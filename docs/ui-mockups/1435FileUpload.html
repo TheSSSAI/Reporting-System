@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FileUpload Component</title>
+  <style>
+    /* --- 1. DESIGN TOKENS & SETUP --- */
+    :root {
+      /* Colors */
+      --color-primary-500: #0068FF;
+      --color-primary-600: #0052CC;
+      --color-primary-100: #E6F0FF;
+      --color-secondary-500: #6c757d;
+      --color-secondary-600: #5a6268;
+      --color-secondary-200: #e2e6ea;
+      --color-danger-500: #D32F2F;
+      --color-danger-600: #c82333;
+      --color-danger-100: #FFEBEE;
+      --color-success-500: #2E7D32;
+      --color-success-100: #E8F5E9;
+      --color-text-primary: #212529;
+      --color-text-secondary: #6c757d;
+      --color-text-white: #ffffff;
+      --color-text-error: #5F2120;
+      --color-border: #ced4da;
+      --color-border-focus: #5C9EFF;
+      --color-bg-light: #f8f9fa;
+      /* Typography */
+      --font-family-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --font-size-sm: 0.875rem;
+      --font-size-md: 1rem;
+      --font-size-lg: 1.25rem;
+      --line-height-base: 1.5;
+      /* Spacing */
+      --space-xs: 0.25rem;
+      --space-sm: 0.5rem;
+      --space-md: 1rem;
+      --space-lg: 1.5rem;
+      --space-xl: 2rem;
+      /* Borders */
+      --border-radius-lg: 0.3rem;
+      --border-width: 1px;
+      /* Transitions */
+      --transition-base: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      font-family: var(--font-family-sans);
+      background-color: #f1f3f5;
+      color: var(--color-text-primary);
+      padding: var(--space-xl);
+    }
+    .showcase { max-width: 600px; margin: 0 auto; display: flex; flex-direction: column; gap: var(--space-xl); }
+    .showcase-section { background: white; padding: var(--space-lg); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+    h3 { margin-top: 0; margin-bottom: var(--space-md); border-bottom: 1px solid #e9ecef; padding-bottom: var(--space-sm); color: #495057; }
+    
+    .icon {
+      display: inline-block;
+      width: 1em; height: 1em;
+      stroke-width: 0; stroke: currentColor; fill: currentColor;
+    }
+    
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+    .spinner { display: inline-block; border-radius: 50%; border-style: solid; animation: spin 0.75s linear infinite; }
+    .spinner--sm { width: 1rem; height: 1rem; border-width: 0.15em; }
+
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-sm); font-family: var(--font-family-sans); font-weight: 600; text-align: center; vertical-align: middle; cursor: pointer; user-select: none; border: var(--border-width) solid transparent; transition: var(--transition-base); font-size: var(--font-size-md); line-height: var(--line-height-base); padding: 8px 22px; border-radius: var(--border-radius-lg); }
+    .btn:focus-visible { outline: 2px solid var(--color-border-focus); outline-offset: 2px; }
+    .btn:disabled { cursor: not-allowed; opacity: 0.65; }
+    .btn--primary { color: var(--color-text-white); background-color: var(--color-primary-500); border-color: var(--color-primary-500); }
+    .btn--primary:hover { background-color: var(--color-primary-600); border-color: var(--color-primary-600); }
+    .btn--secondary { background: transparent; color: var(--color-primary-500); border: 1px solid #B8D5FF; }
+    .btn--secondary:hover { background: #E6F0FF; border-color: var(--color-primary-500); }
+    
+    /* --- FileUpload Component CSS --- */
+    .file-upload {
+      width: 100%;
+    }
+
+    /* --- Drag and Drop Variant --- */
+    .file-upload--dnd .file-upload__dropzone {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-xl) var(--space-lg);
+      border: 2px dashed var(--color-border);
+      border-radius: var(--border-radius-lg);
+      background-color: var(--color-bg-light);
+      text-align: center;
+      cursor: pointer;
+      transition: var(--transition-base);
+    }
+
+    .file-upload__input {
+      width: 0.1px;
+      height: 0.1px;
+      opacity: 0;
+      overflow: hidden;
+      position: absolute;
+      z-index: -1;
+    }
+
+    .file-upload__input:focus-visible + .file-upload__dropzone {
+      border-color: var(--color-border-focus);
+      box-shadow: 0 0 0 0.25rem rgba(0, 104, 255, 0.1);
+      outline: 0;
+    }
+
+    .file-upload--dnd .file-upload__dropzone:hover,
+    .file-upload--dnd.is-dragover .file-upload__dropzone {
+      border-color: var(--color-primary-500);
+      background-color: var(--color-primary-100);
+    }
+
+    .file-upload__icon {
+      width: 3rem;
+      height: 3rem;
+      color: var(--color-primary-500);
+      margin-bottom: var(--space-md);
+    }
+
+    .file-upload__text {
+      font-weight: 600;
+      color: var(--color-text-primary);
+      margin: 0;
+    }
+
+    .file-upload__subtext {
+      font-size: var(--font-size-sm);
+      color: var(--color-text-secondary);
+      margin: var(--space-xs) 0 0 0;
+    }
+
+    .file-upload__browse {
+      color: var(--color-primary-500);
+      font-weight: 600;
+      text-decoration: underline;
+    }
+
+    /* --- Progress/Status States (Shared for DND) --- */
+    .file-upload__status-view {
+      display: flex;
+      flex-direction: column;
+      padding: var(--space-lg);
+      border: 1px solid var(--color-border);
+      border-radius: var(--border-radius-lg);
+      background-color: var(--color-text-white);
+    }
+
+    .file-upload__progress-info {
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+      width: 100%;
+    }
+
+    .file-upload__progress-info .icon {
+      width: 2.5rem;
+      height: 2.5rem;
+      flex-shrink: 0;
+    }
+
+    .file-upload__details {
+      flex-grow: 1;
+      min-width: 0; /* Prevents text overflow issues */
+    }
+
+    .file-upload__filename {
+      display: block;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .file-upload__filesize {
+      font-size: var(--font-size-sm);
+      color: var(--color-text-secondary);
+    }
+
+    .file-upload__progress-bar {
+      width: 100%;
+      height: 0.5rem;
+      background-color: var(--color-secondary-200);
+      border-radius: 0.5rem;
+      margin-top: var(--space-md);
+      overflow: hidden;
+    }
+
+    .file-upload__progress-value {
+      height: 100%;
+      background-color: var(--color-primary-500);
+      border-radius: 0.5rem;
+      transition: width 0.3s ease;
+    }
+
+    /* Uploading State */
+    .file-upload.is-uploading .file-upload__progress-info .spinner {
+        border-color: var(--color-secondary-200);
+        border-top-color: var(--color-primary-500);
+        flex-shrink: 0;
+    }
+
+    /* Success State */
+    .file-upload.is-success .icon {
+      color: var(--color-success-500);
+    }
+    .file-upload.is-success .file-upload__progress-value {
+      background-color: var(--color-success-500);
+    }
+    .file-upload.is-success .file-upload__status-text {
+        font-size: var(--font-size-sm);
+        font-weight: 600;
+        color: var(--color-success-500);
+    }
+
+    /* Error State */
+    .file-upload.is-error .file-upload__status-view {
+      background-color: var(--color-danger-100);
+      border-color: var(--color-danger-500);
+    }
+
+    .file-upload.is-error .icon {
+      color: var(--color-danger-500);
+    }
+
+    .file-upload.is-error .file-upload__error-message {
+      font-size: var(--font-size-sm);
+      color: var(--color-text-error);
+      margin-top: 4px;
+    }
+    .file-upload.is-error .file-upload__actions {
+        margin-left: auto;
+        flex-shrink: 0;
+    }
+
+    /* --- Button Select Variant --- */
+    .file-upload--button {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    .file-upload--button .btn .icon {
+        width: 1.2em;
+        height: 1.2em;
+    }
+    .file-upload--button .file-upload__filename-display {
+        margin-top: var(--space-sm);
+        font-size: var(--font-size-sm);
+        color: var(--color-text-secondary);
+    }
+  </style>
+</head>
+<body>
+  
+  <svg width="0" height="0" style="position:absolute">
+    <symbol id="icon-upload" viewBox="0 0 16 16">
+      <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+      <path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708l3-3z"/>
+    </symbol>
+    <symbol id="icon-file" viewBox="0 0 16 16">
+      <path d="M4 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H4zm0 1h8a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1z"/>
+    </symbol>
+    <symbol id="icon-success" viewBox="0 0 16 16">
+      <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+    </symbol>
+    <symbol id="icon-error" viewBox="0 0 16 16">
+      <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z"/>
+    </symbol>
+  </svg>
+
+  <main class="showcase">
+    <div class="showcase-section">
+      <h3>File Upload Component</h3>
+        <div> 
+          <h4>Variant: Drag & Drop</h4>
+          <div>
+            <h5>Default State</h5>
+            <div class="file-upload file-upload--dnd">
+              <input type="file" id="file-input-1" class="file-upload__input">
+              <label for="file-input-1" class="file-upload__dropzone">
+                <svg class="icon file-upload__icon"><use href="#icon-upload"></use></svg>
+                <p class="file-upload__text">Drag & drop files here</p>
+                <p class="file-upload__subtext">or <span class="file-upload__browse">browse files</span></p>
+              </label>
+            </div>
+          </div>
+
+          <div style="margin-top: var(--space-lg);">
+            <h5>Dragover State</h5>
+            <div class="file-upload file-upload--dnd is-dragover">
+              <label class="file-upload__dropzone">
+                <svg class="icon file-upload__icon"><use href="#icon-upload"></use></svg>
+                <p class="file-upload__text">Drop your file here</p>
+                <p class="file-upload__subtext">Release to start upload</p>
+              </label>
+            </div>
+          </div>
+          
+          <div style="margin-top: var(--space-lg);">
+            <h5>Uploading State</h5>
+            <div class="file-upload is-uploading">
+                <div class="file-upload__status-view">
+                    <div class="file-upload__progress-info">
+                        <svg class="icon"><use href="#icon-file"></use></svg>
+                        <div class="file-upload__details">
+                            <span class="file-upload__filename">Annual_Financial_Report_Q4_2024_Final_v2.pdf</span>
+                            <span class="file-upload__filesize">1.2 MB of 2.8 MB</span>
+                        </div>
+                        <span class="spinner spinner--sm"></span>
+                    </div>
+                    <div class="file-upload__progress-bar">
+                        <div class="file-upload__progress-value" style="width: 45%;"></div>
+                    </div>
+                </div>
+            </div>
+          </div>
+
+          <div style="margin-top: var(--space-lg);">
+            <h5>Success State</h5>
+            <div class="file-upload is-success">
+                <div class="file-upload__status-view">
+                    <div class="file-upload__progress-info">
+                        <svg class="icon"><use href="#icon-success"></use></svg>
+                        <div class="file-upload__details">
+                            <span class="file-upload__filename">Annual_Financial_Report_Q4_2024_Final_v2.pdf</span>
+                            <span class="file-upload__status-text">Upload complete</span>
+                        </div>
+                    </div>
+                    <div class="file-upload__progress-bar">
+                        <div class="file-upload__progress-value" style="width: 100%;"></div>
+                    </div>
+                </div>
+            </div>
+          </div>
+          
+          <div style="margin-top: var(--space-lg);">
+            <h5>Error State</h5>
+            <div class="file-upload is-error">
+                <div class="file-upload__status-view">
+                    <div class="file-upload__progress-info">
+                        <svg class="icon"><use href="#icon-error"></use></svg>
+                        <div class="file-upload__details">
+                            <span class="file-upload__filename">Annual_Financial_Report_Q4_2024_Final_v2.pdf</span>
+                            <p class="file-upload__error-message">Upload failed: File is larger than the 10MB limit.</p>
+                        </div>
+                        <div class="file-upload__actions">
+                            <button class="btn btn--secondary btn--sm">Try Again</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+          </div>
+
+        </div>
+
+    </div>
+    
+    <div class="showcase-section">
+      <h3>Component Variations</h3>
+      <div>
+        <h4>Variant: Button Select</h4>
+        <div class="file-upload file-upload--button">
+          <label for="file-input-2">
+            <div class="btn btn--secondary">
+              <svg class="icon"><use href="#icon-upload"></use></svg>
+              <span>Upload Template</span>
+            </div>
+          </label>
+          <input type="file" id="file-input-2" class="file-upload__input">
+          <p class="file-upload__filename-display">No file selected.</p>
+        </div>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

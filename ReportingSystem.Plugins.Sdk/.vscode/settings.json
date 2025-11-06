@@ -1,0 +1,17 @@
+{
+    "dotnet.defaultSolution": "ReportingSystem.Plugins.Sdk.sln",
+    "files.exclude": {
+        "**/bin": true,
+        "**/obj": true,
+        "**/.vs": true,
+        "**/.idea": true
+    },
+    "editor.formatOnSave": true,
+    "csharp.format.enable": true,
+    "[csharp]": {
+        "editor.defaultFormatter": "ms-dotnettools.csharp",
+        "editor.codeActionsOnSave": {
+            "source.fixAll.csharp": "explicit"
+        }
+    }
+}

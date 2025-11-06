@@ -1,0 +1,31 @@
+sequenceDiagram
+    participant "Control Panel UI" as ControlPanelUI
+    participant "Transformation API" as TransformationAPI
+    participant "Data Access Library" as DataAccessLibrary
+
+    activate ControlPanelUI
+    ControlPanelUI->>ControlPanelUI: 1. User selects a script and a report, then clicks the 'Associate' button.
+    ControlPanelUI-->>ControlPanelUI: UI enters a loading state and prepares the API request.
+    activate TransformationAPI
+    ControlPanelUI->>TransformationAPI: 2. Sends request to create a new script-report association.
+    TransformationAPI-->>ControlPanelUI: Returns 200 OK on success, or an error status code (403, 404, 500).
+    TransformationAPI->>TransformationAPI: 3. ASP.NET Core middleware validates JWT and authorizes user role.
+    TransformationAPI-->>TransformationAPI: Proceeds to controller if valid, otherwise aborts with 401/403.
+    activate DataAccessLibrary
+    TransformationAPI->>DataAccessLibrary: 4. Invokes service to create association, which validates existence of entities.
+    DataAccessLibrary-->>TransformationAPI: Returns success or throws EntityNotFoundException.
+    DataAccessLibrary->>DataAccessLibrary: 5. Begins database transaction. Inserts record into ReportScriptAssociations table. Publishes ReportScriptAssociationChanged domain event.
+    DataAccessLibrary-->>DataAccessLibrary: Audit log entry is created within the same transaction.
+    DataAccessLibrary->>DataAccessLibrary: 5.1. Handles ReportScriptAssociationChanged event and calls IAuditLogRepository.AddAsync.
+    DataAccessLibrary-->>DataAccessLibrary: Audit log entity added to DbContext.
+    TransformationAPI->>ControlPanelUI: 6. Commits transaction and returns success response.
+    ControlPanelUI->>ControlPanelUI: 7. Receives 200 OK, updates component state to reflect association, and clears loading state.
+    ControlPanelUI-->>ControlPanelUI: Component re-renders to display the new state.
+    ControlPanelUI->>ControlPanelUI: 8. Conditionally renders the persistent performance warning based on the updated state.
+
+    note over ControlPanelUI: REQ-DTR-002: The UI is responsible for displaying the persistent performance warning upon success...
+    note over DataAccessLibrary: REQ-DTR-010: The association change is logged to an immutable audit trail. This is handled transa...
+
+    deactivate DataAccessLibrary
+    deactivate TransformationAPI
+    deactivate ControlPanelUI

@@ -1,0 +1,5 @@
+"component_name","business_criticality","technical_complexity","change_frequency","test_types_required","unit_test_coverage","integration_test_coverage","e2e_test_coverage","automation_percentage","manual_test_effort","automated_test_effort","total_test_cases","risk_mitigation_score","quality_confidence","maintenance_overhead","tool_compatibility","team_skill_alignment"
+"JintTransformationEngine","Critical","High","Medium","[""Unit"",""Integration"",""Security"",""Performance""]","95","90","70","98","4","60","45","0.98","High","Medium","Excellent","Good"
+"TransformationsController (API)","High","Medium","High","[""Integration"",""Security""]","","95","85","100","","50","30","0.95","High","Low","Excellent","Excellent"
+"ScriptEditPage (React Component)","High","High","High","[""Unit"",""E2E"",""Accessibility""]","80","","90","85","10","40","25","0.9","High","High","Excellent","Good"
+"Audit Logging Service","Critical","Medium","Low","[""Integration"",""Security""]","70","98","75","95","2","35","20","0.99","High","Low","Excellent","Good"

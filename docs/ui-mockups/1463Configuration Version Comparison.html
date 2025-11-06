@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuration Version Comparison</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* CSS Reset */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { height: 100%; }
+        body { -webkit-font-smoothing: antialiased; }
+        img, picture, video, canvas, svg { display: block; max-width: 100%; }
+        input, button, textarea, select { font: inherit; }
+        p, h1, h2, h3, h4, h5, h6 { overflow-wrap: break-word; }
+
+        /* Design System Tokens */
+        :root {
+            --font-family-sans: 'Inter', sans-serif;
+            --font-family-mono: 'JetBrains Mono', monospace;
+            --font-size-sm: 0.875rem;
+            --font-size-base: 1rem;
+            --font-size-md: 1.125rem;
+            --font-size-lg: 1.25rem;
+            --font-weight-regular: 400;
+            --font-weight-medium: 500;
+            --font-weight-semibold: 600;
+
+            --color-background: #0D1117;
+            --color-surface-1: #161B22;
+            --color-surface-2: #21262D;
+            --color-border-default: #30363D;
+            --color-text-primary: #C9D1D9;
+            --color-text-secondary: #8B949E;
+            --color-text-muted: #586069;
+            --color-accent-fg: #58A6FF;
+            --color-accent-emphasis: #1F6FEB;
+            --color-success-fg: #3FB950;
+            --color-danger-fg: #F85149;
+
+            --color-diff-add-bg: rgba(46, 160, 67, 0.15);
+            --color-diff-add-border: rgba(46, 160, 67, 0.4);
+            --color-diff-remove-bg: rgba(248, 81, 73, 0.15);
+            --color-diff-remove-border: rgba(248, 81, 73, 0.4);
+
+            --syntax-key: #FF7B72;
+            --syntax-string: #A5D6FF;
+            --syntax-number: #79C0FF;
+            --syntax-boolean: #58A6FF;
+            --syntax-punctuation: #8B949E;
+
+            --spacing-1: 0.25rem;
+            --spacing-2: 0.5rem;
+            --spacing-3: 0.75rem;
+            --spacing-4: 1rem;
+            --spacing-5: 1.5rem;
+            --spacing-6: 2rem;
+
+            --border-radius: 6px;
+        }
+
+        /* Base Styles */
+        body {
+            font-family: var(--font-family-sans);
+            background-color: var(--color-background);
+            color: var(--color-text-primary);
+            line-height: 1.5;
+            padding: var(--spacing-6);
+        }
+
+        /* Screen Layout */
+        .screen-container {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-5);
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .screen-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: var(--spacing-4);
+            border-bottom: 1px solid var(--color-border-default);
+        }
+
+        .screen-header h1 {
+            font-size: var(--font-size-lg);
+            font-weight: var(--font-weight-semibold);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-2);
+            font-family: var(--font-family-sans);
+            font-weight: var(--font-weight-medium);
+            font-size: var(--font-size-sm);
+            padding: var(--spacing-2) var(--spacing-4);
+            border-radius: var(--border-radius);
+            border: 1px solid var(--color-border-default);
+            cursor: pointer;
+            text-decoration: none;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+        }
+        
+        .btn--secondary {
+            background-color: var(--color-surface-2);
+            color: var(--color-text-primary);
+        }
+        
+        .btn--secondary:hover {
+            background-color: #30363D;
+            border-color: #8B949E;
+        }
+
+        .comparison-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: var(--font-size-sm);
+            color: var(--color-text-secondary);
+        }
+        
+        .comparison-meta .version-info {
+             font-weight: var(--font-weight-medium);
+             color: var(--color-text-primary);
+        }
+
+        .screen-content {
+            border: 1px solid var(--color-border-default);
+            border-radius: var(--border-radius);
+            background-color: var(--color-surface-1);
+            overflow: hidden;
+        }
+        
+        /* DiffViewer Component */
+        .diff-viewer {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            width: 100%;
+        }
+
+        .diff-pane {
+            display: flex;
+            font-family: var(--font-family-mono);
+            font-size: var(--font-size-sm);
+            line-height: 1.6;
+            overflow-x: auto;
+        }
+        
+        .diff-pane--original {
+            border-right: 1px solid var(--color-border-default);
+        }
+
+        .line-numbers {
+            flex-shrink: 0;
+            padding: var(--spacing-3) var(--spacing-2) var(--spacing-3) var(--spacing-4);
+            text-align: right;
+            color: var(--color-text-muted);
+            background-color: var(--color-surface-1);
+            user-select: none;
+            border-right: 1px solid var(--color-border-default);
+        }
+        
+        .code-content {
+            flex-grow: 1;
+            padding: var(--spacing-3) var(--spacing-4);
+        }
+        
+        .line {
+            display: block;
+            white-space: pre;
+        }
+
+        .line--empty {
+            min-height: 1.6em; /* a bit more than line-height */
+            background-color: #1a1f26;
+        }
+
+        .line--removed {
+            background-color: var(--color-diff-remove-bg);
+            border-left: 2px solid var(--color-diff-remove-border);
+        }
+        
+        .line--added {
+            background-color: var(--color-diff-add-bg);
+            border-left: 2px solid var(--color-diff-add-border);
+        }
+
+        .line--added .line-prefix,
+        .line--removed .line-prefix {
+            display: inline-block;
+            width: 1.5em;
+            text-align: center;
+            user-select: none;
+            color: var(--color-text-secondary);
+        }
+        
+        /* Syntax Highlighting Simulation */
+        .token-key { color: var(--syntax-key); }
+        .token-string { color: var(--syntax-string); }
+        .token-number { color: var(--syntax-number); }
+        .token-boolean { color: var(--syntax-boolean); }
+        .token-punctuation { color: var(--syntax-punctuation); }
+        
+        /* Inline View */
+        .diff-viewer--inline {
+            display: none; /* Hidden by default on desktop */
+        }
+        .diff-pane--inline {
+            width: 100%;
+        }
+
+        /* Variants & States */
+        .variants-container { margin-top: 4rem; }
+        .variants-container > h2 { 
+            font-size: 1.5rem; 
+            margin-bottom: 1.5rem; 
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--color-border-default);
+        }
+        .variant { margin-bottom: 3rem; }
+        .variant > h3 { 
+            font-size: 1.25rem; 
+            font-weight: 600;
+            margin-bottom: 0.5rem; 
+        }
+        .variant > p {
+             color: var(--color-text-secondary);
+             margin-bottom: 1rem;
+        }
+
+        /* No Differences State */
+        .no-diff-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: var(--spacing-6);
+            min-height: 200px;
+            text-align: center;
+            color: var(--color-text-secondary);
+        }
+        .no-diff-container svg {
+            width: 48px;
+            height: 48px;
+            margin-bottom: var(--spacing-4);
+            color: var(--color-success-fg);
+        }
+        .no-diff-container .message {
+            font-weight: var(--font-weight-medium);
+            color: var(--color-text-primary);
+        }
+
+        /* Loading State (Skeleton) */
+        .skeleton-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            width: 100%;
+        }
+        .skeleton-pane {
+            display: flex;
+            padding: var(--spacing-4);
+        }
+        .skeleton-lines {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-4);
+            width: 100%;
+        }
+        .skeleton-line {
+            height: 14px;
+            border-radius: var(--border-radius);
+            background-color: var(--color-surface-2);
+            animation: skeleton-loading 1.5s infinite ease-in-out;
+        }
+        .skeleton-line.w-80 { width: 80%; }
+        .skeleton-line.w-60 { width: 60%; }
+        .skeleton-line.w-90 { width: 90%; }
+
+        @keyframes skeleton-loading {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+
+        /* Responsive Breakpoint */
+        @media (max-width: 992px) {
+            .diff-viewer--side-by-side { display: none; }
+            .diff-viewer--inline { display: block; }
+        }
+
+    </style>
+</head>
+<body>
+    <div class="screen-container">
+        <header class="screen-header">
+            <h1>Compare Configuration Versions</h1>
+            <a href="#" class="btn btn--secondary">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z"/></svg>
+                Back to Version History
+            </a>
+        </header>
+        
+        <div class="comparison-meta">
+            <div class="version-info">Original: <span class="version-id">Version 3 (2025-01-20 10:15:22Z by admin)</span></div>
+            <div class="version-info">Modified: <span class="version-id">Version 5 (2025-01-26 14:30:05Z by system)</span></div>
+        </div>
+
+        <main class="screen-content">
+            <!-- Side-by-Side Diff (Desktop) -->
+            <div class="diff-viewer diff-viewer--side-by-side">
+                <div class="diff-pane diff-pane--original">
+                    <div class="line-numbers">1<br>2<br>3<br>4<br>5<br>6<br>7<br>8<br>9<br>10</div>
+                    <div class="code-content">
+                        <pre><code class="language-json"><span class="line"><span class="token-punctuation">{</span></span><span class="line">  <span class="token-key">"name"</span><span class="token-punctuation">:</span> <span class="token-string">"Daily Sales Report"</span><span class="token-punctuation">,</span></span><span class="line line--removed">  <span class="token-key">"timeout"</span><span class="token-punctuation">:</span> <span class="token-number">30</span><span class="token-punctuation">,</span></span><span class="line">  <span class="token-key">"enabled"</span><span class="token-punctuation">:</span> <span class="token-boolean">true</span><span class="token-punctuation">,</span></span><span class="line line--removed">  <span class="token-key">"legacyMode"</span><span class="token-punctuation">:</span> <span class="token-boolean">true</span><span class="token-punctuation">,</span></span><span class="line line--empty"></span><span class="line">  <span class="token-key">"recipients"</span><span class="token-punctuation">:</span> <span class="token-punctuation">[</span></span><span class="line">    <span class="token-string">"manager@example.com"</span></span><span class="line">  <span class="token-punctuation">]</span></span><span class="line"><span class="token-punctuation">}</span></span></code></pre>
+                    </div>
+                </div>
+                <div class="diff-pane diff-pane--modified">
+                    <div class="line-numbers">1<br>2<br>3<br>4<br>5<br>6<br>7<br>8<br>9<br>10</div>
+                    <div class="code-content">
+                        <pre><code class="language-json"><span class="line"><span class="token-punctuation">{</span></span><span class="line">  <span class="token-key">"name"</span><span class="token-punctuation">:</span> <span class="token-string">"Daily Sales Report"</span><span class="token-punctuation">,</span></span><span class="line line--added">  <span class="token-key">"timeout"</span><span class="token-punctuation">:</span> <span class="token-number">60</span><span class="token-punctuation">,</span></span><span class="line">  <span class="token-key">"enabled"</span><span class="token-punctuation">:</span> <span class="token-boolean">true</span><span class="token-punctuation">,</span></span><span class="line line--empty"></span><span class="line line--added">  <span class="token-key">"retries"</span><span class="token-punctuation">:</span> <span class="token-number">3</span><span class="token-punctuation">,</span></span><span class="line">  <span class="token-key">"recipients"</span><span class="token-punctuation">:</span> <span class="token-punctuation">[</span></span><span class="line">    <span class="token-string">"manager@example.com"</span></span><span class="line">  <span class="token-punctuation">]</span></span><span class="line"><span class="token-punctuation">}</span></span></code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Inline Diff (Mobile/Tablet) -->
+            <div class="diff-viewer diff-viewer--inline">
+                 <div class="diff-pane diff-pane--inline">
+                    <div class="line-numbers">1<br>2<br>3<br>4<br>5<br>6<br>7<br>8<br>9<br>10</div>
+                    <div class="code-content">
+                        <pre><code class="language-json"><span class="line"><span class="token-punctuation">{</span></span><span class="line">  <span class="token-key">"name"</span><span class="token-punctuation">:</span> <span class="token-string">"Daily Sales Report"</span><span class="token-punctuation">,</span></span><span class="line line--removed"><span class="line-prefix">-</span>  <span class="token-key">"timeout"</span><span class="token-punctuation">:</span> <span class="token-number">30</span><span class="token-punctuation">,</span></span><span class="line line--added"><span class="line-prefix">+</span>  <span class="token-key">"timeout"</span><span class="token-punctuation">:</span> <span class="token-number">60</span><span class="token-punctuation">,</span></span><span class="line">  <span class="token-key">"enabled"</span><span class="token-punctuation">:</span> <span class="token-boolean">true</span><span class="token-punctuation">,</span></span><span class="line line--removed"><span class="line-prefix">-</span>  <span class="token-key">"legacyMode"</span><span class="token-punctuation">:</span> <span class="token-boolean">true</span><span class="token-punctuation">,</span></span><span class="line line--added"><span class="line-prefix">+</span>  <span class="token-key">"retries"</span><span class="token-punctuation">:</span> <span class="token-number">3</span><span class="token-punctuation">,</span></span><span class="line">  <span class="token-key">"recipients"</span><span class="token-punctuation">:</span> <span class="token-punctuation">[</span></span><span class="line">    <span class="token-string">"manager@example.com"</span></span><span class="line">  <span class="token-punctuation">]</span></span><span class="line"><span class="token-punctuation">}</span></span></code></pre>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div class="variants-container">
+        <h2>Screen Variations</h2>
+
+        <div class="variant">
+            <h3>State: No Differences Found</h3>
+            <p>Displayed when the content of the two selected versions is identical.</p>
+            <div class="screen-content">
+                <div class="no-diff-container">
+                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.286.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425a.247.247 0 0 1 .02-.022Z"/></svg>
+                     <span class="message">No differences found between the selected versions.</span>
+                     <span>The content of both versions is identical.</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="variant">
+            <h3>State: Loading</h3>
+            <p>Displayed while the system is fetching and comparing the two versions.</p>
+            <div class="screen-content">
+                <div class="skeleton-container">
+                    <div class="skeleton-pane">
+                        <div class="skeleton-lines">
+                            <div class="skeleton-line w-80"></div>
+                            <div class="skeleton-line w-90"></div>
+                            <div class="skeleton-line w-60"></div>
+                            <div class="skeleton-line w-80"></div>
+                            <div class="skeleton-line w-90"></div>
+                        </div>
+                    </div>
+                    <div class="skeleton-pane">
+                        <div class="skeleton-lines">
+                            <div class="skeleton-line w-80"></div>
+                            <div class="skeleton-line w-90"></div>
+                            <div class="skeleton-line w-60"></div>
+                            <div class="skeleton-line w-80"></div>
+                            <div class="skeleton-line w-90"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</body>
+</html>

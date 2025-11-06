@@ -1,0 +1,848 @@
+# 1 Overview
+
+## 1.1 Diagram Id
+
+SEQ-AF-001
+
+## 1.2 Name
+
+API Enforces RBAC on Script Management
+
+## 1.3 Description
+
+Before executing any script management (CRUD) controller action, the ASP.NET Core authorization middleware intercepts the request to verify the user's role and permissions.
+
+## 1.4 Type
+
+🔹 AuthenticationFlow
+
+## 1.5 Purpose
+
+To ensure only authorized users can create, modify, or delete transformation scripts.
+
+## 1.6 Complexity
+
+Low
+
+## 1.7 Priority
+
+🚨 Critical
+
+## 1.8 Frequency
+
+OnDemand
+
+## 1.9 Participants
+
+- REPO-APP-API-001
+
+## 1.10 Key Interactions
+
+- An HTTP request (e.g., `PUT /api/v1/transformations/{id}`) arrives at the API.
+- The ASP.NET Core middleware pipeline is invoked.
+- The Authorization Middleware checks the controller action for an `[Authorize]` attribute with a specific role (e.g., 'Administrator').
+- The middleware validates the user's claims (from their authentication token) against the required role.
+- If the user has the required role, the request is passed to the controller action.
+- If the user does not have the role, the middleware short-circuits the request and returns an HTTP 403 Forbidden response.
+
+## 1.11 Triggers
+
+- Any API call to an endpoint protected by RBAC.
+
+## 1.12 Outcomes
+
+- Authorized users can proceed with the operation.
+- Unauthorized users are denied access.
+
+## 1.13 Business Rules
+
+- Access to create, modify, or delete scripts shall be restricted to authorized users via Role-Based Access Control (RBAC) (REQ-DTR-010).
+
+## 1.14 Error Scenarios
+
+- User is not authenticated, middleware returns 401 Unauthorized.
+- User is authenticated but not authorized, middleware returns 403 Forbidden.
+
+## 1.15 Integration Points
+
+- Identity Provider (source of user claims/roles)
+
+# 2.0 Details
+
+## 2.1 Diagram Id
+
+SEQ-RBAC-001
+
+## 2.2 Name
+
+RBAC Enforcement for Script Management API
+
+## 2.3 Description
+
+Details the sequence of operations within the ASP.NET Core middleware pipeline for a request to a protected endpoint. It shows how the Authentication Middleware validates the JWT Bearer token and how the Authorization Middleware enforces the `[Authorize(Roles = 'Administrator')]` policy before allowing the request to proceed to the `TransformationScriptsController`.
+
+## 2.4 Participants
+
+### 2.4.1 Client
+
+#### 2.4.1.1 Repository Id
+
+User-Agent
+
+#### 2.4.1.2 Display Name
+
+User Agent
+
+#### 2.4.1.3 Type
+
+🔹 Client
+
+#### 2.4.1.4 Technology
+
+HTTP/1.1 Client (Browser)
+
+#### 2.4.1.5 Order
+
+1
+
+#### 2.4.1.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | actor |
+| Color | #90A4AE |
+| Stereotype | External |
+
+### 2.4.2.0 WebServer
+
+#### 2.4.2.1 Repository Id
+
+REPO-APP-API-001
+
+#### 2.4.2.2 Display Name
+
+API Host (Kestrel)
+
+#### 2.4.2.3 Type
+
+🔹 WebServer
+
+#### 2.4.2.4 Technology
+
+ASP.NET Core 8 Kestrel
+
+#### 2.4.2.5 Order
+
+2
+
+#### 2.4.2.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | component |
+| Color | #42A5F5 |
+| Stereotype | Entrypoint |
+
+### 2.4.3.0 Middleware
+
+#### 2.4.3.1 Repository Id
+
+REPO-APP-API-001-AuthN
+
+#### 2.4.3.2 Display Name
+
+Authentication Middleware
+
+#### 2.4.3.3 Type
+
+🔹 Middleware
+
+#### 2.4.3.4 Technology
+
+Microsoft.AspNetCore.Authentication.JwtBearer
+
+#### 2.4.3.5 Order
+
+3
+
+#### 2.4.3.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | component |
+| Color | #EF5350 |
+| Stereotype | Security |
+
+### 2.4.4.0 Middleware
+
+#### 2.4.4.1 Repository Id
+
+REPO-APP-API-001-AuthZ
+
+#### 2.4.4.2 Display Name
+
+Authorization Middleware
+
+#### 2.4.4.3 Type
+
+🔹 Middleware
+
+#### 2.4.4.4 Technology
+
+Microsoft.AspNetCore.Authorization
+
+#### 2.4.4.5 Order
+
+4
+
+#### 2.4.4.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | component |
+| Color | #FF7043 |
+| Stereotype | Security |
+
+### 2.4.5.0 Controller
+
+#### 2.4.5.1 Repository Id
+
+REPO-APP-API-001-Controller
+
+#### 2.4.5.2 Display Name
+
+TransformationScriptsController
+
+#### 2.4.5.3 Type
+
+🔹 Controller
+
+#### 2.4.5.4 Technology
+
+ASP.NET Core 8 MVC
+
+#### 2.4.5.5 Order
+
+5
+
+#### 2.4.5.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | component |
+| Color | #66BB6A |
+| Stereotype | Application |
+
+## 2.5.0.0 Interactions
+
+### 2.5.1.0 Request
+
+#### 2.5.1.1 Source Id
+
+User-Agent
+
+#### 2.5.1.2 Target Id
+
+REPO-APP-API-001
+
+#### 2.5.1.3 Message
+
+Sends HTTP request to protected endpoint.
+
+#### 2.5.1.4 Sequence Number
+
+1
+
+#### 2.5.1.5 Type
+
+🔹 Request
+
+#### 2.5.1.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.1.7 Return Message
+
+
+
+#### 2.5.1.8 Has Return
+
+✅ Yes
+
+#### 2.5.1.9 Is Activation
+
+✅ Yes
+
+#### 2.5.1.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | HTTP/1.1 |
+| Method | PUT /api/v1/transformations/{id} |
+| Parameters | Header: Authorization: Bearer eyJhbGciOiJSUzI1NiIs... |
+| Authentication | JWT Bearer token provided in Authorization header. |
+| Error Handling | Client-side handling for 4xx/5xx responses. |
+| Performance | N/A |
+
+### 2.5.2.0 MethodCall
+
+#### 2.5.2.1 Source Id
+
+REPO-APP-API-001
+
+#### 2.5.2.2 Target Id
+
+REPO-APP-API-001-AuthN
+
+#### 2.5.2.3 Message
+
+Invoke(context)
+
+#### 2.5.2.4 Sequence Number
+
+2
+
+#### 2.5.2.5 Type
+
+🔹 MethodCall
+
+#### 2.5.2.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.2.7 Return Message
+
+
+
+#### 2.5.2.8 Has Return
+
+✅ Yes
+
+#### 2.5.2.9 Is Activation
+
+✅ Yes
+
+#### 2.5.2.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-process |
+| Method | AuthenticationMiddleware.Invoke |
+| Parameters | HttpContext |
+| Authentication | N/A |
+| Error Handling | Exceptions are caught by the host. |
+| Performance | Part of the request pipeline overhead. |
+
+#### 2.5.2.11 Nested Interactions
+
+- {'sourceId': 'REPO-APP-API-001-AuthN', 'targetId': 'REPO-APP-API-001-AuthN', 'message': '[Security Checkpoint] Validate JWT Bearer Token', 'sequenceNumber': 2.1, 'type': 'InternalProcessing', 'isSynchronous': True, 'returnMessage': 'Valid ClaimsPrincipal or Authentication Failure', 'hasReturn': True, 'isActivation': False, 'technicalDetails': {'protocol': 'In-process', 'method': 'JwtBearerHandler.HandleAuthenticateAsync', 'parameters': 'Authorization Header Value', 'authentication': "Verifies token signature against IdP's public key (cached). Validates claims (exp, iss, aud).", 'errorHandling': 'If validation fails (invalid signature, expired, etc.), throws an exception that results in a 401 Unauthorized response.', 'performance': 'Sub-millisecond if IdP metadata/keys are cached.'}}
+
+### 2.5.3.0 Return
+
+#### 2.5.3.1 Source Id
+
+REPO-APP-API-001-AuthN
+
+#### 2.5.3.2 Target Id
+
+REPO-APP-API-001
+
+#### 2.5.3.3 Message
+
+Populates context.User with ClaimsPrincipal
+
+#### 2.5.3.4 Sequence Number
+
+3
+
+#### 2.5.3.5 Type
+
+🔹 Return
+
+#### 2.5.3.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.3.7 Return Message
+
+
+
+#### 2.5.3.8 Has Return
+
+❌ No
+
+#### 2.5.3.9 Is Activation
+
+❌ No
+
+#### 2.5.3.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-process |
+| Method | N/A |
+| Parameters | A populated ClaimsPrincipal object is attached to ... |
+| Authentication | N/A |
+| Error Handling | If token validation failed, middleware short-circu... |
+| Performance | Minimal. |
+
+### 2.5.4.0 MethodCall
+
+#### 2.5.4.1 Source Id
+
+REPO-APP-API-001
+
+#### 2.5.4.2 Target Id
+
+REPO-APP-API-001-AuthZ
+
+#### 2.5.4.3 Message
+
+Invoke(context)
+
+#### 2.5.4.4 Sequence Number
+
+4
+
+#### 2.5.4.5 Type
+
+🔹 MethodCall
+
+#### 2.5.4.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.4.7 Return Message
+
+
+
+#### 2.5.4.8 Has Return
+
+✅ Yes
+
+#### 2.5.4.9 Is Activation
+
+✅ Yes
+
+#### 2.5.4.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-process |
+| Method | AuthorizationMiddleware.Invoke |
+| Parameters | HttpContext (now containing a ClaimsPrincipal) |
+| Authentication | N/A |
+| Error Handling | Exceptions are caught by the host. |
+| Performance | Part of the request pipeline overhead. |
+
+#### 2.5.4.11 Nested Interactions
+
+- {'sourceId': 'REPO-APP-API-001-AuthZ', 'targetId': 'REPO-APP-API-001-AuthZ', 'message': "[Security Checkpoint] Evaluate [Authorize(Roles = 'Administrator')] Policy", 'sequenceNumber': 4.1, 'type': 'InternalProcessing', 'isSynchronous': True, 'returnMessage': 'Authorization Success or Failure', 'hasReturn': True, 'isActivation': False, 'technicalDetails': {'protocol': 'In-process', 'method': 'AuthorizationPolicy.EvaluateAsync', 'parameters': 'ClaimsPrincipal from HttpContext.User', 'authentication': "Checks if the ClaimsPrincipal has a 'role' claim with the value 'Administrator'.", 'errorHandling': 'If the required role claim is not present, the policy evaluation fails, resulting in a 403 Forbidden response.', 'performance': 'Very fast, involves claim set iteration.'}}
+
+### 2.5.5.0 Return
+
+#### 2.5.5.1 Source Id
+
+REPO-APP-API-001-AuthZ
+
+#### 2.5.5.2 Target Id
+
+REPO-APP-API-001
+
+#### 2.5.5.3 Message
+
+Allows request to proceed
+
+#### 2.5.5.4 Sequence Number
+
+5
+
+#### 2.5.5.5 Type
+
+🔹 Return
+
+#### 2.5.5.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.5.7 Return Message
+
+
+
+#### 2.5.5.8 Has Return
+
+❌ No
+
+#### 2.5.5.9 Is Activation
+
+❌ No
+
+#### 2.5.5.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-process |
+| Method | N/A |
+| Parameters | N/A |
+| Authentication | N/A |
+| Error Handling | If policy evaluation failed, middleware short-circ... |
+| Performance | Minimal. |
+
+### 2.5.6.0 MethodCall
+
+#### 2.5.6.1 Source Id
+
+REPO-APP-API-001
+
+#### 2.5.6.2 Target Id
+
+REPO-APP-API-001-Controller
+
+#### 2.5.6.3 Message
+
+ExecuteControllerAction(context, id)
+
+#### 2.5.6.4 Sequence Number
+
+6
+
+#### 2.5.6.5 Type
+
+🔹 MethodCall
+
+#### 2.5.6.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.6.7 Return Message
+
+IActionResult (e.g., 200 OK)
+
+#### 2.5.6.8 Has Return
+
+✅ Yes
+
+#### 2.5.6.9 Is Activation
+
+✅ Yes
+
+#### 2.5.6.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-process |
+| Method | TransformationScriptsController.UpdateScript(id, r... |
+| Parameters | Route parameter 'id', request body DTO. |
+| Authentication | Implicitly satisfied by middleware checks. |
+| Error Handling | Standard controller action exception handling. |
+| Performance | Depends on business logic execution time. |
+
+### 2.5.7.0 Return
+
+#### 2.5.7.1 Source Id
+
+REPO-APP-API-001-Controller
+
+#### 2.5.7.2 Target Id
+
+REPO-APP-API-001
+
+#### 2.5.7.3 Message
+
+Return HTTP 200 OK
+
+#### 2.5.7.4 Sequence Number
+
+7
+
+#### 2.5.7.5 Type
+
+🔹 Return
+
+#### 2.5.7.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.7.7 Return Message
+
+HTTP/1.1 200 OK, Body: { ... }
+
+#### 2.5.7.8 Has Return
+
+❌ No
+
+#### 2.5.7.9 Is Activation
+
+❌ No
+
+#### 2.5.7.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-process |
+| Method | N/A |
+| Parameters | IActionResult object |
+| Authentication | N/A |
+| Error Handling | N/A |
+| Performance | N/A |
+
+### 2.5.8.0 Response
+
+#### 2.5.8.1 Source Id
+
+REPO-APP-API-001
+
+#### 2.5.8.2 Target Id
+
+User-Agent
+
+#### 2.5.8.3 Message
+
+Sends success response
+
+#### 2.5.8.4 Sequence Number
+
+8
+
+#### 2.5.8.5 Type
+
+🔹 Response
+
+#### 2.5.8.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.8.7 Return Message
+
+HTTP/1.1 200 OK
+
+#### 2.5.8.8 Has Return
+
+❌ No
+
+#### 2.5.8.9 Is Activation
+
+❌ No
+
+#### 2.5.8.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | HTTP/1.1 |
+| Method | N/A |
+| Parameters | Response body containing updated resource. |
+| Authentication | N/A |
+| Error Handling | N/A |
+| Performance | N/A |
+
+### 2.5.9.0 Return
+
+#### 2.5.9.1 Source Id
+
+REPO-APP-API-001-AuthZ
+
+#### 2.5.9.2 Target Id
+
+REPO-APP-API-001
+
+#### 2.5.9.3 Message
+
+[ALT] Short-circuits with 403 Forbidden
+
+#### 2.5.9.4 Sequence Number
+
+5.1
+
+#### 2.5.9.5 Type
+
+🔹 Return
+
+#### 2.5.9.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.9.7 Return Message
+
+Authorization failure result
+
+#### 2.5.9.8 Has Return
+
+❌ No
+
+#### 2.5.9.9 Is Activation
+
+❌ No
+
+#### 2.5.9.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-process |
+| Method | N/A |
+| Parameters | Result object indicating authorization failed. |
+| Authentication | N/A |
+| Error Handling | N/A |
+| Performance | N/A |
+
+### 2.5.10.0 Response
+
+#### 2.5.10.1 Source Id
+
+REPO-APP-API-001
+
+#### 2.5.10.2 Target Id
+
+User-Agent
+
+#### 2.5.10.3 Message
+
+[ALT] Sends failure response
+
+#### 2.5.10.4 Sequence Number
+
+5.2
+
+#### 2.5.10.5 Type
+
+🔹 Response
+
+#### 2.5.10.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.10.7 Return Message
+
+HTTP/1.1 403 Forbidden
+
+#### 2.5.10.8 Has Return
+
+❌ No
+
+#### 2.5.10.9 Is Activation
+
+❌ No
+
+#### 2.5.10.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | HTTP/1.1 |
+| Method | N/A |
+| Parameters | Empty response body. |
+| Authentication | N/A |
+| Error Handling | N/A |
+| Performance | N/A |
+
+### 2.5.11.0 Return
+
+#### 2.5.11.1 Source Id
+
+REPO-APP-API-001-AuthN
+
+#### 2.5.11.2 Target Id
+
+REPO-APP-API-001
+
+#### 2.5.11.3 Message
+
+[ALT] Short-circuits with 401 Unauthorized
+
+#### 2.5.11.4 Sequence Number
+
+3.1
+
+#### 2.5.11.5 Type
+
+🔹 Return
+
+#### 2.5.11.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.11.7 Return Message
+
+Authentication failure result
+
+#### 2.5.11.8 Has Return
+
+❌ No
+
+#### 2.5.11.9 Is Activation
+
+❌ No
+
+#### 2.5.11.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-process |
+| Method | N/A |
+| Parameters | Result object indicating authentication failed. |
+| Authentication | N/A |
+| Error Handling | N/A |
+| Performance | N/A |
+
+### 2.5.12.0 Response
+
+#### 2.5.12.1 Source Id
+
+REPO-APP-API-001
+
+#### 2.5.12.2 Target Id
+
+User-Agent
+
+#### 2.5.12.3 Message
+
+[ALT] Sends failure response
+
+#### 2.5.12.4 Sequence Number
+
+3.2
+
+#### 2.5.12.5 Type
+
+🔹 Response
+
+#### 2.5.12.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.12.7 Return Message
+
+HTTP/1.1 401 Unauthorized
+
+#### 2.5.12.8 Has Return
+
+❌ No
+
+#### 2.5.12.9 Is Activation
+
+❌ No
+
+#### 2.5.12.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | HTTP/1.1 |
+| Method | N/A |
+| Parameters | Response may include a WWW-Authenticate header. |
+| Authentication | N/A |
+| Error Handling | N/A |
+| Performance | N/A |
+
+## 2.6.0.0 Notes
+
+- {'content': "The Identity Provider's OIDC discovery document (containing the public key URI) is typically fetched and cached by the API at startup to optimize JWT validation performance and avoid network latency on every request.", 'position': 'top-right', 'participantId': 'REPO-APP-API-001-AuthN', 'sequenceNumber': 2.1}
+
+## 2.7.0.0 Implementation Guidance
+
+| Property | Value |
+|----------|-------|
+| Security Requirements | JWT validation must check algorithm (e.g., RS256),... |
+| Performance Targets | The entire middleware pipeline (AuthN + AuthZ) sho... |
+| Error Handling Strategy | Strictly differentiate between 401 Unauthorized (i... |
+| Testing Considerations | Integration tests are critical. Test cases must in... |
+| Monitoring Requirements | Monitor the rate of 401 and 403 responses. A spike... |
+| Deployment Considerations | The application configuration must be securely man... |
+

@@ -1,0 +1,34 @@
+sequenceDiagram
+    participant "Presentation Layer (React UI)" as PresentationLayerReactUI
+    participant "API/Web Layer" as APIWebLayer
+    participant "Application Layer" as ApplicationLayer
+    participant "Infrastructure Layer" as InfrastructureLayer
+
+    activate APIWebLayer
+    PresentationLayerReactUI->>APIWebLayer: 1. 1. UploadBackupFile(backupFile)
+    APIWebLayer-->>PresentationLayerReactUI: 12. HTTP 200 OK / Error Response
+    activate ApplicationLayer
+    APIWebLayer->>ApplicationLayer: 2. 2. RestoreFromBackupAsync(backupStream)
+    ApplicationLayer-->>APIWebLayer: 11. RestoreResult { Success: true }
+    activate InfrastructureLayer
+    ApplicationLayer->>InfrastructureLayer: 3. 3. PauseSchedulerAsync()
+    InfrastructureLayer-->>ApplicationLayer: Scheduler Paused
+    ApplicationLayer->>InfrastructureLayer: 4. 4. ValidateBackupAsync(backupStream)
+    InfrastructureLayer-->>ApplicationLayer: Validation Successful
+    ApplicationLayer->>InfrastructureLayer: 5. 5. LogAuditEventAsync('RestoreOperationStarted')
+    ApplicationLayer->>InfrastructureLayer: 6. 6. ReplaceDatabaseFileAsync(backupStream)
+    InfrastructureLayer-->>ApplicationLayer: File Replaced
+    ApplicationLayer->>ApplicationLayer: 7. 7. ReinitializeServicesAsync()
+    ApplicationLayer-->>ApplicationLayer: Services Reloaded
+    ApplicationLayer->>InfrastructureLayer: 8. 8. ResumeSchedulerAsync()
+    InfrastructureLayer-->>ApplicationLayer: Scheduler Resumed
+    ApplicationLayer->>InfrastructureLayer: 9. 9. LogSystemEvent('RestoreOperationSucceeded')
+    ApplicationLayer->>InfrastructureLayer: 10. 10. LogAuditEventAsync('RestoreOperationSucceeded')
+
+    note over InfrastructureLayer: The application service account running the Windows Service MUST have read/write/delete permissio...
+    note over ApplicationLayer: The entire restore operation should be wrapped in a try/catch/finally block. The 'finally' block ...
+    note over PresentationLayerReactUI: A critical failure after file replacement (step 6) leaves the system in a potentially non-operati...
+
+    deactivate InfrastructureLayer
+    deactivate ApplicationLayer
+    deactivate APIWebLayer

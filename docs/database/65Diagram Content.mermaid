@@ -1,0 +1,55 @@
+erDiagram
+    User {
+        UUID userId PK
+        VARCHAR username
+        VARCHAR email
+        VARCHAR fullName
+    }
+
+    TransformationScript {
+        UUID transformationScriptId PK
+        VARCHAR name
+        UUID createdByUserId FK
+        UUID updatedByUserId FK
+        UUID activeScriptVersionId FK
+    }
+
+    ScriptVersion {
+        UUID scriptVersionId PK
+        UUID transformationScriptId FK
+        INT versionNumber
+        UUID createdByUserId FK
+    }
+
+    ReportConfiguration {
+        UUID reportConfigurationId PK
+        VARCHAR name
+        UUID jsonSchemaId FK
+        UUID createdByUserId FK
+        UUID updatedByUserId FK
+    }
+
+    JsonSchema {
+        UUID jsonSchemaId PK
+        VARCHAR name
+        UUID createdByUserId FK
+    }
+
+    ReportTransformationScriptAssociation {
+        UUID reportConfigurationId PK,FK
+        UUID transformationScriptId PK,FK
+        UUID associatedByUserId FK
+    }
+
+    User ||--|{ TransformationScript : "manages"
+    User ||--|{ ScriptVersion : "creates"
+    User ||--|{ ReportConfiguration : "manages"
+    User ||--|{ JsonSchema : "creates"
+    User ||--|{ ReportTransformationScriptAssociation : "records action by"
+
+    TransformationScript ||--|{ ScriptVersion : "has"
+
+    JsonSchema ||--o{ ReportConfiguration : "validates"
+
+    ReportConfiguration ||--|{ ReportTransformationScriptAssociation : "links through"
+    TransformationScript ||--|{ ReportTransformationScriptAssociation : "links through"

@@ -1,0 +1,33 @@
+sequenceDiagram
+    participant "Control Panel SPA" as ControlPanelSPA
+    participant "Transformation API" as TransformationAPI
+    participant "External Data Connector" as ExternalDataConnector
+    participant "Jint Engine Wrapper" as JintEngineWrapper
+
+    activate ControlPanelSPA
+    ControlPanelSPA->>ControlPanelSPA: 1. User selects a connector and clicks 'Preview with Live Data'. UI enters 'loading' state, disables button.
+    activate TransformationAPI
+    ControlPanelSPA->>TransformationAPI: 2. POST /api/v1/transformations/preview
+    TransformationAPI-->>ControlPanelSPA: Returns 200 OK with transformed JSON, 400/500/502 on error.
+    TransformationAPI->>TransformationAPI: 3. ScriptPreviewController.PreviewAsync(request, cancellationToken)
+    TransformationAPI-->>TransformationAPI: IActionResult
+    activate ExternalDataConnector
+    TransformationAPI->>ExternalDataConnector: 4. GET /data?limit=100
+    ExternalDataConnector-->>TransformationAPI: Returns 200 OK with JSON array of records.
+    ExternalDataConnector->>TransformationAPI: 5. 200 OK with JSON data sample
+    TransformationAPI->>TransformationAPI: 6. Parse response body into System.Text.Json.JsonNode
+    TransformationAPI-->>TransformationAPI: JsonNode object
+    activate JintEngineWrapper
+    TransformationAPI->>JintEngineWrapper: 7. IScriptEngineWrapper.Execute(script, inputData, cancellationToken)
+    JintEngineWrapper-->>TransformationAPI: Transformed JsonNode
+    JintEngineWrapper->>TransformationAPI: 8. Return transformed JsonNode
+    TransformationAPI->>ControlPanelSPA: 9. 200 OK
+    ControlPanelSPA->>ControlPanelSPA: 10. UI receives response, updates state to 'success'. Renders formatted JSON in output pane. Re-enables button.
+
+    note over ExternalDataConnector: Error Scenario: Data Connector Failure If step #4 returns an error (e.g., 503 Service Unavailable...
+    note over JintEngineWrapper: Error Scenario: Script Execution Failure If step #7 throws a JavaScriptException, the API will ca...
+
+    deactivate JintEngineWrapper
+    deactivate ExternalDataConnector
+    deactivate TransformationAPI
+    deactivate ControlPanelSPA

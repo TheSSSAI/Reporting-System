@@ -1,0 +1,44 @@
+sequenceDiagram
+    actor User
+    participant ReactClient as React Client (Browser)
+    participant APIServer as API Server (Backend)
+    participant AuthService as Authentication Service
+    participant Database
+
+    User->>ReactClient: 1. Submits username and password
+    activate ReactClient
+
+    ReactClient->>APIServer: 2. POST /api/v1/auth/token with credentials
+    activate APIServer
+
+    APIServer->>AuthService: 3. ValidateCredentials(username, password)
+    activate AuthService
+
+    AuthService->>Database: 4. FindUserByUsername(username)
+    activate Database
+    Database-->>AuthService: 5. User record (with hashed password & role)
+    deactivate Database
+
+    alt Credentials are Invalid or Account is Locked
+        AuthService-->>APIServer: 6a. Authentication Failed
+        APIServer-->>ReactClient: 6b. 401 Unauthorized ("Invalid credentials")
+        ReactClient->>User: 6c. Display login error message
+    else Credentials are Valid
+        AuthService->>AuthService: 6. Verify provided password against stored hash
+        AuthService-->>APIServer: 7. Success (Authenticated User object with Role)
+        deactivate AuthService
+
+        APIServer->>APIServer: 8. Generate JWT (including 'role' claim)
+        APIServer-->>ReactClient: 9. 200 OK { "accessToken": "...", "role": "..." }
+        deactivate APIServer
+
+        ReactClient->>ReactClient: 10. Store JWT and check user role
+
+        alt Role is 'Administrator'
+            ReactClient->>User: 11a. Redirect to /control-panel
+        else Role is 'Viewer'
+            ReactClient->>User: 11b. Redirect to /report-viewer
+        end
+    end
+
+    deactivate ReactClient

@@ -1,0 +1,37 @@
+{
+    // C# extension settings
+    "dotnet.defaultSolution": "ReportingSystem.sln",
+    "csharp.semanticHighlighting.enabled": true,
+
+    // Exclude build/transient folders from file explorer
+    "files.exclude": {
+        "**/bin": true,
+        "**/obj": true,
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/CVS": true,
+        "**/.DS_Store": true,
+        "**/Thumbs.db": true,
+        "**/.vs": true,
+        "**/*.cs.user": true,
+        "**/*.cs.suo": true
+    },
+
+    // Associate solution files with the C# extension
+    "files.associations": {
+        "*.sln": "solution"
+    },
+
+    // Formatting settings to align with .editorconfig
+    "editor.formatOnSave": true,
+    "editor.insertSpaces": true,
+    "editor.tabSize": 4,
+
+    // Recommended extensions for this workspace
+    "recommendations": [
+        "ms-dotnettools.csdevkit",
+        "editorconfig.editorconfig",
+        "kreativ-software.csharpextensions"
+    ]
+}

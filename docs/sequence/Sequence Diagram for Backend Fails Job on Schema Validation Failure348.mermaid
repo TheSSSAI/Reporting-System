@@ -1,0 +1,27 @@
+sequenceDiagram
+    participant "TransformationEngine.Api" as TransformationEngineApi
+    participant "TransformationEngine.Execution" as TransformationEngineExecution
+    participant "TransformationEngine.Persistence" as TransformationEnginePersistence
+
+    activate TransformationEngineExecution
+    TransformationEngineApi->>TransformationEngineExecution: 1. 1. [Precondition] Invokes IScriptEngineWrapper.Execute(script, inputJson)
+    TransformationEngineExecution-->>TransformationEngineApi: 2. Returns successfully with transformedJson: JsonNode
+    activate TransformationEnginePersistence
+    TransformationEngineApi->>TransformationEnginePersistence: 3. 3. GetReportConfigWithSchemaAsync(jobContext.ReportId)
+    TransformationEnginePersistence-->>TransformationEngineApi: 4. Returns reportConfiguration with associated JsonSchema entity
+    TransformationEngineApi->>TransformationEngineApi: 5. 5. [Conditional Check] Verifies if reportConfiguration.JsonSchema is not null
+    activate TransformationEngineApi
+    TransformationEngineApi->>TransformationEngineApi: 6. 6. IJsonSchemaValidationService.Validate(transformedJson, schema.Definition)
+    TransformationEngineApi-->>TransformationEngineApi: 7. [Failure] Returns validationResult: { IsValid: false, Errors: [...] }
+    TransformationEngineApi->>TransformationEngineApi: 8. 8. Logs validation failure as audit evidence
+    TransformationEngineApi->>TransformationEngineApi: 9. 9. throw new JsonSchemaValidationException(validationResult.Errors)
+    TransformationEngineApi->>TransformationEngineApi: 10. 10. [Catch Block] GlobalExceptionHandler/JobOrchestrator catches JsonSchemaValidationException
+    TransformationEngineApi->>TransformationEnginePersistence: 11. 11. UpdateJobStatusAsync(jobContext.JobId, JobStatus.Failed, errorMessage)
+    TransformationEnginePersistence-->>TransformationEngineApi: 12. Acknowledges update
+
+    note over TransformationEnginePersistence: Schema Caching: To optimize performance, the JSON Schema definition fetched in step 6 should be c...
+    note over TransformationEngineApi: The logged error in step 8 must be structured (JSON) and include the full list of validation fail...
+
+    deactivate TransformationEngineApi
+    deactivate TransformationEnginePersistence
+    deactivate TransformationEngineExecution

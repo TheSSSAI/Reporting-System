@@ -1,0 +1,26 @@
+sequenceDiagram
+    participant "CI/CD System / Test Runner" as CICDSystemTestRunner
+    participant "TransformationEngine.Api" as TransformationEngineApi
+    participant "TransformationEngine.Execution" as TransformationEngineExecution
+
+    activate CICDSystemTestRunner
+    CICDSystemTestRunner->>CICDSystemTestRunner: 1. 1. Initialize Test & Generate Payload
+    activate TransformationEngineApi
+    CICDSystemTestRunner->>TransformationEngineApi: 2. 2. POST /api/v1/transformations/preview
+    TransformationEngineApi-->>CICDSystemTestRunner: 3. HTTP 200 OK with transformed JSON and custom performance header.
+    TransformationEngineApi->>TransformationEngineApi: 2.1. 2a. [ScriptPreviewController] Invoke ScriptExecutionService.ExecutePreviewAsync()
+    TransformationEngineApi-->>TransformationEngineApi: Transformed JsonNode and execution duration.
+    activate TransformationEngineExecution
+    TransformationEngineApi->>TransformationEngineExecution: 2.2. 2b. [Service] Invoke IScriptEngineWrapper.Execute()
+    TransformationEngineExecution-->>TransformationEngineApi: Transformed JsonNode.
+    TransformationEngineApi->>TransformationEngineApi: 2.4. 2d. [Service] Stop timer, record performance metric
+    CICDSystemTestRunner->>CICDSystemTestRunner: 4. 4. Assert Performance Threshold
+    CICDSystemTestRunner-->>CICDSystemTestRunner: Pass or Fail
+    CICDSystemTestRunner->>CICDSystemTestRunner: 5. 5. Report Test Result to CI/CD Pipeline
+
+    note over TransformationEngineApi: For precise measurement, the API must return the server-side execution duration in a custom respo...
+    note over CICDSystemTestRunner: The primary failure condition for this test is not an error, but a successful response that took ...
+
+    deactivate TransformationEngineExecution
+    deactivate TransformationEngineApi
+    deactivate CICDSystemTestRunner

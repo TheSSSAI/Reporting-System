@@ -1,0 +1,108 @@
+# Visual Studio Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Rider
+.idea/
+*.sln.iml
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Aa]rm/
+[Aa]rm64/
+bld/
+[Bb]in/
+[Oo]bj/
+build/
+Build/
+build-analyser/
+
+# Test results
+TestResults/
+coverage/
+*.trx
+*.coverage
+*.coveragexml
+
+# User-specific files
+*.DotSettings.user
+
+# Build-related files
+*.log
+*.tlog
+*.psess
+*.vsp
+*.vspx
+*.pyc
+*.pyo
+
+# NuGet Packages
+*.nupkg
+*.snupkg
+# The packages folder can be ignored because of Package Restore
+**/[Pp]ackages/*
+# except build/, which is used as an MSBuild target.
+!**/[Pp]ackages/build/
+# Restore NuGet packages. Don't commit the packages folder.
+# NuGet v3's global packages folder
+.nugget/
+# NuGet v3's local packages folder
+packages/
+
+# Secrets
+*.secrets.json
+secrets.json
+
+# Other
+*.pidb
+*.scc
+*.vssscc
+*.vspscc
+*~
+*_i.c
+*_p.c
+*_h.h
+*.ilk
+*.meta
+*.obj
+*.pch
+*.pdb
+*.pgc
+*.pgd
+*.rsp
+*.tmp
+*.bak
+
+# JetBrains Rider
+*.sln.iml
+*.DotSettings.user
+
+# Local publish folders
+/publish
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Windows thumbnail cache
+Thumbs.db
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump

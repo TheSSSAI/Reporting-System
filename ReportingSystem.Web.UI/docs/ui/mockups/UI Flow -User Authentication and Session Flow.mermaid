@@ -1,0 +1,64 @@
+flowchart TD
+    subgraph "Initial Authentication Flow"
+        direction TB
+        A[User navigates to Login Page] --> B{User submits<br>credentials}
+        B --> C[POST /api/v1/auth/token]
+        C --> D{Backend: Credentials Valid?}
+        D -- No --> E[Show 'Invalid Credentials' error]
+        E --> A
+        D -- Yes --> F{Backend: Account Locked?}
+        F -- Yes --> G[Show 'Account Locked' error]
+        G --> A
+        F -- No --> H{Backend: Password<br>Change Required?}
+        H -- Yes --> I[Redirect to Forced<br>Password Change Page]
+        I --> EndAuth[End of Login Flow]
+        H -- No --> J{Backend: 2FA Enabled?}
+        J -- Yes --> K[Redirect to 2FA Page]
+        K --> L{User submits<br>2FA code}
+        L --> M[POST /api/v1/login/verify-2fa]
+        M --> N{Backend: 2FA Code Valid?}
+        N -- No --> O[Show 'Invalid Code' error]
+        O --> K
+        N -- Yes --> P[Issue JWT &<br>Set Session Cookie]
+        J -- No --> P
+        P --> Q{Backend: Determine User Role}
+        Q -- Role: Administrator --> R[Redirect to Control Panel]
+        Q -- Role: Viewer --> S[Redirect to Report Viewer]
+    end
+
+    subgraph "Active Session & Inactivity Flow"
+        direction LR
+        subgraph "User is on Authenticated Page (e.g., Control Panel)"
+            T[Client: Start Inactivity Timer<br>(e.g., 15 mins)]
+            T --> U{User Activity?<br>(click, keypress)}
+            U -- Yes --> T
+            U -- No --> V{Timer > 14 mins?}
+            V -- No --> U
+            V -- Yes --> W[Show 'Session Expiring' Modal<br>with 60s countdown]
+            W --> X{User clicks 'Stay Logged In'?}
+            X -- Yes --> Y[Client: Refresh JWT<br>Server: Extend Session]
+            Y --> T
+            X -- No --> Z{Countdown Finishes?}
+            Z -- No --> W
+            Z -- Yes --> AA[Client: Clear Session Data<br>Redirect to Login Page]
+        end
+    end
+    
+    R --> T
+    S --> T
+    AA --> A
+
+    %% Styling
+    classDef userAction fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    classDef decision fill:#fff9c4,stroke:#fbc02d,stroke-width:2px
+    classDef process fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    classDef error fill:#ffebee,stroke:#d32f2f,stroke-width:2px
+    classDef page fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
+    classDef session fill:#ffecb3,stroke:#ffa000,stroke-width:2px
+
+    class B,L,U,X userAction
+    class D,F,H,J,N,Q,V,Z decision
+    class C,M,P,Y process
+    class E,G,O error
+    class A,I,K,R,S,AA page
+    class T,W session

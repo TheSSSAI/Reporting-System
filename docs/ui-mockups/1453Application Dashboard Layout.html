@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Application Dashboard Layout</title>
+    <style>
+        /* CSS Reset */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Design System Foundation (Tokens) */
+        :root {
+            /* Colors */
+            --color-background: #0D1117;
+            --color-surface-1: #161B22;
+            --color-surface-2: #21262D;
+            --color-border: #30363D;
+            --color-text-primary: #E6EDF3;
+            --color-text-secondary: #8B949E;
+            --color-text-tertiary: #586069;
+            --color-primary: #58A6FF;
+            --color-primary-hover: #79B8FF;
+            --color-primary-active: #3C91F7;
+
+            /* Typography */
+            --font-family-base: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+            --font-size-sm: 0.875rem; /* 14px */
+            --font-size-base: 1rem; /* 16px */
+            --font-size-md: 1.125rem; /* 18px */
+            --font-size-lg: 1.5rem; /* 24px */
+            --font-weight-regular: 400;
+            --font-weight-medium: 500;
+            --font-weight-semibold: 600;
+
+            /* Spacing */
+            --spacing-xs: 4px;
+            --spacing-sm: 8px;
+            --spacing-md: 16px;
+            --spacing-lg: 24px;
+            --spacing-xl: 32px;
+
+            /* Borders & Radii */
+            --border-radius: 6px;
+            --border-width: 1px;
+
+            /* Transitions */
+            --transition-speed: 200ms;
+            --transition-timing: ease-in-out;
+            
+            /* Sidenav specific */
+            --sidenav-width-expanded: 240px;
+            --sidenav-width-collapsed: 60px;
+        }
+
+        /* Base Styles */
+        html, body {
+            height: 100%;
+        }
+
+        body {
+            font-family: var(--font-family-base);
+            background-color: var(--color-background);
+            color: var(--color-text-primary);
+            font-size: var(--font-size-base);
+            line-height: 1.5;
+        }
+
+        a {
+            color: var(--color-primary);
+            text-decoration: none;
+        }
+        
+        /* Layout */
+        .app-layout {
+            display: grid;
+            height: 100vh;
+            grid-template-columns: var(--sidenav-width-expanded) 1fr;
+            grid-template-rows: 60px 1fr;
+            grid-template-areas:
+                "sidenav header"
+                "sidenav main";
+            transition: grid-template-columns var(--transition-speed) var(--transition-timing);
+        }
+        
+        body.sidenav-collapsed .app-layout {
+            grid-template-columns: var(--sidenav-width-collapsed) 1fr;
+        }
+        
+        /* App Header */
+        .app-header {
+            grid-area: header;
+            padding: 0 var(--spacing-lg);
+            border-bottom: var(--border-width) solid var(--color-border);
+            display: flex;
+            align-items: center;
+        }
+
+        .app-header h1 {
+            font-size: var(--font-size-md);
+            font-weight: var(--font-weight-semibold);
+        }
+
+        /* Main Content */
+        .app-content {
+            grid-area: main;
+            padding: var(--spacing-lg);
+            overflow-y: auto;
+        }
+        
+        .app-content h2 {
+            font-size: var(--font-size-lg);
+            margin-bottom: var(--spacing-md);
+        }
+        
+        .app-content p {
+            max-width: 80ch;
+            color: var(--color-text-secondary);
+        }
+
+        /* SideNav Component */
+        .sidenav {
+            grid-area: sidenav;
+            background-color: var(--color-surface-1);
+            border-right: var(--border-width) solid var(--color-border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: width var(--transition-speed) var(--transition-timing);
+            width: var(--sidenav-width-expanded);
+        }
+
+        body.sidenav-collapsed .sidenav {
+            width: var(--sidenav-width-collapsed);
+        }
+
+        .sidenav__header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 60px;
+            padding: 0 var(--spacing-md);
+            flex-shrink: 0;
+            border-bottom: var(--border-width) solid var(--color-border);
+        }
+        
+        .sidenav__logo {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            font-weight: var(--font-weight-semibold);
+            white-space: nowrap;
+            opacity: 1;
+            transition: opacity var(--transition-speed) var(--transition-timing);
+        }
+
+        body.sidenav-collapsed .sidenav__logo {
+            opacity: 0;
+            width: 0;
+        }
+
+        .sidenav__toggle {
+            background: none;
+            border: none;
+            color: var(--color-text-secondary);
+            cursor: pointer;
+            padding: var(--spacing-xs);
+            border-radius: var(--border-radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .sidenav__toggle:hover {
+            background-color: var(--color-surface-2);
+            color: var(--color-text-primary);
+        }
+
+        .sidenav__nav {
+            flex-grow: 1;
+            padding: var(--spacing-md) 0;
+        }
+
+        .sidenav__nav-list {
+            list-style: none;
+        }
+        
+        .sidenav__nav-item {
+             position: relative; /* For tooltip */
+        }
+        
+        .sidenav__nav-link {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+            padding: var(--spacing-sm) var(--spacing-md);
+            margin: var(--spacing-xs) var(--spacing-sm);
+            border-radius: var(--border-radius);
+            color: var(--color-text-secondary);
+            font-weight: var(--font-weight-medium);
+            white-space: nowrap;
+            transition: background-color var(--transition-speed) var(--transition-timing), color var(--transition-speed) var(--transition-timing);
+        }
+        
+        .sidenav__nav-link:hover {
+            background-color: var(--color-surface-2);
+            color: var(--color-text-primary);
+        }
+
+        .sidenav__nav-link[aria-current="page"] {
+            background-color: var(--color-primary);
+            color: var(--color-background);
+        }
+        
+        .sidenav__nav-link[aria-current="page"] .sidenav__icon {
+             color: var(--color-background);
+        }
+
+        .sidenav__icon {
+            flex-shrink: 0;
+            width: 20px;
+            height: 20px;
+            color: var(--color-text-tertiary);
+            transition: color var(--transition-speed) var(--transition-timing);
+        }
+
+        .sidenav__nav-label {
+            opacity: 1;
+            transition: opacity var(--transition-speed) var(--transition-timing);
+        }
+        
+        body.sidenav-collapsed .sidenav__nav-label {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        /* Tooltip for collapsed state */
+        .sidenav__nav-item .tooltip {
+            visibility: hidden;
+            opacity: 0;
+            background-color: var(--color-surface-2);
+            color: var(--color-text-primary);
+            text-align: center;
+            border-radius: var(--border-radius);
+            padding: var(--spacing-xs) var(--spacing-sm);
+            position: absolute;
+            z-index: 10;
+            left: calc(var(--sidenav-width-collapsed) + var(--spacing-sm));
+            top: 50%;
+            transform: translateY(-50%);
+            white-space: nowrap;
+            pointer-events: none;
+            transition: opacity var(--transition-speed) var(--transition-timing);
+        }
+        
+        body.sidenav-collapsed .sidenav__nav-item:hover .tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .sidenav__footer {
+            padding: var(--spacing-md);
+            border-top: var(--border-width) solid var(--color-border);
+            flex-shrink: 0;
+        }
+
+        /* Focus Styles */
+        :focus-visible {
+            outline: 2px solid var(--color-primary);
+            outline-offset: 2px;
+            border-radius: var(--border-radius);
+        }
+
+        /* Responsive */
+        @media (max-width: 1280px) {
+            body:not(.sidenav-collapsed) {
+                 --manual-collapse: 'collapsed';
+            }
+            body {
+                --force-collapse: 'collapsed';
+            }
+            
+            .app-layout {
+                grid-template-columns: var(--sidenav-width-collapsed) 1fr;
+            }
+            .sidenav {
+                width: var(--sidenav-width-collapsed);
+            }
+            .sidenav__logo {
+                opacity: 0;
+                width: 0;
+            }
+            .sidenav__nav-label {
+                opacity: 0;
+                pointer-events: none;
+            }
+            
+            /* The JS will handle adding the class, but this ensures it on load */
+            .js-enabled body.sidenav-collapsed .app-layout {
+                 grid-template-columns: var(--sidenav-width-collapsed) 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="sidenav">
+            <div class="sidenav__header">
+                <span class="sidenav__logo">
+                    <!-- Icon placeholder -->
+                    <svg class="sidenav__icon" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5-10-5-10 5zM12 14.5l-10-5V12l10 5 10-5V9.5l-10 5z"/></svg>
+                    <span>AppName</span>
+                </span>
+                <button class="sidenav__toggle" id="sidenav-toggle" aria-label="Toggle navigation">
+                    <svg class="sidenav__icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="9" y1="3" x2="9" y2="21"></line>
+                    </svg>
+                </button>
+            </div>
+            <nav class="sidenav__nav">
+                <ul class="sidenav__nav-list">
+                    <li class="sidenav__nav-item">
+                        <a href="#" class="sidenav__nav-link" aria-current="page">
+                            <svg class="sidenav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                            <span class="sidenav__nav-label">Dashboard</span>
+                            <span class="tooltip">Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="sidenav__nav-item">
+                        <a href="#" class="sidenav__nav-link">
+                            <svg class="sidenav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></svg>
+                            <span class="sidenav__nav-label">Reports</span>
+                            <span class="tooltip">Reports</span>
+                        </a>
+                    </li>
+                    <li class="sidenav__nav-item">
+                        <a href="#" class="sidenav__nav-link">
+                            <svg class="sidenav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 9 8 12 2 12"></polyline><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>
+                            <span class="sidenav__nav-label">Connectors</span>
+                            <span class="tooltip">Connectors</span>
+                        </a>
+                    </li>
+                    <li class="sidenav__nav-item">
+                        <a href="#" class="sidenav__nav-link">
+                            <svg class="sidenav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                            <span class="sidenav__nav-label">Users</span>
+                            <span class="tooltip">Users</span>
+                        </a>
+                    </li>
+                     <li class="sidenav__nav-item">
+                        <a href="#" class="sidenav__nav-link">
+                           <svg class="sidenav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                            <span class="sidenav__nav-label">Settings</span>
+                            <span class="tooltip">Settings</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            <div class="sidenav__footer">
+                 <!-- Footer content like user profile can go here -->
+            </div>
+        </aside>
+
+        <header class="app-header">
+            <h1>Dashboard</h1>
+        </header>
+
+        <main class="app-content">
+            <h2>Welcome, Administrator</h2>
+            <p>This is the main content area for the application. Selecting an item from the side navigation would typically load a new screen here.</p>
+        </main>
+    </div>
+    
+    <div class="screen-variations" style="position: absolute; bottom: 20px; left: 20px; background: #333; padding: 20px; border-radius: 8px; border: 1px solid #555; max-width: 400px; color: #ddd; font-family: var(--font-family-base);">
+        <h2 style="font-size: 1.2rem; margin-bottom: 10px; color: #fff;">Screen Variations</h2>
+        
+        <div class="variation-group" style="margin-bottom: 15px;">
+            <h3 style="font-weight: 600; margin-bottom: 5px;">Variant Name: "Expanded (Default)"</h3>
+            <p style="font-size: 0.9rem; color: #bbb;">This is the default state of the SideNav on screens wider than 1280px. All navigation labels are visible.</p>
+        </div>
+        
+        <div class="variation-group">
+            <h3 style="font-weight: 600; margin-bottom: 5px;">Variant Name: "Collapsed"</h3>
+            <p style="font-size: 0.9rem; color: #bbb;">Click the toggle button (top right of nav) to collapse the navigation. This is also the default on screens narrower than 1280px. Hover over icons to see tooltips.</p>
+        </div>
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const toggleButton = document.getElementById('sidenav-toggle');
+            if (toggleButton) {
+                toggleButton.addEventListener('click', () => {
+                    document.body.classList.toggle('sidenav-collapsed');
+                });
+            }
+
+            // Apply responsive collapse class on load if needed
+             if (window.innerWidth <= 1280) {
+                 document.body.classList.add('sidenav-collapsed');
+            }
+        });
+    </script>
+</body>
+</html>

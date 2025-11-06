@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Description>An example HL7 v2 custom data connector for the Reporting System, demonstrating implementation of the IConnector interface for file-based sources.</Description>
+    <Authors>Your Company</Authors>
+    <Company>Your Company</Company>
+    <Product>Reporting System Plugins</Product>
+    <Copyright>Copyright © Your Company 2024</Copyright>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NHapi.Model.V251" Version="2.5.0.6" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\ReportingSystem.Plugins.Sdk\src\ReportingSystem.Plugins.Sdk\ReportingSystem.Plugins.Sdk.csproj" />
+  </ItemGroup>
+
+</Project>

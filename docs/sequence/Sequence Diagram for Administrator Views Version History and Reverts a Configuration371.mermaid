@@ -1,0 +1,34 @@
+sequenceDiagram
+    participant "Control Panel UI" as ControlPanelUI
+    participant "API/Web Layer" as APIWebLayer
+    participant "Application Layer" as ApplicationLayer
+    participant "Infrastructure Layer" as InfrastructureLayer
+
+    activate APIWebLayer
+    ControlPanelUI->>APIWebLayer: 1. 1. GET /api/v1/reports/{configId}/versions - Request version history for a configuration.
+    APIWebLayer-->>ControlPanelUI: 6. 200 OK - [ { version: 5, modifiedAt: '...', modifiedBy: '...' }, ... ]
+    activate ApplicationLayer
+    APIWebLayer->>ApplicationLayer: 2. 2. GetVersionHistoryForConfig(configId)
+    ApplicationLayer-->>APIWebLayer: 5. return List<VersionMetadataDto>
+    activate InfrastructureLayer
+    ApplicationLayer->>InfrastructureLayer: 3. 3. IReportRepository.GetVersionsAsync(configId)
+    InfrastructureLayer-->>ApplicationLayer: 4. return List<ReportConfigurationVersion>
+    ControlPanelUI->>APIWebLayer: 7. 7. POST /api/v1/reports/{configId}/versions/{versionId}/restore - Restore a specific version.
+    APIWebLayer-->>ControlPanelUI: 14. 200 OK - { newVersion: 6, ... }
+    APIWebLayer->>ApplicationLayer: 8. 8. RestoreConfigurationVersion(configId, versionId, userId)
+    ApplicationLayer-->>APIWebLayer: 13. return NewVersionDto
+    ApplicationLayer->>InfrastructureLayer: 9. 9. GetVersionContentAsync(versionId)
+    InfrastructureLayer-->>ApplicationLayer: Return ReportConfigurationVersion entity.
+    ApplicationLayer->>InfrastructureLayer: 10. 10. CreateNewVersionFromExisting(configId, oldContent, userId)
+    InfrastructureLayer-->>ApplicationLayer: Return new ReportConfigurationVersion entity.
+    ApplicationLayer->>InfrastructureLayer: 11. 11. LogRestoreAction(userId, configId, versionId)
+    InfrastructureLayer->>ApplicationLayer: 12. 12. Commit Transaction
+    ApplicationLayer-->>InfrastructureLayer: Return success.
+
+    note over ControlPanelUI: Administrator can also select two versions to compare. The UI would make parallel GET requests fo...
+    note over ApplicationLayer: The 'Restore' operation does not modify or delete existing version records. It creates a new vers...
+    note over ControlPanelUI: UI must handle accessibility for the version history modal, including focus trapping, keyboard na...
+
+    deactivate InfrastructureLayer
+    deactivate ApplicationLayer
+    deactivate APIWebLayer

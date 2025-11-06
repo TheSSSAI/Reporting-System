@@ -1,0 +1,24 @@
+sequenceDiagram
+    actor "External Client" as ExternalClient
+    participant "API/Web Layer" as APIWebLayer
+    participant "Application Layer" as ApplicationLayer
+    participant "Infrastructure Layer" as InfrastructureLayer
+
+    activate APIWebLayer
+    ExternalClient->>APIWebLayer: 1. 1. POST /api/v1/reports/{id}/generate
+    APIWebLayer-->>ExternalClient: 13. Responds with HTTP Status Code and Body
+    APIWebLayer->>APIWebLayer: 2. 2. Middleware validates JWT and authorizes user role
+    activate ApplicationLayer
+    APIWebLayer->>ApplicationLayer: 3. 3. Calls GenerateSynchronousReport(reportId, cancellationToken)
+    ApplicationLayer-->>APIWebLayer: 12. Returns generated ReportArtifact or throws exception
+    activate InfrastructureLayer
+    ApplicationLayer->>InfrastructureLayer: 4. 4. GetReportConfigurationById(reportId)
+    InfrastructureLayer-->>ApplicationLayer: 5. Returns ReportConfiguration entity
+    ApplicationLayer->>ApplicationLayer: 6. 6. [ALT] Check if delivery target is 'API_RESPONSE' with synchronous mode
+    ApplicationLayer->>ApplicationLayer: 8. 7. [SUCCESS PATH] Executes report pipeline
+    ApplicationLayer-->>ApplicationLayer: 11. Returns generated ReportArtifact
+
+
+    deactivate InfrastructureLayer
+    deactivate ApplicationLayer
+    deactivate APIWebLayer

@@ -1,0 +1,26 @@
+sequenceDiagram
+    actor "User's Browser (Admin)" as UsersBrowserAdmin
+    participant "Control Panel UI" as ControlPanelUI
+    participant "Transformation Engine API" as TransformationEngineAPI
+
+    activate ControlPanelUI
+    UsersBrowserAdmin->>ControlPanelUI: 1. 1. Administrator with language 'es' clicks 'Preview Script'.
+    activate TransformationEngineAPI
+    ControlPanelUI->>TransformationEngineAPI: 2. 2. POST /api/v1/transformations/preview
+    TransformationEngineAPI-->>ControlPanelUI: 8. HTTP 400 Bad Request with structured error JSON.
+    TransformationEngineAPI->>TransformationEngineAPI: 3. 3. [Controller] Catches request and invokes ScriptExecutionService.
+    TransformationEngineAPI-->>TransformationEngineAPI: 7. Returns structured error DTO to controller.
+    TransformationEngineAPI->>TransformationEngineAPI: 4. 4. [Service] Invokes JintEngineWrapper to execute script.
+    TransformationEngineAPI-->>TransformationEngineAPI: 5. Throws Jint.Runtime.JavaScriptException('foo is not defined').
+    TransformationEngineAPI->>TransformationEngineAPI: 6. 6. [Service] Catches exception and maps it to a structured error DTO.
+    ControlPanelUI->>ControlPanelUI: 9. 9. [API Client] Parses error response and invokes i18n service.
+    ControlPanelUI-->>ControlPanelUI: 11. Returns interpolated, translated string.
+    ControlPanelUI->>ControlPanelUI: 10. 10. [i18n Service] Looks up translation key 'JS_REFERENCE_ERROR' for language 'es' and interpolates parameters.
+    ControlPanelUI->>UsersBrowserAdmin: 12. 12. Renders final translated error message in the output pane.
+
+    note over ControlPanelUI: User's language preference ('es') is assumed to be loaded into the UI's application state (e.g., ...
+    note over TransformationEngineAPI: A mapping layer (e.g., a dictionary or switch statement) exists in the backend to convert specifi...
+    note over ControlPanelUI: Graceful Fallback: If es/errors.json does not contain the key 'JS_REFERENCE_ERROR', the i18n libr...
+
+    deactivate TransformationEngineAPI
+    deactivate ControlPanelUI

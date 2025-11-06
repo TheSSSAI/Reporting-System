@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>12.0</LangVersion>
+    <RootNamespace>ReportingSystem.Shared.Contracts</RootNamespace>
+    <AssemblyName>ReportingSystem.Shared.Contracts</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- 
+      This FrameworkReference is included to get access to System.ComponentModel.DataAnnotations 
+      for validation attributes (e.g., [Required], [StringLength]) on the DTOs. 
+      It does not pull in the entire ASP.NET Core framework but makes the shared libraries available.
+      This is a standard and lightweight approach for contracts libraries that define validation rules.
+    -->
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+</Project>

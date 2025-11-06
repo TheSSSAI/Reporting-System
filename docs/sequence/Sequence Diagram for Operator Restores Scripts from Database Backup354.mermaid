@@ -1,0 +1,43 @@
+sequenceDiagram
+    participant "Monitoring System" as MonitoringSystem
+    participant "Operator" as Operator
+    participant "Application Database (Failed)" as ApplicationDatabaseFailed
+    participant "Database Backup System" as DatabaseBackupSystem
+    participant "Application Database (Restored)" as ApplicationDatabaseRestored
+    participant "TransformationEngine.Api" as TransformationEngineApi
+
+    activate Operator
+    MonitoringSystem->>Operator: 1. Alert: Catastrophic Database Failure Detected (CRITICAL)
+    Operator->>ApplicationDatabaseFailed: 2. Investigate and Confirm Unrecoverable State
+    ApplicationDatabaseFailed-->>Operator: Failure to connect or data corruption confirmed.
+    activate DatabaseBackupSystem
+    Operator->>DatabaseBackupSystem: 3. Login and Request List of Available Backups
+    DatabaseBackupSystem-->>Operator: List of backup files with metadata (timestamp, size).
+    Operator->>Operator: 4. Identify latest valid backup within RPO (< 1 hour)
+    Operator->>DatabaseBackupSystem: 5. Initiate Restore Procedure
+    DatabaseBackupSystem-->>Operator: Job ID for restore process is returned immediately.
+    activate ApplicationDatabaseRestored
+    DatabaseBackupSystem->>ApplicationDatabaseRestored: 6. Restore Data from Backup File
+    ApplicationDatabaseRestored-->>DatabaseBackupSystem: Success/Failure status code.
+    DatabaseBackupSystem->>Operator: 7. Notify: Restore Procedure Succeeded
+    Operator->>ApplicationDatabaseRestored: 8. Run Post-Restore Validation Queries
+    ApplicationDatabaseRestored-->>Operator: Query results (e.g., row counts).
+    activate TransformationEngineApi
+    Operator->>TransformationEngineApi: 9. Update Application Configuration (Connection String)
+    TransformationEngineApi-->>Operator: Confirmation of update.
+    Operator->>TransformationEngineApi: 10. Trigger Service Restart/Recycle
+    TransformationEngineApi-->>Operator: Acknowledgement of restart command.
+    TransformationEngineApi->>ApplicationDatabaseRestored: 11. Establish New Database Connection on Startup
+    ApplicationDatabaseRestored-->>TransformationEngineApi: Connection established.
+    TransformationEngineApi->>TransformationEngineApi: 12. Perform Readiness Health Checks
+    TransformationEngineApi-->>TransformationEngineApi: Health Status: Healthy
+    Operator->>TransformationEngineApi: 13. Perform Functional Smoke Test
+    TransformationEngineApi-->>Operator: 200 OK with data.
+    Operator->>Operator: 14. Declare Service Restored (within RTO < 4 hours)
+
+    note over Operator: Entire procedure must be documented in a runbook and tested quarterly.
+
+    deactivate TransformationEngineApi
+    deactivate ApplicationDatabaseRestored
+    deactivate DatabaseBackupSystem
+    deactivate Operator

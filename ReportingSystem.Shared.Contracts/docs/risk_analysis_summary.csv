@@ -1,0 +1,2 @@
+"total_risks_identified","critical_risks","high_priority_risks","average_risk_score","key_risk_themes","immediate_actions_required"
+"6","0","2","12.33","[""Legacy System Migration Complexity"",""Production Stability Under Load"",""Third-Party Code Execution Security""]","[""Begin developing migration dry-run and validation tooling for RISK-001."",""Implement stress tests and enhanced memory monitoring for RISK-002."",""Conduct a security design review for the Jint sandbox implementation (RISK-003).""]"

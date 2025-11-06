@@ -1,0 +1,727 @@
+# 1 Overview
+
+## 1.1 Diagram Id
+
+SEQ-SI-002
+
+## 1.2 Name
+
+On-Demand Synchronous API Report Generation
+
+## 1.3 Description
+
+An external client makes a REST API call to trigger a quick-running report. The system holds the HTTP connection, executes the entire report generation pipeline, and returns the report content directly in the HTTP response body. If the job takes too long or is known to be long-running, an error is returned.
+
+## 1.4 Type
+
+🔹 ServiceInteraction
+
+## 1.5 Purpose
+
+To provide a simple, blocking mechanism for external systems to retrieve small reports immediately.
+
+## 1.6 Complexity
+
+Medium
+
+## 1.7 Priority
+
+🟡 Medium
+
+## 1.8 Frequency
+
+OnDemand
+
+## 1.9 Participants
+
+- apiweblayer
+- application_layer
+- infrastructure_layer
+
+## 1.10 Key Interactions
+
+- Client sends POST /api/v1/reports/{id}/generate.
+- API/Web Layer validates the request and checks if the report is configured for synchronous generation.
+- If the report is configured as long-running, the API immediately returns HTTP 409 Conflict.
+- Application Layer initiates the full report generation pipeline.
+- The entire process must complete within a configured timeout (e.g., 30 seconds).
+- Upon successful completion, the API/Web Layer returns HTTP 200 OK with the report artifact in the response body.
+
+## 1.11 Triggers
+
+- External system calls the on-demand API for a report configured for synchronous response.
+
+## 1.12 Outcomes
+
+- Client receives the report content directly in the response.
+- Client receives an error if the report is not suitable for synchronous generation.
+
+## 1.13 Business Rules
+
+- A hard timeout of 30 seconds is enforced on synchronous requests.
+- Requests for reports flagged as 'long-running' are rejected with a 409 Conflict status.
+
+## 1.14 Error Scenarios
+
+- Generation exceeds the 30-second timeout, resulting in an HTTP 408 Request Timeout response.
+- The report is configured for asynchronous generation only, resulting in an HTTP 409 Conflict response.
+
+## 1.15 Integration Points
+
+- External Client System (API Consumer)
+
+# 2.0 Details
+
+## 2.1 Diagram Id
+
+SEQ-SI-002
+
+## 2.2 Name
+
+Implementation: On-Demand Synchronous API Report Generation
+
+## 2.3 Description
+
+Provides a comprehensive technical specification for an external client making a synchronous REST API call to generate a quick-running report. The system holds the HTTP connection, validates the report's configuration for synchronous execution, executes the entire report generation pipeline within a strict timeout, and returns the report content directly in the HTTP response body. This sequence details the success path, and critical error paths such as timeout and misconfiguration.
+
+## 2.4 Participants
+
+### 2.4.1 Actor
+
+#### 2.4.1.1 Repository Id
+
+external_client
+
+#### 2.4.1.2 Display Name
+
+External Client
+
+#### 2.4.1.3 Type
+
+🔹 Actor
+
+#### 2.4.1.4 Technology
+
+Generic HTTP/REST Client
+
+#### 2.4.1.5 Order
+
+1
+
+#### 2.4.1.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | actor |
+| Color | #90A4AE |
+| Stereotype | External System |
+
+### 2.4.2.0 APIGateway
+
+#### 2.4.2.1 Repository Id
+
+api_web_layer
+
+#### 2.4.2.2 Display Name
+
+API/Web Layer
+
+#### 2.4.2.3 Type
+
+🔹 APIGateway
+
+#### 2.4.2.4 Technology
+
+ASP.NET Core 8
+
+#### 2.4.2.5 Order
+
+2
+
+#### 2.4.2.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | component |
+| Color | #4DD0E1 |
+| Stereotype | Controller |
+
+### 2.4.3.0 ApplicationServices
+
+#### 2.4.3.1 Repository Id
+
+application_layer
+
+#### 2.4.3.2 Display Name
+
+Application Layer
+
+#### 2.4.3.3 Type
+
+🔹 ApplicationServices
+
+#### 2.4.3.4 Technology
+
+.NET 8
+
+#### 2.4.3.5 Order
+
+3
+
+#### 2.4.3.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | component |
+| Color | #81C784 |
+| Stereotype | Service |
+
+### 2.4.4.0 Infrastructure
+
+#### 2.4.4.1 Repository Id
+
+infrastructure_layer
+
+#### 2.4.4.2 Display Name
+
+Infrastructure Layer
+
+#### 2.4.4.3 Type
+
+🔹 Infrastructure
+
+#### 2.4.4.4 Technology
+
+EF Core 8, Jint, Puppeteer Sharp
+
+#### 2.4.4.5 Order
+
+4
+
+#### 2.4.4.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | component |
+| Color | #FFB74D |
+| Stereotype | Repository/Engine |
+
+## 2.5.0.0 Interactions
+
+### 2.5.1.0 Request
+
+#### 2.5.1.1 Source Id
+
+external_client
+
+#### 2.5.1.2 Target Id
+
+api_web_layer
+
+#### 2.5.1.3 Message
+
+1. POST /api/v1/reports/{id}/generate
+
+#### 2.5.1.4 Sequence Number
+
+1
+
+#### 2.5.1.5 Type
+
+🔹 Request
+
+#### 2.5.1.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.1.7 Return Message
+
+13. Responds with HTTP Status Code and Body
+
+#### 2.5.1.8 Has Return
+
+✅ Yes
+
+#### 2.5.1.9 Is Activation
+
+✅ Yes
+
+#### 2.5.1.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | HTTPS |
+| Method | POST |
+| Parameters | Path: {id} (GUID). Headers: Authorization: Bearer ... |
+| Authentication | Requires a valid JWT Bearer Token. |
+| Error Handling | Client must handle 200, 401, 403, 404, 408, 409, 5... |
+| Performance | Client-side timeout should be configured to be sli... |
+
+### 2.5.2.0 SecurityCheck
+
+#### 2.5.2.1 Source Id
+
+api_web_layer
+
+#### 2.5.2.2 Target Id
+
+api_web_layer
+
+#### 2.5.2.3 Message
+
+2. Middleware validates JWT and authorizes user role
+
+#### 2.5.2.4 Sequence Number
+
+2
+
+#### 2.5.2.5 Type
+
+🔹 SecurityCheck
+
+#### 2.5.2.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.2.7 Return Message
+
+
+
+#### 2.5.2.8 Has Return
+
+❌ No
+
+#### 2.5.2.9 Is Activation
+
+❌ No
+
+#### 2.5.2.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-Process |
+| Method | ASP.NET Core Authentication & Authorization Middle... |
+| Parameters | HttpContext with Authorization header. |
+| Authentication | Validates token signature, issuer, audience, and l... |
+| Error Handling | Aborts request pipeline and returns HTTP 401 Unaut... |
+| Performance | Sub-millisecond operation, potentially cached. |
+
+### 2.5.3.0 MethodCall
+
+#### 2.5.3.1 Source Id
+
+api_web_layer
+
+#### 2.5.3.2 Target Id
+
+application_layer
+
+#### 2.5.3.3 Message
+
+3. Calls GenerateSynchronousReport(reportId, cancellationToken)
+
+#### 2.5.3.4 Sequence Number
+
+3
+
+#### 2.5.3.5 Type
+
+🔹 MethodCall
+
+#### 2.5.3.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.3.7 Return Message
+
+12. Returns generated ReportArtifact or throws exception
+
+#### 2.5.3.8 Has Return
+
+✅ Yes
+
+#### 2.5.3.9 Is Activation
+
+✅ Yes
+
+#### 2.5.3.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-Process Method Call (DI) |
+| Method | IReportService.GenerateSynchronousReportAsync(Guid... |
+| Parameters | reportId from URL. A CancellationToken with a 30-s... |
+| Authentication | N/A (internal trusted call) |
+| Error Handling | Catches ReportNotConfiguredForSyncException (for 4... |
+| Performance | The entire call is wrapped in a 30-second timeout. |
+
+#### 2.5.3.11 Nested Interactions
+
+##### 2.5.3.11.1 DatabaseQuery
+
+###### 2.5.3.11.1.1 Source Id
+
+application_layer
+
+###### 2.5.3.11.1.2 Target Id
+
+infrastructure_layer
+
+###### 2.5.3.11.1.3 Message
+
+4. GetReportConfigurationById(reportId)
+
+###### 2.5.3.11.1.4 Sequence Number
+
+4
+
+###### 2.5.3.11.1.5 Type
+
+🔹 DatabaseQuery
+
+###### 2.5.3.11.1.6 Is Synchronous
+
+✅ Yes
+
+###### 2.5.3.11.1.7 Return Message
+
+5. Returns ReportConfiguration entity
+
+###### 2.5.3.11.1.8 Has Return
+
+✅ Yes
+
+###### 2.5.3.11.1.9 Is Activation
+
+✅ Yes
+
+###### 2.5.3.11.1.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-Process (EF Core) |
+| Method | IReportConfigurationRepository.GetByIdAsync(Guid i... |
+| Parameters | reportId |
+| Authentication | N/A |
+| Error Handling | Throws EntityNotFoundException if reportId is inva... |
+| Performance | Cached or sub-10ms query. |
+
+##### 2.5.3.11.2.0 ConditionalLogic
+
+###### 2.5.3.11.2.1 Source Id
+
+application_layer
+
+###### 2.5.3.11.2.2 Target Id
+
+application_layer
+
+###### 2.5.3.11.2.3 Message
+
+6. [ALT] Check if delivery target is 'API_RESPONSE' with synchronous mode
+
+###### 2.5.3.11.2.4 Sequence Number
+
+6
+
+###### 2.5.3.11.2.5 Type
+
+🔹 ConditionalLogic
+
+###### 2.5.3.11.2.6 Is Synchronous
+
+✅ Yes
+
+###### 2.5.3.11.2.7 Return Message
+
+
+
+###### 2.5.3.11.2.8 Has Return
+
+❌ No
+
+###### 2.5.3.11.2.9 Is Activation
+
+❌ No
+
+###### 2.5.3.11.2.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-Process |
+| Method | if (config.Delivery.Type != 'API_RESPONSE' \|\| co... |
+| Parameters | ReportConfiguration entity |
+| Authentication | N/A |
+| Error Handling | If condition is met, throws ReportNotConfiguredFor... |
+| Performance | Negligible. |
+
+###### 2.5.3.11.2.11 Nested Interactions
+
+- {'sourceId': 'application_layer', 'targetId': 'api_web_layer', 'message': '6a. Throws ReportNotConfiguredForSyncException', 'sequenceNumber': 7, 'type': 'Exception', 'isSynchronous': False, 'returnMessage': '', 'hasReturn': False, 'isActivation': False, 'technicalDetails': {'protocol': '.NET Exception Handling', 'method': 'throw new ReportNotConfiguredForSyncException()', 'parameters': 'N/A', 'authentication': 'N/A', 'errorHandling': 'The exception is caught by the controller and mapped to HTTP 409 Conflict.', 'performance': 'N/A'}}
+
+##### 2.5.3.11.3.0 Orchestration
+
+###### 2.5.3.11.3.1 Source Id
+
+application_layer
+
+###### 2.5.3.11.3.2 Target Id
+
+application_layer
+
+###### 2.5.3.11.3.3 Message
+
+7. [SUCCESS PATH] Executes report pipeline
+
+###### 2.5.3.11.3.4 Sequence Number
+
+8
+
+###### 2.5.3.11.3.5 Type
+
+🔹 Orchestration
+
+###### 2.5.3.11.3.6 Is Synchronous
+
+✅ Yes
+
+###### 2.5.3.11.3.7 Return Message
+
+11. Returns generated ReportArtifact
+
+###### 2.5.3.11.3.8 Has Return
+
+✅ Yes
+
+###### 2.5.3.11.3.9 Is Activation
+
+❌ No
+
+###### 2.5.3.11.3.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-Process |
+| Method | private async Task<ReportArtifact> ExecutePipeline... |
+| Parameters | ReportConfiguration, CancellationToken |
+| Authentication | N/A |
+| Error Handling | Propagates exceptions from downstream components. ... |
+| Performance | Entire pipeline must complete within the remaining... |
+
+###### 2.5.3.11.3.11 Nested Interactions
+
+####### 2.5.3.11.3.11.1 DataRequest
+
+######## 2.5.3.11.3.11.1.1 Source Id
+
+application_layer
+
+######## 2.5.3.11.3.11.1.2 Target Id
+
+infrastructure_layer
+
+######## 2.5.3.11.3.11.1.3 Message
+
+8. FetchData(connectorConfig)
+
+######## 2.5.3.11.3.11.1.4 Sequence Number
+
+9
+
+######## 2.5.3.11.3.11.1.5 Type
+
+🔹 DataRequest
+
+######## 2.5.3.11.3.11.1.6 Is Synchronous
+
+✅ Yes
+
+######## 2.5.3.11.3.11.1.7 Return Message
+
+Returns standardized JSON data
+
+######## 2.5.3.11.3.11.1.8 Has Return
+
+✅ Yes
+
+######## 2.5.3.11.3.11.1.9 Is Activation
+
+❌ No
+
+######## 2.5.3.11.3.11.1.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-Process / JDBC/ODBC / OPC UA |
+| Method | IConnector.FetchDataAsync(config, cancellationToke... |
+| Parameters | Connector configuration from ReportConfiguration. |
+| Authentication | Uses credentials stored in the connector configura... |
+| Error Handling | Handled by Polly resilience policies (retry, circu... |
+| Performance | Must complete quickly. Subject to overall timeout. |
+
+####### 2.5.3.11.3.11.2.0 Processing
+
+######## 2.5.3.11.3.11.2.1 Source Id
+
+application_layer
+
+######## 2.5.3.11.3.11.2.2 Target Id
+
+infrastructure_layer
+
+######## 2.5.3.11.3.11.2.3 Message
+
+9. TransformData(jsonData, script)
+
+######## 2.5.3.11.3.11.2.4 Sequence Number
+
+10
+
+######## 2.5.3.11.3.11.2.5 Type
+
+🔹 Processing
+
+######## 2.5.3.11.3.11.2.6 Is Synchronous
+
+✅ Yes
+
+######## 2.5.3.11.3.11.2.7 Return Message
+
+Returns transformed JSON data
+
+######## 2.5.3.11.3.11.2.8 Has Return
+
+✅ Yes
+
+######## 2.5.3.11.3.11.2.9 Is Activation
+
+❌ No
+
+######## 2.5.3.11.3.11.2.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-Process |
+| Method | ITransformationEngine.ExecuteAsync(script, jsonDat... |
+| Parameters | JSON data and JavaScript from TransformationScript... |
+| Authentication | N/A |
+| Error Handling | Jint engine is sandboxed; throws ScriptExecutionEx... |
+| Performance | Memory and CPU intensive. Subject to overall timeo... |
+
+####### 2.5.3.11.3.11.3.0 Processing
+
+######## 2.5.3.11.3.11.3.1 Source Id
+
+application_layer
+
+######## 2.5.3.11.3.11.3.2 Target Id
+
+infrastructure_layer
+
+######## 2.5.3.11.3.11.3.3 Message
+
+10. GenerateReport(data, template)
+
+######## 2.5.3.11.3.11.3.4 Sequence Number
+
+11
+
+######## 2.5.3.11.3.11.3.5 Type
+
+🔹 Processing
+
+######## 2.5.3.11.3.11.3.6 Is Synchronous
+
+✅ Yes
+
+######## 2.5.3.11.3.11.3.7 Return Message
+
+11. Returns ReportArtifact (e.g., byte[] of PDF)
+
+######## 2.5.3.11.3.11.3.8 Has Return
+
+✅ Yes
+
+######## 2.5.3.11.3.11.3.9 Is Activation
+
+❌ No
+
+######## 2.5.3.11.3.11.3.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-Process |
+| Method | IReportGenerator.GenerateAsync(data, template, can... |
+| Parameters | Transformed data and Handlebars template. |
+| Authentication | N/A |
+| Error Handling | Throws TemplateProcessingException for invalid tem... |
+| Performance | High-fidelity PDF rendering can be slow. Subject t... |
+
+## 2.6.0.0.0.0.0.0 Notes
+
+### 2.6.1.0.0.0.0.0 Content
+
+#### 2.6.1.1.0.0.0.0 Content
+
+Timeout Management: The controller creates a CancellationTokenSource with a 30-second delay. The token is passed down through the entire call chain. If any 'await' call exceeds the timeout, an OperationCanceledException is thrown and caught by the controller, which then returns HTTP 408.
+
+#### 2.6.1.2.0.0.0.0 Position
+
+TopRight
+
+#### 2.6.1.3.0.0.0.0 Participant Id
+
+*Not specified*
+
+#### 2.6.1.4.0.0.0.0 Sequence Number
+
+3
+
+### 2.6.2.0.0.0.0.0 Content
+
+#### 2.6.2.1.0.0.0.0 Content
+
+Security: All synchronous report generation is subject to the same Role-Based Access Control (RBAC) as any other API endpoint. The user must have 'Viewer' permissions for the requested report.
+
+#### 2.6.2.2.0.0.0.0 Position
+
+BottomLeft
+
+#### 2.6.2.3.0.0.0.0 Participant Id
+
+*Not specified*
+
+#### 2.6.2.4.0.0.0.0 Sequence Number
+
+2
+
+### 2.6.3.0.0.0.0.0 Content
+
+#### 2.6.3.1.0.0.0.0 Content
+
+Idempotency: This POST endpoint is NOT idempotent. Multiple identical calls will trigger multiple report generations. Clients should not retry on anything other than 5xx errors or network failures.
+
+#### 2.6.3.2.0.0.0.0 Position
+
+BottomRight
+
+#### 2.6.3.3.0.0.0.0 Participant Id
+
+*Not specified*
+
+#### 2.6.3.4.0.0.0.0 Sequence Number
+
+1
+
+## 2.7.0.0.0.0.0.0 Implementation Guidance
+
+| Property | Value |
+|----------|-------|
+| Security Requirements | The API endpoint must be protected by JWT validati... |
+| Performance Targets | The end-to-end P99 latency for this entire sequenc... |
+| Error Handling Strategy | Map exceptions to HTTP status codes:
+- `EntityNotF... |
+| Testing Considerations | 1. Unit test the configuration check logic. 2. Int... |
+| Monitoring Requirements | 1. Use Prometheus to create a histogram for `http_... |
+| Deployment Considerations | The 30-second timeout should be a configurable set... |
+

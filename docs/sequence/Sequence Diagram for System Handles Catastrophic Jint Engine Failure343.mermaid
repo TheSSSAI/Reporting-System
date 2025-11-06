@@ -1,0 +1,26 @@
+sequenceDiagram
+    participant "API: GlobalExceptionHandlerMiddleware" as APIGlobalExceptionHandlerMiddleware
+    participant "Lib: JintEngineWrapper" as LibJintEngineWrapper
+    participant "API: GlobalExceptionHandlerMiddleware" as APIGlobalExceptionHandlerMiddleware
+    participant "Logging Service" as LoggingService
+    participant "Data Persistence" as DataPersistence
+
+    activate LibJintEngineWrapper
+    APIGlobalExceptionHandlerMiddleware->>LibJintEngineWrapper: 1. 1. ExecuteAsync(script, inputJson, jobId)
+    LibJintEngineWrapper->>LibJintEngineWrapper: 2. 2. engine.Execute(script)
+    LibJintEngineWrapper-->>LibJintEngineWrapper: 3. throws OutOfMemoryException
+    activate APIGlobalExceptionHandlerMiddleware
+    LibJintEngineWrapper->>APIGlobalExceptionHandlerMiddleware: 4. 4. Exception propagates up the call stack
+    APIGlobalExceptionHandlerMiddleware->>APIGlobalExceptionHandlerMiddleware: 5. 5. Exception propagates to middleware boundary
+    APIGlobalExceptionHandlerMiddleware->>APIGlobalExceptionHandlerMiddleware: 6. 6. InvokeAsync(context) catches unhandled Exception
+    APIGlobalExceptionHandlerMiddleware->>LoggingService: 7. 7. Log.Fatal(ex, "Catastrophic failure...")
+    APIGlobalExceptionHandlerMiddleware->>DataPersistence: 8. 8. UpdateJobStatusAsync(jobId, JobStatus.Failed)
+    APIGlobalExceptionHandlerMiddleware->>DataPersistence: 9. 9. CommitAsync()
+    DataPersistence-->>APIGlobalExceptionHandlerMiddleware: Success
+    APIGlobalExceptionHandlerMiddleware->>APIGlobalExceptionHandlerMiddleware: 10. 10. Returns HTTP 500 Internal Server Error
+
+    note over APIGlobalExceptionHandlerMiddleware: The key to this recovery pattern is that the exception handler exists outside the direct call cha...
+    note over LoggingService: The FATAL log entry is critical. It must be configured to trigger immediate, high-priority alerts...
+
+    deactivate APIGlobalExceptionHandlerMiddleware
+    deactivate LibJintEngineWrapper

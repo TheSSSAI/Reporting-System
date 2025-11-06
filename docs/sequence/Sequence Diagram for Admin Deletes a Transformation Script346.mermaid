@@ -1,0 +1,39 @@
+sequenceDiagram
+    participant "Control Panel UI" as ControlPanelUI
+    participant "Transformation API" as TransformationAPI
+    participant "Data Access Library" as DataAccessLibrary
+
+    ControlPanelUI->>ControlPanelUI: 1. 1. Admin clicks 'Delete' button and confirms via modal.
+    ControlPanelUI-->>ControlPanelUI: Deletion confirmed.
+    ControlPanelUI->>ControlPanelUI: 2. 2. Set UI state to 'deleting' for the specific script.
+    ControlPanelUI-->>ControlPanelUI: Loading spinner is displayed.
+    activate TransformationAPI
+    ControlPanelUI->>TransformationAPI: 3. 3. Send delete request for transformation script.
+    TransformationAPI-->>ControlPanelUI: Receives HTTP 204, 404, or 409.
+    TransformationAPI->>TransformationAPI: 4. 4. [TransformationScriptsController] Authorize request and invoke service.
+    TransformationAPI-->>TransformationAPI: Service layer result.
+    activate DataAccessLibrary
+    TransformationAPI->>DataAccessLibrary: 5. 5. [TransformationScriptService] Verify script is not associated with reports.
+    DataAccessLibrary-->>TransformationAPI: Returns boolean indicating if script is in use.
+    DataAccessLibrary->>TransformationAPI: 5.1. 5a. [ERROR] Script is in use. Return true.
+    TransformationAPI->>DataAccessLibrary: 6. 6. [TransformationScriptService] Request deletion of script and all versions.
+    DataAccessLibrary-->>TransformationAPI: Task completes upon successful transaction commit.
+    TransformationAPI->>TransformationAPI: 7. 7. [TransformationScriptService] Publish domain event for auditing.
+    TransformationAPI-->>TransformationAPI: Handler completes execution.
+    TransformationAPI->>DataAccessLibrary: 7.1. 7a. [AuditLogHandler] Persist audit log entry.
+    DataAccessLibrary-->>TransformationAPI: AuditLog entity is added to the DbContext.
+    DataAccessLibrary->>TransformationAPI: 8. 8. [DbContext] Commit transaction.
+    TransformationAPI-->>DataAccessLibrary: Transaction successfully committed.
+    ControlPanelUI->>ControlPanelUI: 9. 9. [SUCCESS] Update UI state to reflect successful deletion.
+    ControlPanelUI-->>ControlPanelUI: Script is removed from the list.
+    ControlPanelUI->>ControlPanelUI: 10. 10. Display success notification to the user.
+    ControlPanelUI-->>ControlPanelUI: Toast message appears: 'Script deleted successfully.'
+    ControlPanelUI->>ControlPanelUI: 11. 9a. [ERROR] Update UI state to show error.
+    ControlPanelUI-->>ControlPanelUI: Error state is set.
+    ControlPanelUI->>ControlPanelUI: 12. 10a. Display error notification to the user.
+    ControlPanelUI-->>ControlPanelUI: Toast message appears with specific error from API.
+
+    note over TransformationAPI: Auditing is implemented via a synchronous, in-process domain event. This ensures the audit log en...
+
+    deactivate DataAccessLibrary
+    deactivate TransformationAPI

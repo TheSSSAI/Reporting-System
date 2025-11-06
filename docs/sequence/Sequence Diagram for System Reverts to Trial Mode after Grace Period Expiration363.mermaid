@@ -1,0 +1,24 @@
+sequenceDiagram
+    participant "Quartz.NET Scheduler" as QuartzNETScheduler
+    participant "CheckLicenseStatusJob" as CheckLicenseStatusJob
+    participant "LicenseService" as LicenseService
+    participant "SystemStateRepository" as SystemStateRepository
+    participant "AuditService" as AuditService
+
+    activate CheckLicenseStatusJob
+    QuartzNETScheduler->>CheckLicenseStatusJob: 1. Execute(IJobExecutionContext context)
+    activate LicenseService
+    CheckLicenseStatusJob->>LicenseService: 2. Task VerifyGracePeriodExpirationAsync()
+    LicenseService-->>CheckLicenseStatusJob: Task
+    LicenseService->>SystemStateRepository: 2.1. Task<SystemState> GetSystemStateAsync()
+    SystemStateRepository-->>LicenseService: SystemState { Status: 'GracePeriod', GracePeriodStart: '...' }
+    LicenseService->>LicenseService: 3. Evaluate Grace Period Expiration Logic
+    LicenseService-->>LicenseService: bool: isExpired = true
+    LicenseService->>SystemStateRepository: 4. Task UpdateSystemStateAsync(newState)
+    SystemStateRepository-->>LicenseService: Task
+    LicenseService->>AuditService: 5. Task LogSystemEventAsync(details)
+    AuditService-->>LicenseService: Task
+
+
+    deactivate LicenseService
+    deactivate CheckLicenseStatusJob

@@ -1,0 +1,25 @@
+sequenceDiagram
+    participant "Control Panel (UI)" as ControlPanelUI
+    participant "API/Web Layer" as APIWebLayer
+    participant "Application Layer" as ApplicationLayer
+    participant "Infrastructure Layer" as InfrastructureLayer
+
+    activate APIWebLayer
+    ControlPanelUI->>APIWebLayer: 1. 1. RequestAuditLogExport(exportParams)
+    APIWebLayer-->>ControlPanelUI: 200 OK (File Stream) or Error Response
+    activate ApplicationLayer
+    APIWebLayer->>ApplicationLayer: 2. 2. ExportLogsAsync(ExportAuditLogsDto dto)
+    ApplicationLayer-->>APIWebLayer: Task<IActionResult>
+    activate InfrastructureLayer
+    ApplicationLayer->>InfrastructureLayer: 3. 3. GetLogsByDateRangeAsync(startDate, endDate, maxRecords)
+    InfrastructureLayer-->>ApplicationLayer: IAsyncEnumerable<AuditLog>
+    InfrastructureLayer->>InfrastructureLayer: 4. 4. Execute Query
+    InfrastructureLayer-->>InfrastructureLayer: Cursor / Data Reader
+    ApplicationLayer->>ApplicationLayer: 5. 5. Stream and Serialize Data
+
+    note over APIWebLayer: Security Checkpoint: The AuditLogsController endpoint is decorated with [Authorize(Roles = "Admin...
+    note over ApplicationLayer: Performance Pattern: The use of IAsyncEnumerable<T> combined with stream-based serialization is t...
+
+    deactivate InfrastructureLayer
+    deactivate ApplicationLayer
+    deactivate APIWebLayer

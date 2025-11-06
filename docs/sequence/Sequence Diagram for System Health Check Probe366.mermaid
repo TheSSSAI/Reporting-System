@@ -1,0 +1,21 @@
+sequenceDiagram
+    participant "Monitoring Tool" as MonitoringTool
+    participant "Service Host (API/Web Layer)" as ServiceHostAPIWebLayer
+    participant "Infrastructure Layer" as InfrastructureLayer
+
+    activate ServiceHostAPIWebLayer
+    MonitoringTool->>ServiceHostAPIWebLayer: 1. Probe health: GET /healthz
+    ServiceHostAPIWebLayer-->>MonitoringTool: Return aggregated health status (e.g., HTTP 200 OK or 503 Service Unavailable)
+    ServiceHostAPIWebLayer->>ServiceHostAPIWebLayer: 2. Intercept request: HealthCheckMiddleware.InvokeAsync(context)
+    activate InfrastructureLayer
+    ServiceHostAPIWebLayer->>InfrastructureLayer: 3. Invoke all registered checks: healthCheckService.CheckHealthAsync(cancellationToken)
+    InfrastructureLayer-->>ServiceHostAPIWebLayer: Return aggregated HealthReport
+    InfrastructureLayer->>InfrastructureLayer: 3.1. Execute DB Check: SQLiteHealthCheck.CheckHealthAsync(context, cancellationToken)
+    InfrastructureLayer-->>InfrastructureLayer: Return HealthCheckResult
+    ServiceHostAPIWebLayer->>ServiceHostAPIWebLayer: 4. Aggregate results and format response using configured HealthCheckResponseWriter
+
+    note over ServiceHostAPIWebLayer: Business Rule: The overall status is 'Unhealthy' and the HTTP status is 503 if any single health ...
+    note over InfrastructureLayer: Implementation Detail: Individual health checks MUST be configured with aggressive, short timeout...
+
+    deactivate InfrastructureLayer
+    deactivate ServiceHostAPIWebLayer

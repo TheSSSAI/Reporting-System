@@ -1,0 +1,634 @@
+# 1 Overview
+
+## 1.1 Diagram Id
+
+SEQ-OF-004
+
+## 1.2 Name
+
+Operator Performs Emergency Rollback
+
+## 1.3 Description
+
+Following a go/no-go decision failure during cutover, an operator executes the documented rollback procedure. This involves disabling the system-wide feature flag and reverting any associated database schema changes via a migration script.
+
+## 1.4 Type
+
+🔹 OperationalFlow
+
+## 1.5 Purpose
+
+To provide a safe and reliable way to disable the new feature and revert to the previous state without service interruption.
+
+## 1.6 Complexity
+
+High
+
+## 1.7 Priority
+
+🚨 Critical
+
+## 1.8 Frequency
+
+OnDemand
+
+## 1.9 Participants
+
+- External: Operator
+- External: Feature Flag System
+- REPO-LIB-DATA-003
+
+## 1.10 Key Interactions
+
+- Operator determines a rollback is necessary.
+- Operator accesses the feature flag management system and disables the 'DataTransformationFeature' flag.
+- Operator runs the 'down' version of the database migration script associated with the feature's schema changes.
+- The migration script reverses the schema changes (e.g., drops new tables).
+- The application, on next check, sees the feature flag is disabled and reverts to using legacy transformation logic.
+
+## 1.11 Triggers
+
+- A critical P1/P2 defect is found post-deployment, or go/no-go criteria are not met.
+
+## 1.12 Outcomes
+
+- The new data transformation feature is fully disabled across the application.
+- The database schema is returned to its pre-deployment state.
+- The system continues to operate using the old functionality.
+
+## 1.13 Business Rules
+
+- A documented rollback procedure must exist to disable the feature flag and revert database changes (REQ-IMP-004).
+
+## 1.14 Error Scenarios
+
+- The database migration 'down' script fails, requiring manual database intervention.
+
+## 1.15 Integration Points
+
+- Feature Flag Management System
+- Database Migration Tooling
+
+# 2.0 Details
+
+## 2.1 Diagram Id
+
+SEQ-OF-004
+
+## 2.2 Name
+
+Operator Performs Emergency Rollback of Data Transformation Feature
+
+## 2.3 Description
+
+A comprehensive technical sequence detailing the operational procedure for an emergency rollback of a feature deployment. The sequence is initiated by an operator via a CI/CD pipeline, which orchestrates the disabling of a feature flag via API and the reversion of database schema changes using a migration tool. This ensures a safe, automated, and audited return to a last known good state without service interruption.
+
+## 2.4 Participants
+
+### 2.4.1 Actor
+
+#### 2.4.1.1 Repository Id
+
+External: Operator
+
+#### 2.4.1.2 Display Name
+
+Operator
+
+#### 2.4.1.3 Type
+
+🔹 Actor
+
+#### 2.4.1.4 Technology
+
+Human with SRE/DevOps role
+
+#### 2.4.1.5 Order
+
+1
+
+#### 2.4.1.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | actor |
+| Color | #999999 |
+| Stereotype | Human |
+
+### 2.4.2.0 System
+
+#### 2.4.2.1 Repository Id
+
+Internal: SCM/CI-CD Pipeline
+
+#### 2.4.2.2 Display Name
+
+CI/CD Pipeline
+
+#### 2.4.2.3 Type
+
+🔹 System
+
+#### 2.4.2.4 Technology
+
+Jenkins / GitLab CI / GitHub Actions
+
+#### 2.4.2.5 Order
+
+2
+
+#### 2.4.2.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | component |
+| Color | #1E90FF |
+| Stereotype | Orchestrator |
+
+### 2.4.3.0 External System
+
+#### 2.4.3.1 Repository Id
+
+External: Feature Flag System
+
+#### 2.4.3.2 Display Name
+
+Feature Flag System
+
+#### 2.4.3.3 Type
+
+🔹 External System
+
+#### 2.4.3.4 Technology
+
+LaunchDarkly / Optimizely / In-house
+
+#### 2.4.3.5 Order
+
+3
+
+#### 2.4.3.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | component |
+| Color | #FF8C00 |
+| Stereotype | SaaS |
+
+### 2.4.4.0 Tool
+
+#### 2.4.4.1 Repository Id
+
+Internal: Database Migration Tool
+
+#### 2.4.4.2 Display Name
+
+DB Migration Tool
+
+#### 2.4.4.3 Type
+
+🔹 Tool
+
+#### 2.4.4.4 Technology
+
+EF Core CLI (`dotnet ef`)
+
+#### 2.4.4.5 Order
+
+4
+
+#### 2.4.4.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | component |
+| Color | #32CD32 |
+| Stereotype | CLI |
+
+### 2.4.5.0 Database
+
+#### 2.4.5.1 Repository Id
+
+REPO-LIB-DATA-003
+
+#### 2.4.5.2 Display Name
+
+Application Database
+
+#### 2.4.5.3 Type
+
+🔹 Database
+
+#### 2.4.5.4 Technology
+
+PostgreSQL 16
+
+#### 2.4.5.5 Order
+
+5
+
+#### 2.4.5.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | database |
+| Color | #8A2BE2 |
+| Stereotype | Persistence |
+
+### 2.4.6.0 Application
+
+#### 2.4.6.1 Repository Id
+
+REPO-APP-API-001
+
+#### 2.4.6.2 Display Name
+
+TransformationEngine.Api
+
+#### 2.4.6.3 Type
+
+🔹 Application
+
+#### 2.4.6.4 Technology
+
+ASP.NET Core 8
+
+#### 2.4.6.5 Order
+
+6
+
+#### 2.4.6.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | component |
+| Color | #D2691E |
+| Stereotype | Service |
+
+## 2.5.0.0 Interactions
+
+### 2.5.1.0 Request
+
+#### 2.5.1.1 Source Id
+
+External: Operator
+
+#### 2.5.1.2 Target Id
+
+Internal: SCM/CI-CD Pipeline
+
+#### 2.5.1.3 Message
+
+1. Triggers 'Rollback-DataTransformation-Feature' job
+
+#### 2.5.1.4 Sequence Number
+
+1
+
+#### 2.5.1.5 Type
+
+🔹 Request
+
+#### 2.5.1.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.1.7 Return Message
+
+2. Acknowledges job start, returns job URL
+
+#### 2.5.1.8 Has Return
+
+✅ Yes
+
+#### 2.5.1.9 Is Activation
+
+✅ Yes
+
+#### 2.5.1.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | HTTPS |
+| Method | POST /job/rollback/buildWithParameters |
+| Parameters | User authentication credentials, job parameters (e... |
+| Authentication | Requires 'Operations' role via SAML/SSO integratio... |
+| Error Handling | UI displays error if user lacks permissions or job... |
+| Performance | Sub-second response time. |
+
+### 2.5.2.0 API Call
+
+#### 2.5.2.1 Source Id
+
+Internal: SCM/CI-CD Pipeline
+
+#### 2.5.2.2 Target Id
+
+External: Feature Flag System
+
+#### 2.5.2.3 Message
+
+3. [Rollback Step 1] Disables 'DataTransformationFeature' flag
+
+#### 2.5.2.4 Sequence Number
+
+2
+
+#### 2.5.2.5 Type
+
+🔹 API Call
+
+#### 2.5.2.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.2.7 Return Message
+
+4. 200 OK - Flag updated
+
+#### 2.5.2.8 Has Return
+
+✅ Yes
+
+#### 2.5.2.9 Is Activation
+
+✅ Yes
+
+#### 2.5.2.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | HTTPS/REST |
+| Method | PATCH /api/v2/flags/DataTransformationFeature |
+| Parameters | Headers: {'Authorization': 'api-key $FF_API_KEY'},... |
+| Authentication | Securely stored API Key for the Feature Flag syste... |
+| Error Handling | If status is not 2xx, fail the pipeline job immedi... |
+| Performance | Expected latency < 500ms. |
+
+### 2.5.3.0 Command Execution
+
+#### 2.5.3.1 Source Id
+
+Internal: SCM/CI-CD Pipeline
+
+#### 2.5.3.2 Target Id
+
+Internal: Database Migration Tool
+
+#### 2.5.3.3 Message
+
+5. [Rollback Step 2] Invokes migration to revert schema
+
+#### 2.5.3.4 Sequence Number
+
+3
+
+#### 2.5.3.5 Type
+
+🔹 Command Execution
+
+#### 2.5.3.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.3.7 Return Message
+
+8. Exit Code 0 (Success)
+
+#### 2.5.3.8 Has Return
+
+✅ Yes
+
+#### 2.5.3.9 Is Activation
+
+✅ Yes
+
+#### 2.5.3.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | Shell |
+| Method | dotnet ef database update <PreviousMigrationName> |
+| Parameters | Requires DB connection string, e.g., --connection ... |
+| Authentication | Connection string with credentials is retrieved fr... |
+| Error Handling | A non-zero exit code indicates failure. The pipeli... |
+| Performance | Variable, depends on schema complexity. Target < 2... |
+
+#### 2.5.3.11 Nested Interactions
+
+- {'sourceId': 'Internal: Database Migration Tool', 'targetId': 'REPO-LIB-DATA-003', 'message': '6. Executes `Down()` migration script in a transaction', 'sequenceNumber': 4, 'type': 'DB Transaction', 'isSynchronous': True, 'returnMessage': '7. Transaction committed successfully', 'hasReturn': True, 'isActivation': True, 'technicalDetails': {'protocol': 'PostgreSQL Wire Protocol', 'method': 'SQL: DROP TABLE..., ALTER TABLE...', 'parameters': 'The SQL generated by the EF Core `Down()` method.', 'authentication': 'Uses credentials from the provided connection string.', 'errorHandling': 'If any SQL statement fails, the entire transaction is automatically rolled back by the database, ensuring schema consistency. The tool receives the error from the DB driver.', 'performance': 'Should complete quickly; long-running schema changes are a risk.'}}
+
+### 2.5.4.0 Notification
+
+#### 2.5.4.1 Source Id
+
+Internal: SCM/CI-CD Pipeline
+
+#### 2.5.4.2 Target Id
+
+External: Operator
+
+#### 2.5.4.3 Message
+
+9. Notifies of successful rollback completion
+
+#### 2.5.4.4 Sequence Number
+
+5
+
+#### 2.5.4.5 Type
+
+🔹 Notification
+
+#### 2.5.4.6 Is Synchronous
+
+❌ No
+
+#### 2.5.4.7 Return Message
+
+
+
+#### 2.5.4.8 Has Return
+
+❌ No
+
+#### 2.5.4.9 Is Activation
+
+❌ No
+
+#### 2.5.4.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | Slack/Email |
+| Method | Webhook Post / SMTP |
+| Parameters | Job status, link to job logs, duration. |
+| Authentication | N/A |
+| Error Handling | N/A |
+| Performance | N/A |
+
+### 2.5.5.0 API Call
+
+#### 2.5.5.1 Source Id
+
+REPO-APP-API-001
+
+#### 2.5.5.2 Target Id
+
+External: Feature Flag System
+
+#### 2.5.5.3 Message
+
+10. [Loop] On next request, checks feature flag status
+
+#### 2.5.5.4 Sequence Number
+
+6
+
+#### 2.5.5.5 Type
+
+🔹 API Call
+
+#### 2.5.5.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.5.7 Return Message
+
+11. Returns { 'DataTransformationFeature': false }
+
+#### 2.5.5.8 Has Return
+
+✅ Yes
+
+#### 2.5.5.9 Is Activation
+
+✅ Yes
+
+#### 2.5.5.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | HTTPS/REST |
+| Method | GET /api/v2/flags/DataTransformationFeature |
+| Parameters | User context for evaluation. |
+| Authentication | Uses service-specific API key. |
+| Error Handling | SDK handles caching and fallbacks. A failure to co... |
+| Performance | SDK is optimized for low latency (<50ms), often us... |
+
+### 2.5.6.0 Internal Logic
+
+#### 2.5.6.1 Source Id
+
+REPO-APP-API-001
+
+#### 2.5.6.2 Target Id
+
+REPO-APP-API-001
+
+#### 2.5.6.3 Message
+
+12. Routes request to legacy transformation logic
+
+#### 2.5.6.4 Sequence Number
+
+7
+
+#### 2.5.6.5 Type
+
+🔹 Internal Logic
+
+#### 2.5.6.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.6.7 Return Message
+
+
+
+#### 2.5.6.8 Has Return
+
+❌ No
+
+#### 2.5.6.9 Is Activation
+
+❌ No
+
+#### 2.5.6.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-process |
+| Method | if (featureEnabled) { ... } else { legacyLogic(); ... |
+| Parameters | Flag evaluation result |
+| Authentication | N/A |
+| Error Handling | Standard application error handling. |
+| Performance | Negligible overhead. |
+
+## 2.6.0.0 Notes
+
+### 2.6.1.0 Content
+
+#### 2.6.1.1 Content
+
+Audit Requirement: The CI/CD pipeline must log the identity of the operator who triggered the rollback job, the exact time, and the job's outcome. This is critical for REQ-IMP-004 and SOC 2 compliance.
+
+#### 2.6.1.2 Position
+
+top
+
+#### 2.6.1.3 Participant Id
+
+Internal: SCM/CI-CD Pipeline
+
+#### 2.6.1.4 Sequence Number
+
+1
+
+### 2.6.2.0 Content
+
+#### 2.6.2.1 Content
+
+Exception Handling: If the DB migration script fails (step 6), the database's transactional integrity ensures no partial schema changes are left behind. However, this constitutes a failed rollback, requiring immediate manual intervention by an SRE/DBA. The pipeline's failure alert is the trigger for this escalation.
+
+#### 2.6.2.2 Position
+
+bottom
+
+#### 2.6.2.3 Participant Id
+
+Internal: Database Migration Tool
+
+#### 2.6.2.4 Sequence Number
+
+4
+
+### 2.6.3.0 Content
+
+#### 2.6.3.1 Content
+
+Observability: Post-rollback, monitoring systems must be checked to confirm that application error rates (e.g., 5xx responses) have returned to baseline, validating the success of the operation.
+
+#### 2.6.3.2 Position
+
+bottom
+
+#### 2.6.3.3 Participant Id
+
+REPO-APP-API-001
+
+#### 2.6.3.4 Sequence Number
+
+7
+
+## 2.7.0.0 Implementation Guidance
+
+| Property | Value |
+|----------|-------|
+| Security Requirements | Access to the rollback CI/CD job must be strictly ... |
+| Performance Targets | The entire automated rollback procedure should com... |
+| Error Handling Strategy | The CI/CD pipeline is the primary point of failure... |
+| Testing Considerations | The rollback procedure is as critical as the deplo... |
+| Monitoring Requirements | The execution of the rollback job must be a tracka... |
+| Deployment Considerations | This sequence is part of the system's disaster rec... |
+

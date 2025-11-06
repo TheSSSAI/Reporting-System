@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PageHeader Component</title>
+    <style>
+        /* --- DESIGN TOKENS & SETUP --- */
+        :root {
+            /* Colors */
+            --color-primary-500: #0068FF;
+            --color-primary-600: #0052CC;
+            --color-primary-100: #E6F0FF;
+            --color-secondary-500: #6c757d;
+            --color-secondary-600: #5a6268;
+            --color-text-white: #FFFFFF;
+            --color-gray-900: #212529;
+            --color-gray-600: #6c757d;
+            --color-gray-200: #E9ECEF;
+            --color-border-focus: #5C9EFF;
+            --color-border-default: #B8D5FF;
+
+            /* Typography */
+            --font-family-primary: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            --font-size-h2: 36px;
+            --font-weight-h2: 600;
+            --line-height-h2: 1.25;
+            --font-size-body: 16px;
+            --line-height-body: 1.5;
+
+            /* Spacing */
+            --space-xs: 4px;
+            --space-sm: 8px;
+            --space-md: 16px;
+            --space-lg: 24px;
+            --space-xl: 32px;
+
+            /* Borders */
+            --border-radius-main: 8px;
+            --border-width: 1px;
+
+            /* Transitions */
+            --transition-base: all 0.2s ease-in-out;
+        }
+
+        /* --- BASE & LAYOUT STYLES --- */
+        body {
+            font-family: var(--font-family-primary);
+            background-color: #f8f9fa;
+            color: var(--color-gray-900);
+            margin: 0;
+            padding: var(--space-xl);
+        }
+
+        .showcase-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: var(--space-xl);
+            border-radius: var(--border-radius-main);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        h2.variant-title {
+            margin-top: var(--space-xl);
+            margin-bottom: var(--space-md);
+            border-bottom: 1px solid var(--color-gray-200);
+            padding-bottom: var(--space-sm);
+        }
+        
+        h2.variant-title:first-of-type {
+            margin-top: 0;
+        }
+
+        /* --- DEPENDENCY: BUTTON COMPONENT --- */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-sm);
+            font-family: var(--font-family-primary);
+            font-weight: 600;
+            text-align: center;
+            vertical-align: middle;
+            cursor: pointer;
+            user-select: none;
+            border: var(--border-width) solid transparent;
+            transition: var(--transition-base);
+            font-size: var(--font-size-body);
+            line-height: var(--line-height-body);
+            padding: 8px 22px;
+            border-radius: var(--border-radius-main);
+        }
+
+        .btn:focus-visible {
+            outline: 2px solid var(--color-border-focus);
+            outline-offset: 2px;
+        }
+
+        .btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.65;
+        }
+
+        .btn--primary {
+            color: var(--color-text-white);
+            background-color: var(--color-primary-500);
+            border-color: var(--color-primary-500);
+        }
+
+        .btn--primary:hover {
+            background-color: var(--color-primary-600);
+            border-color: var(--color-primary-600);
+            transform: translateY(-1px);
+        }
+        
+        .btn--secondary {
+            color: var(--color-primary-500);
+            background-color: transparent;
+            border: 1px solid var(--color-border-default);
+        }
+
+        .btn--secondary:hover {
+            background-color: var(--color-primary-100);
+            border-color: var(--color-primary-500);
+            transform: translateY(-1px);
+        }
+
+
+        /* --- MOLECULAR COMPONENT: PageHeader --- */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-block: var(--space-lg);
+            border-bottom: 1px solid var(--color-gray-200);
+            margin-bottom: var(--space-xl);
+            flex-wrap: wrap;
+            gap: var(--space-md);
+        }
+
+        .page-header__content {
+            flex: 1 1 auto;
+        }
+
+        .page-header__title {
+            font-family: var(--font-family-primary);
+            font-size: var(--font-size-h2);
+            font-weight: var(--font-weight-h2);
+            line-height: var(--line-height-h2);
+            color: var(--color-gray-900);
+            margin: 0;
+        }
+
+        .page-header__subtitle {
+            font-family: var(--font-family-primary);
+            font-size: var(--font-size-body);
+            line-height: var(--line-height-body);
+            color: var(--color-gray-600);
+            margin-top: var(--space-xs);
+            margin-bottom: 0;
+            max-width: 60ch;
+        }
+
+        .page-header__actions {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            flex-shrink: 0;
+        }
+
+        /* Responsive Adaptations */
+        @media (max-width: 768px) {
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: var(--space-sm);
+            }
+
+            .page-header__actions {
+                width: 100%;
+                margin-top: var(--space-md);
+            }
+
+            .page-header__actions .btn {
+                flex-grow: 1; /* Make buttons grow to fill space */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="showcase-container">
+        <h2 class="variant-title">Page Header</h2>
+
+        <header class="page-header">
+            <div class="page-header__content">
+                <h1 class="page-header__title">Dashboard</h1>
+                <p class="page-header__subtitle">An overview of system activity and recent report executions.</p>
+            </div>
+            <div class="page-header__actions">
+                <button class="btn btn--secondary">Refresh Data</button>
+                <button class="btn btn--primary">Create New Report</button>
+            </div>
+        </header>
+
+        <div>
+            <h2>Component Variations</h2>
+            <div>
+                <h3 class="variant-title">Simple Header</h3>
+                <p>Used for pages that have a primary title but no immediate page-level actions.</p>
+                <header class="page-header">
+                    <div class="page-header__content">
+                        <h1 class="page-header__title">System Settings</h1>
+                        <p class="page-header__subtitle">Configure global settings for security, notifications, and licensing.</p>
+                    </div>
+                </header>
+            </div>
+            <div>
+                <h3 class="variant-title">Header with Actions</h3>
+                <p>The most common variant, providing a title, context, and primary actions for the page.</p>
+                <header class="page-header">
+                    <div class="page-header__content">
+                        <h1 class="page-header__title">User Management</h1>
+                        <p class="page-header__subtitle">Create, edit, and manage user accounts and their roles.</p>
+                    </div>
+                    <div class="page-header__actions">
+                        <button class="btn btn--secondary">Export Users</button>
+                        <button class="btn btn--primary">Add New User</button>
+                    </div>
+                </header>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

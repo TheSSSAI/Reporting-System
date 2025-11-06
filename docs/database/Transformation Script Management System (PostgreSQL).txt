@@ -1,0 +1,185 @@
+-- Transformation Script Management System Schema
+-- PostgreSQL Dialect
+
+-- Enable UUID generation function if not already available
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- =============================================
+-- Entity: User
+-- =============================================
+CREATE TABLE "User" (
+    "userId" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    "username" VARCHAR(100) NOT NULL,
+    "email" VARCHAR(255) NOT NULL,
+    "fullName" VARCHAR(200) NOT NULL,
+    "passwordHash" VARCHAR(255) NOT NULL,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "isDeleted" BOOLEAN NOT NULL DEFAULT false,
+    "createdAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "UC_User_Username" UNIQUE ("username"),
+    CONSTRAINT "UC_User_Email" UNIQUE ("email")
+);
+
+CREATE INDEX "IX_User_Active_NotDeleted" ON "User" ("isActive", "isDeleted");
+CREATE INDEX "IX_User_FullName" ON "User" ("fullName");
+CREATE INDEX "IX_User_CreatedAt" ON "User" ("createdAt");
+
+-- =============================================
+-- Entity: JsonSchema
+-- =============================================
+CREATE TABLE "JsonSchema" (
+    "jsonSchemaId" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    "name" VARCHAR(255) NOT NULL,
+    "schemaDefinition" JSONB NOT NULL, -- Using JSONB for performance and validation
+    "createdByUserId" UUID NOT NULL,
+    "createdAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "UC_JsonSchema_Name" UNIQUE ("name"),
+    CONSTRAINT "FK_JsonSchema_CreatedByUser" FOREIGN KEY ("createdByUserId") REFERENCES "User"("userId") ON DELETE NO ACTION ON UPDATE CASCADE
+);
+
+CREATE INDEX "IX_JsonSchema_CreatedByUser" ON "JsonSchema" ("createdByUserId");
+CREATE INDEX "IX_JsonSchema_CreatedAt" ON "JsonSchema" ("createdAt");
+
+-- =============================================
+-- Entity: TransformationScript
+-- =============================================
+CREATE TABLE "TransformationScript" (
+    "transformationScriptId" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    "name" VARCHAR(255) NOT NULL,
+    "description" TEXT,
+    "activeScriptVersionId" UUID, -- FK constraint added later
+    "activeVersionNumber" INTEGER,
+    "createdByUserId" UUID NOT NULL,
+    "updatedByUserId" UUID NOT NULL,
+    "isDeleted" BOOLEAN NOT NULL DEFAULT false,
+    "createdAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "UC_TransformationScript_Name" UNIQUE ("name"),
+    CONSTRAINT "FK_TransformationScript_CreatedByUser" FOREIGN KEY ("createdByUserId") REFERENCES "User"("userId") ON DELETE NO ACTION ON UPDATE CASCADE,
+    CONSTRAINT "FK_TransformationScript_UpdatedByUser" FOREIGN KEY ("updatedByUserId") REFERENCES "User"("userId") ON DELETE NO ACTION ON UPDATE CASCADE
+);
+
+CREATE INDEX "IX_TransformationScript_ActiveScriptVersionId" ON "TransformationScript" ("activeScriptVersionId");
+CREATE INDEX "IX_TransformationScript_IsDeleted" ON "TransformationScript" ("isDeleted");
+CREATE INDEX "IX_TransformationScript_ActiveVersionNumber" ON "TransformationScript" ("activeVersionNumber");
+CREATE INDEX "IX_TransformationScript_CreatedByUser" ON "TransformationScript" ("createdByUserId");
+CREATE INDEX "IX_TransformationScript_UpdatedByUser" ON "TransformationScript" ("updatedByUserId");
+CREATE INDEX "IX_TransformationScript_CreatedAt" ON "TransformationScript" ("createdAt");
+
+
+-- =============================================
+-- Entity: ScriptVersion
+-- =============================================
+CREATE TABLE "ScriptVersion" (
+    "scriptVersionId" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    "transformationScriptId" UUID NOT NULL,
+    "versionNumber" INTEGER NOT NULL,
+    "scriptContentEncrypted" BYTEA NOT NULL,
+    "changeLog" TEXT,
+    "createdByUserId" UUID NOT NULL,
+    "createdAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "UC_ScriptVersion_Script_Version" UNIQUE ("transformationScriptId", "versionNumber"),
+    CONSTRAINT "FK_ScriptVersion_TransformationScript" FOREIGN KEY ("transformationScriptId") REFERENCES "TransformationScript"("transformationScriptId") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "FK_ScriptVersion_CreatedByUser" FOREIGN KEY ("createdByUserId") REFERENCES "User"("userId") ON DELETE NO ACTION ON UPDATE CASCADE
+) PARTITION BY HASH ("transformationScriptId");
+
+CREATE INDEX "IX_ScriptVersion_CreatedAt" ON "ScriptVersion" ("createdAt");
+CREATE INDEX "IX_ScriptVersion_ScriptId_VersionDesc" ON "ScriptVersion" ("transformationScriptId", "versionNumber" DESC);
+CREATE INDEX "IX_ScriptVersion_CreatedByUser" ON "ScriptVersion" ("createdByUserId");
+
+
+-- =============================================
+-- Add Foreign Key from TransformationScript to ScriptVersion
+-- =============================================
+ALTER TABLE "TransformationScript"
+ADD CONSTRAINT "FK_TransformationScript_ActiveScriptVersion"
+FOREIGN KEY ("activeScriptVersionId")
+REFERENCES "ScriptVersion"("scriptVersionId")
+ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- =============================================
+-- Entity: ReportConfiguration
+-- =============================================
+CREATE TABLE "ReportConfiguration" (
+    "reportConfigurationId" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    "name" VARCHAR(255) NOT NULL,
+    "jsonSchemaId" UUID,
+    "createdByUserId" UUID NOT NULL,
+    "updatedByUserId" UUID NOT NULL,
+    "createdAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "FK_ReportConfiguration_JsonSchema" FOREIGN KEY ("jsonSchemaId") REFERENCES "JsonSchema"("jsonSchemaId") ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT "FK_ReportConfiguration_CreatedByUser" FOREIGN KEY ("createdByUserId") REFERENCES "User"("userId") ON DELETE NO ACTION ON UPDATE CASCADE,
+    CONSTRAINT "FK_ReportConfiguration_UpdatedByUser" FOREIGN KEY ("updatedByUserId") REFERENCES "User"("userId") ON DELETE NO ACTION ON UPDATE CASCADE
+);
+
+CREATE INDEX "IX_ReportConfiguration_Name" ON "ReportConfiguration" ("name");
+CREATE INDEX "IX_ReportConfiguration_JsonSchemaId" ON "ReportConfiguration" ("jsonSchemaId");
+CREATE INDEX "IX_ReportConfiguration_CreatedByUser" ON "ReportConfiguration" ("createdByUserId");
+CREATE INDEX "IX_ReportConfiguration_UpdatedByUser" ON "ReportConfiguration" ("updatedByUserId");
+CREATE INDEX "IX_ReportConfiguration_CreatedAt" ON "ReportConfiguration" ("createdAt");
+
+
+-- =============================================
+-- Entity: ReportTransformationScriptAssociation (Junction Table)
+-- =============================================
+CREATE TABLE "ReportTransformationScriptAssociation" (
+    "reportConfigurationId" UUID NOT NULL,
+    "transformationScriptId" UUID NOT NULL,
+    "associatedByUserId" UUID NOT NULL,
+    "associatedAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY ("reportConfigurationId", "transformationScriptId"),
+    CONSTRAINT "FK_RTSA_ReportConfiguration" FOREIGN KEY ("reportConfigurationId") REFERENCES "ReportConfiguration"("reportConfigurationId") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "FK_RTSA_TransformationScript" FOREIGN KEY ("transformationScriptId") REFERENCES "TransformationScript"("transformationScriptId") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "FK_RTSA_AssociatedByUser" FOREIGN KEY ("associatedByUserId") REFERENCES "User"("userId") ON DELETE NO ACTION ON UPDATE CASCADE
+);
+
+CREATE INDEX "IX_RTSA_TransformationScriptId" ON "ReportTransformationScriptAssociation" ("transformationScriptId");
+CREATE INDEX "IX_RTSA_AssociatedByUser" ON "ReportTransformationScriptAssociation" ("associatedByUserId");
+
+
+-- =============================================
+-- Entity: AuditLog
+-- =============================================
+CREATE TABLE "AuditLog" (
+    "auditLogId" BIGINT GENERATED BY DEFAULT AS IDENTITY,
+    "userId" UUID, -- Nullable to keep log if user is deleted
+    "actionType" VARCHAR(100) NOT NULL,
+    "entityType" VARCHAR(100) NOT NULL,
+    "entityId" UUID NOT NULL,
+    "changeDetails" JSONB,
+    "timestamp" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "sourceIpAddress" VARCHAR(45),
+    PRIMARY KEY ("auditLogId", "timestamp"),
+    CONSTRAINT "FK_AuditLog_User" FOREIGN KEY ("userId") REFERENCES "User"("userId") ON DELETE SET NULL ON UPDATE CASCADE
+) PARTITION BY RANGE ("timestamp");
+
+CREATE INDEX "IX_AuditLog_EntityType_EntityId" ON "AuditLog" ("entityType", "entityId");
+CREATE INDEX "IX_AuditLog_UserId_Timestamp" ON "AuditLog" ("userId", "timestamp");
+CREATE INDEX "IX_AuditLog_TimestampDesc_EntityType_ActionType" ON "AuditLog" ("timestamp" DESC, "entityType", "actionType");
+CREATE INDEX "IX_AuditLog_ChangeDetails_GIN" ON "AuditLog" USING GIN ("changeDetails");
+
+
+-- =============================================
+-- Entity: SecurityViolationLog
+-- =============================================
+CREATE TABLE "SecurityViolationLog" (
+    "securityViolationLogId" BIGINT GENERATED BY DEFAULT AS IDENTITY,
+    "transformationScriptId" UUID NOT NULL,
+    "scriptVersionId" UUID NOT NULL,
+    "violationType" VARCHAR(50) NOT NULL,
+    "violationValue" VARCHAR(255) NOT NULL,
+    "executionId" UUID,
+    "timestamp" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY ("securityViolationLogId", "timestamp"),
+    CONSTRAINT "FK_SecurityViolationLog_TransformationScript" FOREIGN KEY ("transformationScriptId") REFERENCES "TransformationScript"("transformationScriptId") ON DELETE NO ACTION ON UPDATE CASCADE,
+    CONSTRAINT "FK_SecurityViolationLog_ScriptVersion" FOREIGN KEY ("scriptVersionId") REFERENCES "ScriptVersion"("scriptVersionId") ON DELETE NO ACTION ON UPDATE CASCADE,
+    CONSTRAINT "CHK_SecurityViolationLog_ViolationType" CHECK ("violationType" IN ('TIMEOUT', 'MEMORY_LIMIT', 'STATEMENT_COUNT'))
+) PARTITION BY RANGE ("timestamp");
+
+CREATE INDEX "IX_SecurityViolationLog_ScriptId_Timestamp" ON "SecurityViolationLog" ("transformationScriptId", "timestamp");
+CREATE INDEX "IX_SecurityViolationLog_ViolationType_TimestampDesc" ON "SecurityViolationLog" ("violationType", "timestamp" DESC);
+CREATE INDEX "IX_SecurityViolationLog_ScriptVersionId" ON "SecurityViolationLog" ("scriptVersionId");
+CREATE INDEX "IX_SecurityViolationLog_ExecutionId" ON "SecurityViolationLog" ("executionId");

@@ -1,0 +1,55 @@
+flowchart TD
+    subgraph "Login & Authentication Flow"
+        A[Start: User on Login Page] --> B(User submits Username + Password)
+        B --> C{Credentials Valid?}
+        C -- No --> D[Increment Failed Login Count]
+        D --> E{Account Locked?}
+        E -- Yes --> F[Show 'Account Locked' Error]
+        F --> A
+        E -- No --> G[Show 'Invalid Credentials' Error]
+        G --> A
+        
+        C -- Yes --> H[Reset Failed Login Count]
+        H --> I{2FA Enabled?}
+        
+        I -- Yes --> J[Redirect to 2FA Page]
+        J --> K(User submits 2FA Code)
+        K --> L{2FA Code Valid?}
+        L -- No --> D
+        L -- Yes --> M{User Role?}
+        
+        I -- No --> M
+
+        M -- Administrator --> N[Redirect to Control Panel]
+        M -- Viewer --> O[Redirect to Report Viewer]
+        
+        N --> P((Authenticated Session))
+        O --> P
+    end
+
+    subgraph "Session Inactivity Lifecycle"
+        P --> Q{User Active?}
+        Q -- Yes --> R[Reset Inactivity Timer]
+        R --> P
+        Q -- No --> S{Session Timeout Warning?}
+        S -- Yes --> T(Show 'Stay Logged In?' Modal)
+        T --> U{User clicks 'Stay Logged In'?}
+        U -- Yes --> R
+        S -- No --> V[Timer Continues]
+        V --> P
+        U -- No / Timeout --> W(Log Out User)
+        W --> A
+    end
+
+    %% Styling
+    classDef process fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,color:#000
+    classDef decision fill:#fff9c4,stroke:#fbc02d,stroke-width:2px,color:#000
+    classDef error fill:#ffebee,stroke:#d32f2f,stroke-width:2px,color:#000
+    classDef success fill:#e8f5e9,stroke:#388e3c,stroke-width:2px,color:#000
+    classDef state fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#000
+
+    class B,D,H,K,R,T,W process
+    class C,E,I,L,M,Q,S,U decision
+    class F,G error
+    class N,O,P success
+    class A,J,V state

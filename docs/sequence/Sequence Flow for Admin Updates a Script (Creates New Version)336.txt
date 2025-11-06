@@ -1,0 +1,1165 @@
+# 1 Overview
+
+## 1.1 Diagram Id
+
+SEQ-UJ-004
+
+## 1.2 Name
+
+Admin Updates a Script (Creates New Version)
+
+## 1.3 Description
+
+An administrator modifies an existing transformation script and saves the changes. The system automatically creates a new, immutable `ScriptVersion` entity, preserving the old version. The parent `TransformationScript` entity is updated to point to the new version as the active one.
+
+## 1.4 Type
+
+🔹 UserJourney
+
+## 1.5 Purpose
+
+To provide a complete change history for scripts, enabling auditing, comparison, and rollback capabilities.
+
+## 1.6 Complexity
+
+Medium
+
+## 1.7 Priority
+
+🔴 High
+
+## 1.8 Frequency
+
+OnDemand
+
+## 1.9 Participants
+
+- REPO-APP-UI-005
+- REPO-APP-API-001
+- REPO-LIB-DATA-003
+
+## 1.10 Key Interactions
+
+- Admin edits a script and clicks 'Save'.
+- UI sends a PUT request to `/api/v1/transformations/{id}`.
+- `TransformationScriptService` receives the update request.
+- Service retrieves the parent script, encrypts the new content, and creates a new `ScriptVersion` entity with an incremented version number.
+- Service updates the `activeVersionId` on the parent `TransformationScript` entity.
+- Repository commits both the new version and the parent script update to the database in a single transaction.
+- An audit log event for the 'UPDATE' action is published and handled.
+
+## 1.11 Triggers
+
+- Administrator saves changes to an existing script.
+
+## 1.12 Outcomes
+
+- A new version of the script is created and becomes the active version.
+- The previous version is preserved for historical purposes.
+- An audit log entry is generated.
+
+## 1.13 Business Rules
+
+- Scripts must be versioned. Each update creates a new version (REQ-DTR-008).
+- The system must retain a history of all changes (REQ-DTR-008).
+
+## 1.14 Error Scenarios
+
+- The script ID provided in the URL is invalid, API returns 404 Not Found.
+- A database concurrency conflict occurs during the update.
+
+## 1.15 Integration Points
+
+- Control Panel UI (React)
+- Application Database
+
+# 2.0 Details
+
+## 2.1 Diagram Id
+
+SEQ-UJ-004-IMPL
+
+## 2.2 Name
+
+Implementation: Administrator Updates a Transformation Script, Creating a New Version
+
+## 2.3 Description
+
+Technical sequence detailing the end-to-end user journey of an administrator saving an edited script. The sequence covers UI state management, a transactional backend update that creates a new script version, and atomic audit logging. This sequence provides a direct implementation blueprint for requirement REQ-DTR-008.
+
+## 2.4 Participants
+
+### 2.4.1 Frontend Application
+
+#### 2.4.1.1 Repository Id
+
+REPO-APP-UI-005
+
+#### 2.4.1.2 Display Name
+
+User's Browser (React SPA)
+
+#### 2.4.1.3 Type
+
+🔹 Frontend Application
+
+#### 2.4.1.4 Technology
+
+React 18, TypeScript, Axios
+
+#### 2.4.1.5 Order
+
+1
+
+#### 2.4.1.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | actor |
+| Color | #3498DB |
+| Stereotype | <User Interface> |
+
+### 2.4.2.0 Backend API
+
+#### 2.4.2.1 Repository Id
+
+REPO-APP-API-001
+
+#### 2.4.2.2 Display Name
+
+TransformationEngine.Api
+
+#### 2.4.2.3 Type
+
+🔹 Backend API
+
+#### 2.4.2.4 Technology
+
+ASP.NET Core 8, C# 12
+
+#### 2.4.2.5 Order
+
+2
+
+#### 2.4.2.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | component |
+| Color | #2ECC71 |
+| Stereotype | <API Gateway & Application Service> |
+
+### 2.4.3.0 Data Persistence Library
+
+#### 2.4.3.1 Repository Id
+
+REPO-LIB-DATA-003
+
+#### 2.4.3.2 Display Name
+
+Data Access Library
+
+#### 2.4.3.3 Type
+
+🔹 Data Persistence Library
+
+#### 2.4.3.4 Technology
+
+Entity Framework Core 8
+
+#### 2.4.3.5 Order
+
+3
+
+#### 2.4.3.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | database |
+| Color | #E67E22 |
+| Stereotype | <Repository & ORM> |
+
+## 2.5.0.0 Interactions
+
+### 2.5.1.0 User Interaction
+
+#### 2.5.1.1 Source Id
+
+REPO-APP-UI-005
+
+#### 2.5.1.2 Target Id
+
+REPO-APP-UI-005
+
+#### 2.5.1.3 Message
+
+1. Admin edits script in Monaco Editor and clicks 'Save'
+
+#### 2.5.1.4 Sequence Number
+
+1
+
+#### 2.5.1.5 Type
+
+🔹 User Interaction
+
+#### 2.5.1.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.1.7 Return Message
+
+
+
+#### 2.5.1.8 Has Return
+
+❌ No
+
+#### 2.5.1.9 Is Activation
+
+✅ Yes
+
+#### 2.5.1.10 Technical Details
+
+##### 2.5.1.10.1 Protocol
+
+DOM Event
+
+##### 2.5.1.10.2 Method
+
+onClick
+
+##### 2.5.1.10.3 Parameters
+
+Event object
+
+##### 2.5.1.10.4 Authentication
+
+N/A
+
+##### 2.5.1.10.5 Error Handling
+
+Button is disabled until content is changed.
+
+##### 2.5.1.10.6 Performance
+
+###### 2.5.1.10.6.1 Latency
+
+<50ms UI response
+
+### 2.5.2.0.0.0 State Management
+
+#### 2.5.2.1.0.0 Source Id
+
+REPO-APP-UI-005
+
+#### 2.5.2.2.0.0 Target Id
+
+REPO-APP-UI-005
+
+#### 2.5.2.3.0.0 Message
+
+2. Set loading state to true and disable save button
+
+#### 2.5.2.4.0.0 Sequence Number
+
+2
+
+#### 2.5.2.5.0.0 Type
+
+🔹 State Management
+
+#### 2.5.2.6.0.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.2.7.0.0 Return Message
+
+
+
+#### 2.5.2.8.0.0 Has Return
+
+❌ No
+
+#### 2.5.2.9.0.0 Is Activation
+
+❌ No
+
+#### 2.5.2.10.0.0 Technical Details
+
+##### 2.5.2.10.1.0 Protocol
+
+In-Memory
+
+##### 2.5.2.10.2.0 Method
+
+React state update (e.g., `setLoading(true)`)
+
+##### 2.5.2.10.3.0 Parameters
+
+New state object
+
+##### 2.5.2.10.4.0 Authentication
+
+N/A
+
+##### 2.5.2.10.5.0 Error Handling
+
+N/A
+
+##### 2.5.2.10.6.0 Performance
+
+###### 2.5.2.10.6.1 Latency
+
+Immediate
+
+### 2.5.3.0.0.0 API Request
+
+#### 2.5.3.1.0.0 Source Id
+
+REPO-APP-UI-005
+
+#### 2.5.3.2.0.0 Target Id
+
+REPO-APP-API-001
+
+#### 2.5.3.3.0.0 Message
+
+3. PUT /api/v1/transformations/{id}
+
+#### 2.5.3.4.0.0 Sequence Number
+
+3
+
+#### 2.5.3.5.0.0 Type
+
+🔹 API Request
+
+#### 2.5.3.6.0.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.3.7.0.0 Return Message
+
+HTTP 200 OK | 400 | 404 | 409 | 500
+
+#### 2.5.3.8.0.0 Has Return
+
+✅ Yes
+
+#### 2.5.3.9.0.0 Is Activation
+
+✅ Yes
+
+#### 2.5.3.10.0.0 Technical Details
+
+##### 2.5.3.10.1.0 Protocol
+
+HTTPS
+
+##### 2.5.3.10.2.0 Method
+
+PUT
+
+##### 2.5.3.10.3.0 Parameters
+
+| Property | Value |
+|----------|-------|
+| Path | id: string (UUID) |
+| Headers | Authorization: Bearer <JWT_TOKEN>, Content-Type: a... |
+| Body | UpdateScriptRequestDto { name: string, description... |
+
+##### 2.5.3.10.4.0 Authentication
+
+JWT Bearer Token required.
+
+##### 2.5.3.10.5.0 Error Handling
+
+Axios client handles non-2xx responses in a catch block.
+
+##### 2.5.3.10.6.0 Performance
+
+###### 2.5.3.10.6.1 Latency
+
+Depends on network and server processing time.
+
+### 2.5.4.0.0.0 Security & Validation
+
+#### 2.5.4.1.0.0 Source Id
+
+REPO-APP-API-001
+
+#### 2.5.4.2.0.0 Target Id
+
+REPO-APP-API-001
+
+#### 2.5.4.3.0.0 Message
+
+4. [TransformationScriptsController] Authorize request and validate DTO
+
+#### 2.5.4.4.0.0 Sequence Number
+
+4
+
+#### 2.5.4.5.0.0 Type
+
+🔹 Security & Validation
+
+#### 2.5.4.6.0.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.4.7.0.0 Return Message
+
+Proceed or return HTTP 401/403/400
+
+#### 2.5.4.8.0.0 Has Return
+
+✅ Yes
+
+#### 2.5.4.9.0.0 Is Activation
+
+❌ No
+
+#### 2.5.4.10.0.0 Technical Details
+
+##### 2.5.4.10.1.0 Protocol
+
+In-Process
+
+##### 2.5.4.10.2.0 Method
+
+ASP.NET Core Middleware & Action Filters
+
+##### 2.5.4.10.3.0 Parameters
+
+HttpContext, UpdateScriptRequestDto
+
+##### 2.5.4.10.4.0 Authentication
+
+Verifies JWT token validity and role claim ('Administrator').
+
+##### 2.5.4.10.5.0 Error Handling
+
+Returns HTTP 401 Unauthorized, 403 Forbidden, or 400 Bad Request if validation fails.
+
+##### 2.5.4.10.6.0 Performance
+
+###### 2.5.4.10.6.1 Latency
+
+<5ms
+
+### 2.5.5.0.0.0 Data Request
+
+#### 2.5.5.1.0.0 Source Id
+
+REPO-APP-API-001
+
+#### 2.5.5.2.0.0 Target Id
+
+REPO-LIB-DATA-003
+
+#### 2.5.5.3.0.0 Message
+
+5. [TransformationScriptService] Request script: `repository.GetWithVersionsAsync(id)`
+
+#### 2.5.5.4.0.0 Sequence Number
+
+5
+
+#### 2.5.5.5.0.0 Type
+
+🔹 Data Request
+
+#### 2.5.5.6.0.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.5.7.0.0 Return Message
+
+TransformationScript entity or null
+
+#### 2.5.5.8.0.0 Has Return
+
+✅ Yes
+
+#### 2.5.5.9.0.0 Is Activation
+
+✅ Yes
+
+#### 2.5.5.10.0.0 Technical Details
+
+##### 2.5.5.10.1.0 Protocol
+
+In-Process
+
+##### 2.5.5.10.2.0 Method
+
+C# method call
+
+##### 2.5.5.10.3.0 Parameters
+
+id: Guid
+
+##### 2.5.5.10.4.0 Authentication
+
+N/A
+
+##### 2.5.5.10.5.0 Error Handling
+
+If null is returned, service will throw a 'NotFoundException' resulting in HTTP 404.
+
+##### 2.5.5.10.6.0 Performance
+
+###### 2.5.5.10.6.1 Latency
+
+<50ms
+
+### 2.5.6.0.0.0 Business Logic
+
+#### 2.5.6.1.0.0 Source Id
+
+REPO-APP-API-001
+
+#### 2.5.6.2.0.0 Target Id
+
+REPO-APP-API-001
+
+#### 2.5.6.3.0.0 Message
+
+6. In-memory: Encrypt content, create new `ScriptVersion` entity, update parent `TransformationScript`
+
+#### 2.5.6.4.0.0 Sequence Number
+
+6
+
+#### 2.5.6.5.0.0 Type
+
+🔹 Business Logic
+
+#### 2.5.6.6.0.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.6.7.0.0 Return Message
+
+
+
+#### 2.5.6.8.0.0 Has Return
+
+❌ No
+
+#### 2.5.6.9.0.0 Is Activation
+
+❌ No
+
+#### 2.5.6.10.0.0 Technical Details
+
+##### 2.5.6.10.1.0 Protocol
+
+In-Process
+
+##### 2.5.6.10.2.0 Method
+
+Domain entity manipulation
+
+##### 2.5.6.10.3.0 Parameters
+
+scriptContent: string
+
+##### 2.5.6.10.4.0 Authentication
+
+N/A
+
+##### 2.5.6.10.5.0 Error Handling
+
+N/A
+
+##### 2.5.6.10.6.0 Performance
+
+###### 2.5.6.10.6.1 Latency
+
+<10ms
+
+### 2.5.7.0.0.0 Data Persistence
+
+#### 2.5.7.1.0.0 Source Id
+
+REPO-APP-API-001
+
+#### 2.5.7.2.0.0 Target Id
+
+REPO-LIB-DATA-003
+
+#### 2.5.7.3.0.0 Message
+
+7. [TransformationScriptService] Request transactional update: `repository.UpdateAsync(script)`
+
+#### 2.5.7.4.0.0 Sequence Number
+
+7
+
+#### 2.5.7.5.0.0 Type
+
+🔹 Data Persistence
+
+#### 2.5.7.6.0.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.7.7.0.0 Return Message
+
+Task completes or throws exception
+
+#### 2.5.7.8.0.0 Has Return
+
+✅ Yes
+
+#### 2.5.7.9.0.0 Is Activation
+
+❌ No
+
+#### 2.5.7.10.0.0 Technical Details
+
+##### 2.5.7.10.1.0 Protocol
+
+In-Process
+
+##### 2.5.7.10.2.0 Method
+
+C# method call
+
+##### 2.5.7.10.3.0 Parameters
+
+script: TransformationScript (with new version in collection)
+
+##### 2.5.7.10.4.0 Authentication
+
+N/A
+
+##### 2.5.7.10.5.0 Error Handling
+
+Propagates `DbUpdateConcurrencyException` for optimistic locking failures (results in HTTP 409).
+
+##### 2.5.7.10.6.0 Performance
+
+###### 2.5.7.10.6.1 Latency
+
+Depends on database transaction time.
+
+#### 2.5.7.11.0.0 Nested Interactions
+
+##### 2.5.7.11.1.0 Database Operation
+
+###### 2.5.7.11.1.1 Source Id
+
+REPO-LIB-DATA-003
+
+###### 2.5.7.11.1.2 Target Id
+
+REPO-LIB-DATA-003
+
+###### 2.5.7.11.1.3 Message
+
+7a. [EF Core] Begin transaction
+
+###### 2.5.7.11.1.4 Sequence Number
+
+8
+
+###### 2.5.7.11.1.5 Type
+
+🔹 Database Operation
+
+###### 2.5.7.11.1.6 Is Synchronous
+
+✅ Yes
+
+###### 2.5.7.11.1.7 Return Message
+
+
+
+###### 2.5.7.11.1.8 Has Return
+
+❌ No
+
+###### 2.5.7.11.1.9 Is Activation
+
+❌ No
+
+###### 2.5.7.11.1.10 Technical Details
+
+####### 2.5.7.11.1.10.1 Protocol
+
+DB Connection
+
+####### 2.5.7.11.1.10.2 Method
+
+Implicit transaction start
+
+####### 2.5.7.11.1.10.3 Parameters
+
+N/A
+
+####### 2.5.7.11.1.10.4 Authentication
+
+N/A
+
+####### 2.5.7.11.1.10.5 Error Handling
+
+N/A
+
+####### 2.5.7.11.1.10.6 Performance
+
+######## 2.5.7.11.1.10.6.1 Latency
+
+<2ms
+
+##### 2.5.7.11.2.0.0.0 ORM Operation
+
+###### 2.5.7.11.2.1.0.0 Source Id
+
+REPO-LIB-DATA-003
+
+###### 2.5.7.11.2.2.0.0 Target Id
+
+REPO-LIB-DATA-003
+
+###### 2.5.7.11.2.3.0.0 Message
+
+7b. Add new `ScriptVersion` and `AuditLog` to `DbContext`
+
+###### 2.5.7.11.2.4.0.0 Sequence Number
+
+9
+
+###### 2.5.7.11.2.5.0.0 Type
+
+🔹 ORM Operation
+
+###### 2.5.7.11.2.6.0.0 Is Synchronous
+
+✅ Yes
+
+###### 2.5.7.11.2.7.0.0 Return Message
+
+
+
+###### 2.5.7.11.2.8.0.0 Has Return
+
+❌ No
+
+###### 2.5.7.11.2.9.0.0 Is Activation
+
+❌ No
+
+###### 2.5.7.11.2.10.0.0 Technical Details
+
+####### 2.5.7.11.2.10.1.0 Protocol
+
+In-Memory
+
+####### 2.5.7.11.2.10.2.0 Method
+
+DbContext.Add()
+
+####### 2.5.7.11.2.10.3.0 Parameters
+
+ScriptVersion entity, AuditLog entity
+
+####### 2.5.7.11.2.10.4.0 Authentication
+
+N/A
+
+####### 2.5.7.11.2.10.5.0 Error Handling
+
+N/A
+
+####### 2.5.7.11.2.10.6.0 Performance
+
+######## 2.5.7.11.2.10.6.1 Latency
+
+<1ms
+
+##### 2.5.7.11.3.0.0.0 ORM Operation
+
+###### 2.5.7.11.3.1.0.0 Source Id
+
+REPO-LIB-DATA-003
+
+###### 2.5.7.11.3.2.0.0 Target Id
+
+REPO-LIB-DATA-003
+
+###### 2.5.7.11.3.3.0.0 Message
+
+7c. Mark `TransformationScript` as Modified in `DbContext`
+
+###### 2.5.7.11.3.4.0.0 Sequence Number
+
+10
+
+###### 2.5.7.11.3.5.0.0 Type
+
+🔹 ORM Operation
+
+###### 2.5.7.11.3.6.0.0 Is Synchronous
+
+✅ Yes
+
+###### 2.5.7.11.3.7.0.0 Return Message
+
+
+
+###### 2.5.7.11.3.8.0.0 Has Return
+
+❌ No
+
+###### 2.5.7.11.3.9.0.0 Is Activation
+
+❌ No
+
+###### 2.5.7.11.3.10.0.0 Technical Details
+
+####### 2.5.7.11.3.10.1.0 Protocol
+
+In-Memory
+
+####### 2.5.7.11.3.10.2.0 Method
+
+DbContext.Update() or state tracking
+
+####### 2.5.7.11.3.10.3.0 Parameters
+
+TransformationScript entity
+
+####### 2.5.7.11.3.10.4.0 Authentication
+
+N/A
+
+####### 2.5.7.11.3.10.5.0 Error Handling
+
+N/A
+
+####### 2.5.7.11.3.10.6.0 Performance
+
+######## 2.5.7.11.3.10.6.1 Latency
+
+<1ms
+
+##### 2.5.7.11.4.0.0.0 Database Operation
+
+###### 2.5.7.11.4.1.0.0 Source Id
+
+REPO-LIB-DATA-003
+
+###### 2.5.7.11.4.2.0.0 Target Id
+
+REPO-LIB-DATA-003
+
+###### 2.5.7.11.4.3.0.0 Message
+
+7d. Execute `DbContext.SaveChangesAsync()`
+
+###### 2.5.7.11.4.4.0.0 Sequence Number
+
+11
+
+###### 2.5.7.11.4.5.0.0 Type
+
+🔹 Database Operation
+
+###### 2.5.7.11.4.6.0.0 Is Synchronous
+
+✅ Yes
+
+###### 2.5.7.11.4.7.0.0 Return Message
+
+Number of rows affected
+
+###### 2.5.7.11.4.8.0.0 Has Return
+
+✅ Yes
+
+###### 2.5.7.11.4.9.0.0 Is Activation
+
+❌ No
+
+###### 2.5.7.11.4.10.0.0 Technical Details
+
+####### 2.5.7.11.4.10.1.0 Protocol
+
+DB Connection
+
+####### 2.5.7.11.4.10.2.0 Method
+
+Generates SQL INSERT for ScriptVersion/AuditLog and UPDATE for TransformationScript
+
+####### 2.5.7.11.4.10.3.0 Parameters
+
+N/A
+
+####### 2.5.7.11.4.10.4.0 Authentication
+
+N/A
+
+####### 2.5.7.11.4.10.5.0 Error Handling
+
+Throws exceptions on failure (e.g., constraint violation, concurrency conflict).
+
+####### 2.5.7.11.4.10.6.0 Performance
+
+######## 2.5.7.11.4.10.6.1 Latency
+
+<100ms
+
+##### 2.5.7.11.5.0.0.0 Database Operation
+
+###### 2.5.7.11.5.1.0.0 Source Id
+
+REPO-LIB-DATA-003
+
+###### 2.5.7.11.5.2.0.0 Target Id
+
+REPO-LIB-DATA-003
+
+###### 2.5.7.11.5.3.0.0 Message
+
+7e. Commit transaction
+
+###### 2.5.7.11.5.4.0.0 Sequence Number
+
+12
+
+###### 2.5.7.11.5.5.0.0 Type
+
+🔹 Database Operation
+
+###### 2.5.7.11.5.6.0.0 Is Synchronous
+
+✅ Yes
+
+###### 2.5.7.11.5.7.0.0 Return Message
+
+
+
+###### 2.5.7.11.5.8.0.0 Has Return
+
+❌ No
+
+###### 2.5.7.11.5.9.0.0 Is Activation
+
+❌ No
+
+###### 2.5.7.11.5.10.0.0 Technical Details
+
+####### 2.5.7.11.5.10.1.0 Protocol
+
+DB Connection
+
+####### 2.5.7.11.5.10.2.0 Method
+
+Implicit transaction commit
+
+####### 2.5.7.11.5.10.3.0 Parameters
+
+N/A
+
+####### 2.5.7.11.5.10.4.0 Authentication
+
+N/A
+
+####### 2.5.7.11.5.10.5.0 Error Handling
+
+Rolls back on any exception during SaveChangesAsync.
+
+####### 2.5.7.11.5.10.6.0 Performance
+
+######## 2.5.7.11.5.10.6.1 Latency
+
+<5ms
+
+### 2.5.8.0.0.0.0.0 API Response
+
+#### 2.5.8.1.0.0.0.0 Source Id
+
+REPO-APP-API-001
+
+#### 2.5.8.2.0.0.0.0 Target Id
+
+REPO-APP-UI-005
+
+#### 2.5.8.3.0.0.0.0 Message
+
+8. Return HTTP 200 OK with updated script DTO
+
+#### 2.5.8.4.0.0.0.0 Sequence Number
+
+13
+
+#### 2.5.8.5.0.0.0.0 Type
+
+🔹 API Response
+
+#### 2.5.8.6.0.0.0.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.8.7.0.0.0.0 Return Message
+
+
+
+#### 2.5.8.8.0.0.0.0 Has Return
+
+❌ No
+
+#### 2.5.8.9.0.0.0.0 Is Activation
+
+❌ No
+
+#### 2.5.8.10.0.0.0.0 Technical Details
+
+##### 2.5.8.10.1.0.0.0 Protocol
+
+HTTPS
+
+##### 2.5.8.10.2.0.0.0 Method
+
+Response Body
+
+##### 2.5.8.10.3.0.0.0 Parameters
+
+| Property | Value |
+|----------|-------|
+| Status | 200 |
+| Body | ScriptResponseDto { id, name, ..., activeVersion: ... |
+
+##### 2.5.8.10.4.0.0.0 Authentication
+
+N/A
+
+##### 2.5.8.10.5.0.0.0 Error Handling
+
+N/A
+
+##### 2.5.8.10.6.0.0.0 Performance
+
+###### 2.5.8.10.6.1.0.0 Latency
+
+<5ms for serialization
+
+### 2.5.9.0.0.0.0.0 State Management
+
+#### 2.5.9.1.0.0.0.0 Source Id
+
+REPO-APP-UI-005
+
+#### 2.5.9.2.0.0.0.0 Target Id
+
+REPO-APP-UI-005
+
+#### 2.5.9.3.0.0.0.0 Message
+
+9. Update UI state, show success notification, set loading to false
+
+#### 2.5.9.4.0.0.0.0 Sequence Number
+
+14
+
+#### 2.5.9.5.0.0.0.0 Type
+
+🔹 State Management
+
+#### 2.5.9.6.0.0.0.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.9.7.0.0.0.0 Return Message
+
+
+
+#### 2.5.9.8.0.0.0.0 Has Return
+
+❌ No
+
+#### 2.5.9.9.0.0.0.0 Is Activation
+
+❌ No
+
+#### 2.5.9.10.0.0.0.0 Technical Details
+
+##### 2.5.9.10.1.0.0.0 Protocol
+
+In-Memory
+
+##### 2.5.9.10.2.0.0.0 Method
+
+React state update, toast notification library call
+
+##### 2.5.9.10.3.0.0.0 Parameters
+
+Updated script data from response
+
+##### 2.5.9.10.4.0.0.0 Authentication
+
+N/A
+
+##### 2.5.9.10.5.0.0.0 Error Handling
+
+N/A
+
+##### 2.5.9.10.6.0.0.0 Performance
+
+###### 2.5.9.10.6.1.0.0 Latency
+
+Immediate
+
+## 2.6.0.0.0.0.0.0 Notes
+
+### 2.6.1.0.0.0.0.0 Content
+
+#### 2.6.1.1.0.0.0.0 Content
+
+Error Handling: If the script ID is not found (Step 5), the API immediately returns HTTP 404. If a concurrency conflict occurs (Step 7d), it returns HTTP 409. Any other unhandled exception results in a generic HTTP 500.
+
+#### 2.6.1.2.0.0.0.0 Position
+
+bottom
+
+#### 2.6.1.3.0.0.0.0 Participant Id
+
+REPO-APP-API-001
+
+#### 2.6.1.4.0.0.0.0 Sequence Number
+
+5
+
+### 2.6.2.0.0.0.0.0 Content
+
+#### 2.6.2.1.0.0.0.0 Content
+
+Transactional Integrity: The new ScriptVersion, the update to the parent TransformationScript, and the creation of the AuditLog entry are all committed to the database in a single atomic transaction to ensure data consistency.
+
+#### 2.6.2.2.0.0.0.0 Position
+
+right
+
+#### 2.6.2.3.0.0.0.0 Participant Id
+
+REPO-LIB-DATA-003
+
+#### 2.6.2.4.0.0.0.0 Sequence Number
+
+7
+
+## 2.7.0.0.0.0.0.0 Implementation Guidance
+
+| Property | Value |
+|----------|-------|
+| Security Requirements | The API endpoint MUST be protected by authenticati... |
+| Performance Targets | The entire end-to-end process from the user clicki... |
+| Error Handling Strategy | The UI must be prepared to handle 400 (Bad Request... |
+| Testing Considerations | Integration tests should verify the transactional ... |
+| Monitoring Requirements | The latency of the PUT `/api/v1/transformations/{i... |
+| Deployment Considerations | Any changes to the database entities (`Transformat... |
+

@@ -1,0 +1,31 @@
+sequenceDiagram
+    participant "Application Service (Job Executor)" as ApplicationServiceJobExecutor
+    participant "SQL Data Connector" as SQLDataConnector
+    participant "Logging Provider (Serilog)" as LoggingProviderSerilog
+    participant "External SQL Database" as ExternalSQLDatabase
+
+    activate SQLDataConnector
+    ApplicationServiceJobExecutor->>SQLDataConnector: 1. [Attempt 1] Execute Polly Policy: FetchDataAsync(config)
+    activate ExternalSQLDatabase
+    SQLDataConnector->>ExternalSQLDatabase: 2. OpenConnection()
+    ExternalSQLDatabase->>SQLDataConnector: 3. Return: Transient Network Error
+    SQLDataConnector-->>ExternalSQLDatabase: Throws SqlException (e.g., network path not found)
+    SQLDataConnector->>ApplicationServiceJobExecutor: 4. Return: Throws SqlException
+    ApplicationServiceJobExecutor-->>SQLDataConnector: Propagates the caught SqlException.
+    ApplicationServiceJobExecutor->>LoggingProviderSerilog: 5. Log(Warning, 'Data fetch failed. Retrying...')
+    ApplicationServiceJobExecutor->>ApplicationServiceJobExecutor: 6. Wait for exponential backoff delay (e.g., 1s + jitter)
+    ApplicationServiceJobExecutor->>SQLDataConnector: 7. [Attempt 2] Execute Polly Policy: FetchDataAsync(config)
+    SQLDataConnector->>ExternalSQLDatabase: 8. OpenConnection()
+    ExternalSQLDatabase->>SQLDataConnector: 9. Return: Connection Acknowledged
+    SQLDataConnector-->>ExternalSQLDatabase: Successful connection handle.
+    SQLDataConnector->>ExternalSQLDatabase: 10. ExecuteQuery(sql, params)
+    ExternalSQLDatabase->>SQLDataConnector: 11. Return: Query Results
+    SQLDataConnector-->>ExternalSQLDatabase: Data stream or result set.
+    SQLDataConnector->>ApplicationServiceJobExecutor: 12. Return: [DataSet]
+    ApplicationServiceJobExecutor-->>SQLDataConnector: Returns the successfully fetched dataset as a standardized JSON object.
+
+    note over ApplicationServiceJobExecutor: The Polly Retry Policy is configured at application startup and injected via DI. It's defined to ...
+    note over ApplicationServiceJobExecutor: If all 3 retry attempts were to fail, the policy would re-throw the last caught exception, which ...
+
+    deactivate ExternalSQLDatabase
+    deactivate SQLDataConnector

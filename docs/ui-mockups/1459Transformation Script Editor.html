@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Transformation Script Editor</title>
+  <style>
+    /* CSS Reset */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    :root {
+      /* Colors */
+      --color-background: #111827;
+      --color-surface-1: #1F2937;
+      --color-surface-2: #374151;
+      --color-surface-3: #4B5563;
+      --color-text-primary: #F9FAFB;
+      --color-text-secondary: #D1D5DB;
+      --color-text-placeholder: #9CA3AF;
+      --color-primary: #3B82F6;
+      --color-primary-hover: #2563EB;
+      --color-secondary: #4B5563;
+      --color-secondary-hover: #6B7280;
+      --color-border: #4B5563;
+      --color-success: #10B981;
+      --color-error: #EF4444;
+      --color-warning: #F59E0B;
+
+      /* Typography */
+      --font-family-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      --font-size-sm: 0.875rem; /* 14px */
+      --font-size-base: 1rem; /* 16px */
+      --font-size-lg: 1.125rem; /* 18px */
+      --font-size-xl: 1.25rem; /* 20px */
+      --font-size-2xl: 1.5rem; /* 24px */
+      --font-weight-normal: 400;
+      --font-weight-medium: 500;
+      --font-weight-bold: 700;
+      --line-height-base: 1.5;
+
+      /* Spacing */
+      --space-1: 0.25rem; /* 4px */
+      --space-2: 0.5rem;  /* 8px */
+      --space-3: 0.75rem; /* 12px */
+      --space-4: 1rem;    /* 16px */
+      --space-6: 1.5rem;  /* 24px */
+      --space-8: 2rem;    /* 32px */
+
+      /* Borders */
+      --border-radius-sm: 0.25rem;
+      --border-radius-md: 0.5rem;
+      --border-width: 1px;
+      
+      /* Transitions */
+      --transition-duration: 150ms;
+    }
+
+    /* Base Styles */
+    body {
+      font-family: var(--font-family-sans);
+      background-color: var(--color-background);
+      color: var(--color-text-primary);
+      font-size: var(--font-size-base);
+      line-height: var(--line-height-base);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    h1, h2, h3 {
+        line-height: 1.2;
+    }
+
+    a {
+      color: var(--color-primary);
+      text-decoration: none;
+    }
+    
+    a:hover {
+      text-decoration: underline;
+    }
+    
+    /* Screen Layout */
+    .screen-container {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        width: 100%;
+    }
+
+    .screen-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: var(--space-3) var(--space-4);
+        background-color: var(--color-surface-1);
+        border-bottom: var(--border-width) solid var(--color-border);
+        flex-shrink: 0;
+    }
+    
+    .screen-header-title {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+    }
+
+    .screen-header-title h1 {
+        font-size: var(--font-size-xl);
+        font-weight: var(--font-weight-bold);
+    }
+    
+    .screen-header-title input {
+        font-size: var(--font-size-lg);
+        background: transparent;
+        border: none;
+        color: var(--color-text-primary);
+        padding: var(--space-1) var(--space-2);
+        border-radius: var(--border-radius-sm);
+        outline: none;
+        width: 300px;
+    }
+    
+    .screen-header-title input:focus {
+        background-color: var(--color-surface-2);
+        box-shadow: 0 0 0 2px var(--color-primary);
+    }
+
+    .screen-header-actions {
+        display: flex;
+        gap: var(--space-3);
+    }
+
+    /* Button Component Styles */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-2);
+      padding: var(--space-2) var(--space-4);
+      border: none;
+      border-radius: var(--border-radius-sm);
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-medium);
+      cursor: pointer;
+      transition: background-color var(--transition-duration), box-shadow var(--transition-duration);
+      white-space: nowrap;
+    }
+
+    .btn:focus-visible {
+        outline: 2px solid var(--color-primary);
+        outline-offset: 2px;
+    }
+
+    .btn--primary {
+      background-color: var(--color-primary);
+      color: #fff;
+    }
+
+    .btn--primary:hover {
+      background-color: var(--color-primary-hover);
+    }
+
+    .btn--secondary {
+      background-color: var(--color-secondary);
+      color: var(--color-text-primary);
+    }
+
+    .btn--secondary:hover {
+      background-color: var(--color-secondary-hover);
+    }
+    
+    .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    
+    .btn svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* Select Dropdown Component */
+    .select-dropdown-wrapper {
+        position: relative;
+        display: inline-block;
+        width: 100%;
+    }
+    .select-dropdown {
+        width: 100%;
+        padding: var(--space-2) var(--space-3);
+        background-color: var(--color-surface-2);
+        color: var(--color-text-primary);
+        border: var(--border-width) solid var(--color-border);
+        border-radius: var(--border-radius-sm);
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        cursor: pointer;
+    }
+    .select-dropdown:focus {
+        outline: none;
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 2px var(--color-primary);
+    }
+    .select-dropdown-wrapper::after {
+        content: '▼';
+        font-size: 0.75rem;
+        color: var(--color-text-secondary);
+        position: absolute;
+        right: var(--space-3);
+        top: 50%;
+        transform: translateY(-50%);
+        pointer-events: none;
+    }
+
+    /* Editor Layout (Three Panes) */
+    .editor-layout {
+        display: flex;
+        height: 100%;
+        overflow: hidden;
+        flex-grow: 1;
+    }
+    
+    .pane {
+        flex-grow: 1;
+        flex-shrink: 1;
+        flex-basis: 0;
+        display: flex;
+        flex-direction: column;
+        background-color: var(--color-surface-1);
+        overflow: hidden;
+        min-width: 200px;
+    }
+
+    .pane-header {
+        padding: var(--space-2) var(--space-3);
+        background-color: var(--color-surface-2);
+        border-bottom: var(--border-width) solid var(--color-border);
+        font-weight: var(--font-weight-medium);
+        font-size: var(--font-size-sm);
+        color: var(--color-text-secondary);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .pane-content {
+        flex-grow: 1;
+        overflow: auto;
+        position: relative; /* For loader positioning */
+    }
+    
+    .pane-content--editor {
+        font-family: monospace;
+        background-color: #1E1E1E; /* VS Code dark theme bg */
+        padding: var(--space-3);
+        color: #D4D4D4;
+        white-space: pre;
+        font-size: 14px;
+        line-height: 1.6;
+    }
+
+    .resize-handle {
+        flex-shrink: 0;
+        width: 8px;
+        background-color: var(--color-background);
+        cursor: col-resize;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .resize-handle:hover {
+        background-color: var(--color-primary-hover);
+    }
+    
+    .resize-handle::before {
+        content: '⋮';
+        color: var(--color-text-secondary);
+        font-size: 1.2rem;
+        line-height: 0;
+    }
+
+    .data-pane-controls {
+        padding: var(--space-3);
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3);
+        border-top: var(--border-width) solid var(--color-border);
+        background-color: var(--color-surface-2);
+    }
+    
+    .data-pane-controls .group {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+    }
+
+    .data-pane-controls .group .btn {
+        flex-grow: 1;
+    }
+
+    /* Alert Component */
+    .alert {
+      padding: var(--space-3);
+      border-radius: var(--border-radius-sm);
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-3);
+      margin: var(--space-4);
+    }
+    .alert--error {
+      background-color: rgba(239, 68, 68, 0.1);
+      color: var(--color-error);
+      border: var(--border-width) solid var(--color-error);
+    }
+    .alert__icon {
+      flex-shrink: 0;
+      width: 20px;
+      height: 20px;
+    }
+    .alert__content {
+      flex-grow: 1;
+    }
+    .alert__title {
+      font-weight: var(--font-weight-bold);
+      margin-bottom: var(--space-1);
+    }
+    .alert__message {
+      font-size: var(--font-size-sm);
+    }
+    
+    /* Loading Spinner */
+    .loader-container {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: rgba(31, 41, 55, 0.7);
+        z-index: 10;
+    }
+    .spinner {
+        width: 48px;
+        height: 48px;
+        border: 4px solid var(--color-surface-3);
+        border-top-color: var(--color-primary);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    /* Syntax Highlighting (simple placeholder) */
+    .hl-keyword { color: #569CD6; }
+    .hl-string { color: #CE9178; }
+    .hl-number { color: #B5CEA8; }
+    .hl-punctuation { color: #D4D4D4; }
+    .hl-property { color: #9CDCFE; }
+    .hl-function { color: #DCDCAA; }
+    .hl-comment { color: #6A9955; }
+    
+    /* Screen Variations (for demo purposes) */
+    .screen-variations {
+      display: none; /* Hidden by default, shown in demo files */
+    }
+
+  </style>
+</head>
+<body>
+  <div class="screen-container">
+    <header class="screen-header">
+      <div class="screen-header-title">
+        <h1>Edit Transformation:</h1>
+        <input type="text" value="Format User Data" aria-label="Transformation Script Name">
+      </div>
+      <div class="screen-header-actions">
+        <button class="btn btn--secondary">Cancel</button>
+        <button class="btn btn--primary">Save Changes</button>
+      </div>
+    </header>
+    
+    <main class="editor-layout">
+        <div class="pane editor-pane" id="pane-1">
+            <div class="pane-header">
+                <span>Script Editor (main.js)</span>
+            </div>
+            <div class="pane-content pane-content--editor">
+<span class="hl-comment">// A simple transformation script example.
+// The 'transform' function receives the raw data.
+// It must return the transformed data.</span>
+
+<span class="hl-keyword">function</span> <span class="hl-function">transform</span><span class="hl-punctuation">(</span><span class="hl-property">data</span><span class="hl-punctuation">)</span> <span class="hl-punctuation">{</span>
+  <span class="hl-keyword">if</span> <span class="hl-punctuation">(!</span>Array<span class="hl-punctuation">.</span><span class="hl-function">isArray</span><span class="hl-punctuation">(</span><span class="hl-property">data</span><span class="hl-punctuation">))</span> <span class="hl-punctuation">{</span>
+    <span class="hl-keyword">return</span> <span class="hl-property">data</span><span class="hl-punctuation">;</span>
+  <span class="hl-punctuation">}</span>
+
+  <span class="hl-comment">// Map over each record in the dataset.</span>
+  <span class="hl-keyword">const</span> <span class="hl-property">transformedData</span> <span class="hl-punctuation">=</span> <span class="hl-property">data</span><span class="hl-punctuation">.</span><span class="hl-function">map</span><span class="hl-punctuation">(</span><span class="hl-property">record</span> <span class="hl-punctuation">=></span> <span class="hl-punctuation">{</span>
+    <span class="hl-comment">// Create a new object for the transformed record.</span>
+    <span class="hl-keyword">return</span> <span class="hl-punctuation">{</span>
+      <span class="hl-property">id</span><span class="hl-punctuation">:</span> <span class="hl-property">record</span><span class="hl-punctuation">.</span><span class="hl-property">user_id</span><span class="hl-punctuation">,</span>
+      <span class="hl-property">fullName</span><span class="hl-punctuation">:</span> <span class="hl-string">`</span><span class="hl-punctuation">${</span><span class="hl-property">record</span><span class="hl-punctuation">.</span><span class="hl-property">first_name</span><span class="hl-punctuation">}</span> <span class="hl-punctuation">${</span><span class="hl-property">record</span><span class="hl-punctuation">.</span><span class="hl-property">last_name</span><span class="hl-punctuation">}</span><span class="hl-string">`</span><span class="hl-punctuation">,</span>
+      <span class="hl-property">isActive</span><span class="hl-punctuation">:</span> <span class="hl-property">record</span><span class="hl-punctuation">.</span><span class="hl-property">status</span> <span class="hl-punctuation">===</span> <span class="hl-string">'active'</span><span class="hl-punctuation">,</span>
+      <span class="hl-property">registrationDate</span><span class="hl-punctuation">:</span> <span class="hl-keyword">new</span> <span class="hl-function">Date</span><span class="hl-punctuation">(</span><span class="hl-property">record</span><span class="hl-punctuation">.</span><span class="hl-property">created_at</span><span class="hl-punctuation">).</span><span class="hl-function">toLocaleDateString</span><span class="hl-punctuation">()</span>
+    <span class="hl-punctuation">};</span>
+  <span class="hl-punctuation">});</span>
+
+  <span class="hl-keyword">return</span> <span class="hl-property">transformedData</span><span class="hl-punctuation">;</span>
+<span class="hl-punctuation">}</span>
+            </div>
+        </div>
+
+        <div class="resize-handle" id="handle-1"></div>
+
+        <div class="pane data-pane" id="pane-2">
+            <div class="pane-header">
+                <span>Input Data</span>
+            </div>
+            <div class="pane-content pane-content--editor">
+<span class="hl-punctuation">[</span>
+  <span class="hl-punctuation">{</span>
+    <span class="hl-property">"user_id"</span><span class="hl-punctuation">:</span> <span class="hl-number">101</span><span class="hl-punctuation">,</span>
+    <span class="hl-property">"first_name"</span><span class="hl-punctuation">:</span> <span class="hl-string">"Jane"</span><span class="hl-punctuation">,</span>
+    <span class="hl-property">"last_name"</span><span class="hl-punctuation">:</span> <span class="hl-string">"Doe"</span><span class="hl-punctuation">,</span>
+    <span class="hl-property">"status"</span><span class="hl-punctuation">:</span> <span class="hl-string">"active"</span><span class="hl-punctuation">,</span>
+    <span class="hl-property">"created_at"</span><span class="hl-punctuation">:</span> <span class="hl-string">"2023-10-26T10:00:00Z"</span>
+  <span class="hl-punctuation">}</span><span class="hl-punctuation">,</span>
+  <span class="hl-punctuation">{</span>
+    <span class="hl-property">"user_id"</span><span class="hl-punctuation">:</span> <span class="hl-number">102</span><span class="hl-punctuation">,</span>
+    <span class="hl-property">"first_name"</span><span class="hl-punctuation">:</span> <span class="hl-string">"John"</span><span class="hl-punctuation">,</span>
+    <span class="hl-property">"last_name"</span><span class="hl-punctuation">:</span> <span class="hl-string">"Smith"</span><span class="hl-punctuation">,</span>
+    <span class="hl-property">"status"</span><span class="hl-punctuation">:</span> <span class="hl-string">"inactive"</span><span class="hl-punctuation">,</span>
+    <span class="hl-property">"created_at"</span><span class="hl-punctuation">:</span> <span class="hl-string">"2023-11-15T14:30:00Z"</span>
+  <span class="hl-punctuation">}</span>
+<span class="hl-punctuation">]</span>
+            </div>
+            <div class="data-pane-controls">
+                <div class="group">
+                    <button class="btn btn--primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" /></svg>
+                        <span>Preview with Sample Data</span>
+                    </button>
+                </div>
+                <div class="group">
+                    <div class="select-dropdown-wrapper">
+                      <select class="select-dropdown" aria-label="Select Live Data Connector">
+                        <option>Production DB Connector</option>
+                        <option>CSV Customer Feed</option>
+                        <option>Legacy Orders XML</option>
+                      </select>
+                    </div>
+                    <button class="btn btn--secondary">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" /></svg>
+                      <span>Live Preview</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="resize-handle" id="handle-2"></div>
+        
+        <div class="pane output-pane" id="pane-3">
+             <div class="pane-header">
+                <span>Output / Preview</span>
+            </div>
+            <div class="pane-content pane-content--editor">
+<span class="hl-comment">// Output will appear here after running a preview.</span>
+            </div>
+        </div>
+    </main>
+  </div>
+  
+  <div class="screen-variations">
+    <div class="variation-group">
+        <h3>Loading State</h3>
+        <p>The output pane shows a loading spinner, and the preview buttons in the data pane are disabled.</p>
+        <div class="pane data-pane" style="flex-basis: 33%;">
+            <div class="pane-header">Input Data</div>
+            <div class="pane-content pane-content--editor">...</div>
+            <div class="data-pane-controls">
+                <div class="group"><button class="btn btn--primary" disabled>...</button></div>
+                <div class="group">...<button class="btn btn--secondary" disabled>...</button></div>
+            </div>
+        </div>
+        <div class="pane output-pane" style="flex-basis: 33%;">
+             <div class="pane-header">Output / Preview</div>
+             <div class="pane-content">
+                <div class="loader-container">
+                    <div class="spinner"></div>
+                </div>
+             </div>
+        </div>
+    </div>
+    
+    <div class="variation-group">
+        <h3>Preview Success State</h3>
+        <p>The output pane displays the transformed, formatted JSON result.</p>
+        <div class="pane output-pane" style="flex-basis: 100%;">
+            <div class="pane-header">Output / Preview</div>
+            <div class="pane-content pane-content--editor">
+<span class="hl-punctuation">[</span>
+  <span class="hl-punctuation">{</span>
+    <span class="hl-property">"id"</span><span class="hl-punctuation">:</span> <span class="hl-number">101</span><span class="hl-punctuation">,</span>
+    <span class="hl-property">"fullName"</span><span class="hl-punctuation">:</span> <span class="hl-string">"Jane Doe"</span><span class="hl-punctuation">,</span>
+    <span class="hl-property">"isActive"</span><span class="hl-punctuation">:</span> <span class="hl-keyword">true</span><span class="hl-punctuation">,</span>
+    <span class="hl-property">"registrationDate"</span><span class="hl-punctuation">:</span> <span class="hl-string">"10/26/2023"</span>
+  <span class="hl-punctuation">}</span><span class="hl-punctuation">,</span>
+  <span class="hl-punctuation">{</span>
+    <span class="hl-property">"id"</span><span class="hl-punctuation">:</span> <span class="hl-number">102</span><span class="hl-punctuation">,</span>
+    <span class="hl-property">"fullName"</span><span class="hl-punctuation">:</span> <span class="hl-string">"John Smith"</span><span class="hl-punctuation">,</span>
+    <span class="hl-property">"isActive"</span><span class="hl-punctuation">:</span> <span class="hl-keyword">false</span><span class="hl-punctuation">,</span>
+    <span class="hl-property">"registrationDate"</span><span class="hl-punctuation">:</span> <span class="hl-string">"11/15/2023"</span>
+  <span class="hl-punctuation">}</span>
+<span class="hl-punctuation">]</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="variation-group">
+        <h3>Preview Error State</h3>
+        <p>The output pane displays a clear error alert with details about the script failure.</p>
+        <div class="pane output-pane" style="flex-basis: 100%;">
+            <div class="pane-header">Output / Preview</div>
+            <div class="pane-content">
+                 <div class="alert alert--error">
+                  <div class="alert__icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+                    </svg>
+                  </div>
+                  <div class="alert__content">
+                    <div class="alert__title">Script Execution Error</div>
+                    <div class="alert__message">
+                      <p>TypeError: Cannot read properties of null (reading 'first_name')</p>
+                      <p style="margin-top: 4px; color: var(--color-text-secondary)">at main.js:15:28</p>
+                    </div>
+                  </div>
+                </div>
+            </div>
+        </div>
+    </div>
+  </div>
+
+<script>
+    // Basic resizable pane functionality
+    document.addEventListener('DOMContentLoaded', () => {
+        const handles = document.querySelectorAll('.resize-handle');
+
+        handles.forEach(handle => {
+            handle.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                const leftPane = handle.previousElementSibling;
+                const rightPane = handle.nextElementSibling;
+                const container = handle.parentElement;
+                
+                if (!leftPane || !rightPane) return;
+
+                let isResizing = true;
+                
+                const onMouseMove = (moveEvent) => {
+                    if (!isResizing) return;
+                    
+                    const containerRect = container.getBoundingClientRect();
+                    const leftPaneMinWidth = parseInt(getComputedStyle(leftPane).minWidth, 10);
+                    const rightPaneMinWidth = parseInt(getComputedStyle(rightPane).minWidth, 10);
+                    
+                    const leftWidth = moveEvent.clientX - containerRect.left;
+                    const rightWidth = containerRect.right - moveEvent.clientX;
+
+                    if (leftWidth > leftPaneMinWidth && rightWidth > rightPaneMinWidth) {
+                        const totalWidth = container.offsetWidth;
+                        const leftPercentage = (leftWidth / totalWidth) * 100;
+                        const rightPercentage = 100 - leftPercentage;
+
+                        // This is a simplified approach. A real implementation would need to adjust
+                        // flex-basis for all panes in the container.
+                        const allPanes = Array.from(container.children).filter(el => el.classList.contains('pane'));
+                        if (allPanes.length === 3) {
+                             if (handle.id === 'handle-1') {
+                                leftPane.style.flexBasis = `${leftPercentage}%`;
+                                const otherPanesWidth = 100 - leftPercentage;
+                                const pane2 = allPanes[1];
+                                const pane3 = allPanes[2];
+                                const pane2Ratio = parseFloat(pane2.style.flexBasis || 33.33) / (parseFloat(pane2.style.flexBasis || 33.33) + parseFloat(pane3.style.flexBasis || 33.33));
+                                pane2.style.flexBasis = `${otherPanesWidth * pane2Ratio}%`;
+                                pane3.style.flexBasis = `${otherPanesWidth * (1 - pane2Ratio)}%`;
+                             } else { // handle-2
+                                const pane1 = allPanes[0];
+                                const pane1WidthPercent = parseFloat(pane1.style.flexBasis || 33.33);
+                                const rightOfHandleWidth = moveEvent.clientX - (containerRect.left + (pane1.offsetWidth + handle.offsetWidth));
+                                const rightPanesTotalWidth = container.offsetWidth - (pane1.offsetWidth + handle.offsetWidth * 2);
+                                
+                                const pane2Percentage = (rightOfHandleWidth / rightPanesTotalWidth) * (100 - pane1WidthPercent);
+                                const pane3Percentage = 100 - pane1WidthPercent - pane2Percentage;
+
+                                if (pane2Percentage > (leftPaneMinWidth/totalWidth)*100 && pane3Percentage > (rightPaneMinWidth/totalWidth)*100) {
+                                  leftPane.style.flexBasis = `${pane2Percentage}%`;
+                                  rightPane.style.flexBasis = `${pane3Percentage}%`;
+                                }
+                             }
+                        }
+                    }
+                };
+                
+                const onMouseUp = () => {
+                    isResizing = false;
+                    window.removeEventListener('mousemove', onMouseMove);
+                    window.removeEventListener('mouseup', onMouseUp);
+                    document.body.style.cursor = '';
+                };
+                
+                document.body.style.cursor = 'col-resize';
+                window.addEventListener('mousemove', onMouseMove);
+                window.addEventListener('mouseup', onMouseUp);
+            });
+        });
+    });
+</script>
+
+</body>
+</html>

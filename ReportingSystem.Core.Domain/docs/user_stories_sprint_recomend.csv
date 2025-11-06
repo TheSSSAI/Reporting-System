@@ -1,0 +1,4 @@
+"sprint_number","story_ids","total_points","sprint_goal","dependencies_resolved"
+"1","[""US-DT-001"",""US-DT-006""]","21","Establish the foundational backend for secure script execution and the core extensibility framework for custom connectors.","true"
+"2","[""US-DT-002"",""US-DT-005""]","18","Build the complete API and database infrastructure for managing versioned transformation scripts and their associated audit trails.","true"
+"3","[""US-DT-003"",""US-DT-004""]","11","Develop the rich frontend editor for writing and previewing scripts, and implement observability through Prometheus metrics.","true"

@@ -1,0 +1,29 @@
+sequenceDiagram
+    participant "Control Panel UI" as ControlPanelUI
+    participant "Transformation API" as TransformationAPI
+    participant "Jint Engine Wrapper" as JintEngineWrapper
+
+    activate ControlPanelUI
+    ControlPanelUI->>ControlPanelUI: 1. User clicks 'Preview'. UI validates inputs (script and JSON not empty), sets state to 'loading', and displays a spinner.
+    activate TransformationAPI
+    ControlPanelUI->>TransformationAPI: 2. Sends script and sample data for preview.
+    TransformationAPI-->>ControlPanelUI: Returns 200 OK with transformed JSON, 400 with structured error, or 500 for server failures.
+    TransformationAPI->>TransformationAPI: 3. ScriptPreviewController instantiates CancellationTokenSource with a 30s timeout.
+    TransformationAPI-->>TransformationAPI: CancellationToken is passed down the call stack.
+    activate JintEngineWrapper
+    TransformationAPI->>JintEngineWrapper: 4. ScriptExecutionService calls wrapper to execute the script.
+    JintEngineWrapper-->>TransformationAPI: Returns a result object containing either the transformed JsonNode or a structured error.
+    JintEngineWrapper->>JintEngineWrapper: 5. Creates secure Jint engine, applies constraints (memory, statement count, no CLR), and executes script.
+    JintEngineWrapper-->>JintEngineWrapper: Transformed JSON as Jint.Native.Json.JsonInstance or throws an exception.
+    JintEngineWrapper->>TransformationAPI: 6. Returns successful execution result.
+    TransformationAPI-->>JintEngineWrapper: ScriptExecutionResult { IsSuccess: true, Output: JsonNode }
+    TransformationAPI->>ControlPanelUI: 7. Returns 200 OK with transformed JSON payload.
+    ControlPanelUI->>ControlPanelUI: 8. Receives successful response, sets state to 'loaded', and displays formatted JSON in the output pane.
+
+    note over TransformationAPI: Error Scenario: Timeout If the script runs longer than 30s, the CancellationToken is triggered. T...
+    note over JintEngineWrapper: Error Scenario: Script Error If Jint throws a JavaScriptException, the wrapper catches it, extrac...
+    note over JintEngineWrapper: Error Scenario: Sandbox Violation If Jint throws MemoryLimitExceededException, the wrapper catche...
+
+    deactivate JintEngineWrapper
+    deactivate TransformationAPI
+    deactivate ControlPanelUI

@@ -1,0 +1,808 @@
+# 1 Overview
+
+## 1.1 Diagram Id
+
+SEQ-CF-002
+
+## 1.2 Name
+
+Backend Fails Job on Schema Validation Failure
+
+## 1.3 Description
+
+After a script successfully executes, the system checks if a JSON Schema is associated with the report. If so, it validates the script's output against the schema. If validation fails, the job is terminated with a descriptive error.
+
+## 1.4 Type
+
+🔹 ComplianceFlow
+
+## 1.5 Purpose
+
+To enforce a data contract on the output of transformation scripts, ensuring data quality and consistency.
+
+## 1.6 Complexity
+
+Medium
+
+## 1.7 Priority
+
+🟢 Low
+
+## 1.8 Frequency
+
+OnDemand
+
+## 1.9 Participants
+
+- REPO-APP-API-001
+- REPO-LIB-JINT-002
+- REPO-LIB-DATA-003
+
+## 1.10 Key Interactions
+
+- Script Execution Service successfully executes a script.
+- Service checks the report configuration for an associated `jsonSchemaId`.
+- If a schema is found, the service retrieves the schema definition.
+- The `JsonSchemaValidationService` is invoked to validate the transformed JSON output.
+- Validation fails, returning a list of validation errors.
+- The Script Execution Service logs the validation errors.
+- A `JsonSchemaValidationException` is thrown, causing the report job to be marked as 'Failed'.
+
+## 1.11 Triggers
+
+- The output of a transformation script does not conform to the associated JSON Schema.
+
+## 1.12 Outcomes
+
+- The data processing job is marked as 'Failed'.
+- A detailed error log is created specifying why the schema validation failed.
+
+## 1.13 Business Rules
+
+- If a schema is present, the transformation engine shall validate the output against it (REQ-DTR-017).
+- Validation failures shall cause the data processing job to fail with a descriptive error (REQ-DTR-017).
+
+## 1.14 Error Scenarios
+
+- This is an error handling scenario.
+
+## 1.15 Integration Points
+
+- Application Database (for storing schemas)
+- Centralized Logging System
+
+# 2.0 Details
+
+## 2.1 Diagram Id
+
+SEQ-CF-002-IMPL
+
+## 2.2 Name
+
+Implementation: Data Processing Job Failure on JSON Schema Validation Mismatch
+
+## 2.3 Description
+
+This sequence details the technical implementation of the compliance flow where a data processing job is intentionally failed due to the output of a transformation script not conforming to its associated JSON Schema. The flow begins after a successful script execution. It involves retrieving the schema, invoking a validation service, logging the specific validation errors as audit evidence, and throwing a specific exception to be caught by a higher-level handler that updates the job's final state to 'Failed'.
+
+## 2.4 Participants
+
+### 2.4.1 Application Service & Orchestration
+
+#### 2.4.1.1 Repository Id
+
+REPO-APP-API-001
+
+#### 2.4.1.2 Display Name
+
+TransformationEngine.Api
+
+#### 2.4.1.3 Type
+
+🔹 Application Service & Orchestration
+
+#### 2.4.1.4 Technology
+
+ASP.NET Core 8
+
+#### 2.4.1.5 Order
+
+1
+
+#### 2.4.1.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | actor |
+| Color | #1E90FF |
+| Stereotype | Layer: Application & API |
+
+### 2.4.2.0 JavaScript Engine Wrapper
+
+#### 2.4.2.1 Repository Id
+
+REPO-LIB-JINT-002
+
+#### 2.4.2.2 Display Name
+
+TransformationEngine.Execution
+
+#### 2.4.2.3 Type
+
+🔹 JavaScript Engine Wrapper
+
+#### 2.4.2.4 Technology
+
+Jint 3.x
+
+#### 2.4.2.5 Order
+
+2
+
+#### 2.4.2.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | component |
+| Color | #FFD700 |
+| Stereotype | Library: Script Execution |
+
+### 2.4.3.0 Data Access Layer
+
+#### 2.4.3.1 Repository Id
+
+REPO-LIB-DATA-003
+
+#### 2.4.3.2 Display Name
+
+TransformationEngine.Persistence
+
+#### 2.4.3.3 Type
+
+🔹 Data Access Layer
+
+#### 2.4.3.4 Technology
+
+Entity Framework Core 8
+
+#### 2.4.3.5 Order
+
+3
+
+#### 2.4.3.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | database |
+| Color | #32CD32 |
+| Stereotype | Library: Data Access |
+
+## 2.5.0.0 Interactions
+
+### 2.5.1.0 Method Call
+
+#### 2.5.1.1 Source Id
+
+REPO-APP-API-001
+
+#### 2.5.1.2 Target Id
+
+REPO-LIB-JINT-002
+
+#### 2.5.1.3 Message
+
+1. [Precondition] Invokes IScriptEngineWrapper.Execute(script, inputJson)
+
+#### 2.5.1.4 Sequence Number
+
+1
+
+#### 2.5.1.5 Type
+
+🔹 Method Call
+
+#### 2.5.1.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.1.7 Return Message
+
+2. Returns successfully with transformedJson: JsonNode
+
+#### 2.5.1.8 Has Return
+
+✅ Yes
+
+#### 2.5.1.9 Is Activation
+
+✅ Yes
+
+#### 2.5.1.10 Technical Details
+
+##### 2.5.1.10.1 Protocol
+
+In-process
+
+##### 2.5.1.10.2 Method
+
+Execute(string script, System.Text.Json.JsonNode inputJson)
+
+##### 2.5.1.10.3 Parameters
+
+Script content and input data as a JsonNode.
+
+##### 2.5.1.10.4 Authentication
+
+Internal System Call
+
+##### 2.5.1.10.5 Error Handling
+
+Handled in a separate sequence. This flow assumes success.
+
+##### 2.5.1.10.6 Performance
+
+###### 2.5.1.10.6.1 Latency
+
+<10s for benchmark
+
+#### 2.5.1.11.0.0 Nested Interactions
+
+*No items available*
+
+### 2.5.2.0.0.0 Database Query
+
+#### 2.5.2.1.0.0 Source Id
+
+REPO-APP-API-001
+
+#### 2.5.2.2.0.0 Target Id
+
+REPO-LIB-DATA-003
+
+#### 2.5.2.3.0.0 Message
+
+3. GetReportConfigWithSchemaAsync(jobContext.ReportId)
+
+#### 2.5.2.4.0.0 Sequence Number
+
+3
+
+#### 2.5.2.5.0.0 Type
+
+🔹 Database Query
+
+#### 2.5.2.6.0.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.2.7.0.0 Return Message
+
+4. Returns reportConfiguration with associated JsonSchema entity
+
+#### 2.5.2.8.0.0 Has Return
+
+✅ Yes
+
+#### 2.5.2.9.0.0 Is Activation
+
+✅ Yes
+
+#### 2.5.2.10.0.0 Technical Details
+
+##### 2.5.2.10.1.0 Protocol
+
+In-process (EF Core)
+
+##### 2.5.2.10.2.0 Method
+
+IReportRepository.GetReportConfigWithSchemaAsync(Guid reportId)
+
+##### 2.5.2.10.3.0 Parameters
+
+The unique identifier for the report configuration being processed.
+
+##### 2.5.2.10.4.0 Authentication
+
+Internal via DB Connection String
+
+##### 2.5.2.10.5.0 Error Handling
+
+Throws InvalidOperationException if config not found.
+
+##### 2.5.2.10.6.0 Performance
+
+###### 2.5.2.10.6.1 Latency
+
+<50ms
+
+#### 2.5.2.11.0.0 Nested Interactions
+
+*No items available*
+
+### 2.5.3.0.0.0 Internal Logic
+
+#### 2.5.3.1.0.0 Source Id
+
+REPO-APP-API-001
+
+#### 2.5.3.2.0.0 Target Id
+
+REPO-APP-API-001
+
+#### 2.5.3.3.0.0 Message
+
+5. [Conditional Check] Verifies if reportConfiguration.JsonSchema is not null
+
+#### 2.5.3.4.0.0 Sequence Number
+
+5
+
+#### 2.5.3.5.0.0 Type
+
+🔹 Internal Logic
+
+#### 2.5.3.6.0.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.3.7.0.0 Return Message
+
+
+
+#### 2.5.3.8.0.0 Has Return
+
+❌ No
+
+#### 2.5.3.9.0.0 Is Activation
+
+❌ No
+
+#### 2.5.3.10.0.0 Technical Details
+
+##### 2.5.3.10.1.0 Protocol
+
+In-process
+
+##### 2.5.3.10.2.0 Method
+
+Internal business rule check.
+
+##### 2.5.3.10.3.0 Parameters
+
+The fetched ReportConfiguration entity.
+
+##### 2.5.3.10.4.0 Authentication
+
+N/A
+
+##### 2.5.3.10.5.0 Error Handling
+
+If null, the sequence terminates successfully.
+
+##### 2.5.3.10.6.0 Performance
+
+###### 2.5.3.10.6.1 Latency
+
+<1ms
+
+#### 2.5.3.11.0.0 Nested Interactions
+
+*No items available*
+
+### 2.5.4.0.0.0 Service Call
+
+#### 2.5.4.1.0.0 Source Id
+
+REPO-APP-API-001
+
+#### 2.5.4.2.0.0 Target Id
+
+REPO-APP-API-001
+
+#### 2.5.4.3.0.0 Message
+
+6. IJsonSchemaValidationService.Validate(transformedJson, schema.Definition)
+
+#### 2.5.4.4.0.0 Sequence Number
+
+6
+
+#### 2.5.4.5.0.0 Type
+
+🔹 Service Call
+
+#### 2.5.4.6.0.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.4.7.0.0 Return Message
+
+7. [Failure] Returns validationResult: { IsValid: false, Errors: [...] }
+
+#### 2.5.4.8.0.0 Has Return
+
+✅ Yes
+
+#### 2.5.4.9.0.0 Is Activation
+
+✅ Yes
+
+#### 2.5.4.10.0.0 Technical Details
+
+##### 2.5.4.10.1.0 Protocol
+
+In-process (DI)
+
+##### 2.5.4.10.2.0 Method
+
+Validate(JsonNode data, string schemaDefinition)
+
+##### 2.5.4.10.3.0 Parameters
+
+The script output and the schema string.
+
+##### 2.5.4.10.4.0 Authentication
+
+Internal System Call
+
+##### 2.5.4.10.5.0 Error Handling
+
+Returns a structured result object, does not throw on validation failure.
+
+##### 2.5.4.10.6.0 Performance
+
+###### 2.5.4.10.6.1 Latency
+
+Dependent on schema and data complexity, target <200ms
+
+#### 2.5.4.11.0.0 Nested Interactions
+
+*No items available*
+
+### 2.5.5.0.0.0 Logging
+
+#### 2.5.5.1.0.0 Source Id
+
+REPO-APP-API-001
+
+#### 2.5.5.2.0.0 Target Id
+
+REPO-APP-API-001
+
+#### 2.5.5.3.0.0 Message
+
+8. Logs validation failure as audit evidence
+
+#### 2.5.5.4.0.0 Sequence Number
+
+8
+
+#### 2.5.5.5.0.0 Type
+
+🔹 Logging
+
+#### 2.5.5.6.0.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.5.7.0.0 Return Message
+
+
+
+#### 2.5.5.8.0.0 Has Return
+
+❌ No
+
+#### 2.5.5.9.0.0 Is Activation
+
+❌ No
+
+#### 2.5.5.10.0.0 Technical Details
+
+##### 2.5.5.10.1.0 Protocol
+
+In-process (Serilog)
+
+##### 2.5.5.10.2.0 Method
+
+ILogger.ForContext(...).Warning("Schema validation failed. Errors: {ValidationErrors}")
+
+##### 2.5.5.10.3.0 Parameters
+
+Structured log with JobId, ReportId, CorrelationId, and serialized validationResult.Errors.
+
+##### 2.5.5.10.4.0 Authentication
+
+N/A
+
+##### 2.5.5.10.5.0 Error Handling
+
+Logging failures are handled by the logging framework.
+
+##### 2.5.5.10.6.0 Performance
+
+###### 2.5.5.10.6.1 Latency
+
+Async logging; should not block execution.
+
+#### 2.5.5.11.0.0 Nested Interactions
+
+*No items available*
+
+### 2.5.6.0.0.0 Exception
+
+#### 2.5.6.1.0.0 Source Id
+
+REPO-APP-API-001
+
+#### 2.5.6.2.0.0 Target Id
+
+REPO-APP-API-001
+
+#### 2.5.6.3.0.0 Message
+
+9. throw new JsonSchemaValidationException(validationResult.Errors)
+
+#### 2.5.6.4.0.0 Sequence Number
+
+9
+
+#### 2.5.6.5.0.0 Type
+
+🔹 Exception
+
+#### 2.5.6.6.0.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.6.7.0.0 Return Message
+
+
+
+#### 2.5.6.8.0.0 Has Return
+
+❌ No
+
+#### 2.5.6.9.0.0 Is Activation
+
+❌ No
+
+#### 2.5.6.10.0.0 Technical Details
+
+##### 2.5.6.10.1.0 Protocol
+
+In-process
+
+##### 2.5.6.10.2.0 Method
+
+Exception throw
+
+##### 2.5.6.10.3.0 Parameters
+
+The custom exception is populated with the detailed error list from the validation service.
+
+##### 2.5.6.10.4.0 Authentication
+
+N/A
+
+##### 2.5.6.10.5.0 Error Handling
+
+This is the error being handled. The exception will be caught by a higher-level handler.
+
+##### 2.5.6.10.6.0 Performance
+
+###### 2.5.6.10.6.1 Latency
+
+N/A
+
+#### 2.5.6.11.0.0 Nested Interactions
+
+*No items available*
+
+### 2.5.7.0.0.0 Exception Handling
+
+#### 2.5.7.1.0.0 Source Id
+
+REPO-APP-API-001
+
+#### 2.5.7.2.0.0 Target Id
+
+REPO-APP-API-001
+
+#### 2.5.7.3.0.0 Message
+
+10. [Catch Block] GlobalExceptionHandler/JobOrchestrator catches JsonSchemaValidationException
+
+#### 2.5.7.4.0.0 Sequence Number
+
+10
+
+#### 2.5.7.5.0.0 Type
+
+🔹 Exception Handling
+
+#### 2.5.7.6.0.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.7.7.0.0 Return Message
+
+
+
+#### 2.5.7.8.0.0 Has Return
+
+❌ No
+
+#### 2.5.7.9.0.0 Is Activation
+
+❌ No
+
+#### 2.5.7.10.0.0 Technical Details
+
+##### 2.5.7.10.1.0 Protocol
+
+In-process
+
+##### 2.5.7.10.2.0 Method
+
+try-catch block
+
+##### 2.5.7.10.3.0 Parameters
+
+The thrown exception object.
+
+##### 2.5.7.10.4.0 Authentication
+
+N/A
+
+##### 2.5.7.10.5.0 Error Handling
+
+This is the final handler for this specific failure type.
+
+##### 2.5.7.10.6.0 Performance
+
+###### 2.5.7.10.6.1 Latency
+
+N/A
+
+#### 2.5.7.11.0.0 Nested Interactions
+
+*No items available*
+
+### 2.5.8.0.0.0 Database Command
+
+#### 2.5.8.1.0.0 Source Id
+
+REPO-APP-API-001
+
+#### 2.5.8.2.0.0 Target Id
+
+REPO-LIB-DATA-003
+
+#### 2.5.8.3.0.0 Message
+
+11. UpdateJobStatusAsync(jobContext.JobId, JobStatus.Failed, errorMessage)
+
+#### 2.5.8.4.0.0 Sequence Number
+
+11
+
+#### 2.5.8.5.0.0 Type
+
+🔹 Database Command
+
+#### 2.5.8.6.0.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.8.7.0.0 Return Message
+
+12. Acknowledges update
+
+#### 2.5.8.8.0.0 Has Return
+
+✅ Yes
+
+#### 2.5.8.9.0.0 Is Activation
+
+✅ Yes
+
+#### 2.5.8.10.0.0 Technical Details
+
+##### 2.5.8.10.1.0 Protocol
+
+In-process (EF Core)
+
+##### 2.5.8.10.2.0 Method
+
+IJobRepository.UpdateJobStatusAsync(Guid jobId, JobStatus status, string message)
+
+##### 2.5.8.10.3.0 Parameters
+
+Job ID, the terminal status 'Failed', and a formatted summary of the validation errors.
+
+##### 2.5.8.10.4.0 Authentication
+
+Internal via DB Connection String
+
+##### 2.5.8.10.5.0 Error Handling
+
+Retry logic for transient DB failures.
+
+##### 2.5.8.10.6.0 Performance
+
+###### 2.5.8.10.6.1 Latency
+
+<50ms
+
+#### 2.5.8.11.0.0 Nested Interactions
+
+*No items available*
+
+## 2.6.0.0.0.0 Notes
+
+### 2.6.1.0.0.0 Content
+
+#### 2.6.1.1.0.0 Content
+
+REQ-DTR-017 Compliance: This entire sequence is the implementation of the requirement to validate script output against a schema and fail the job on a mismatch. The logged error serves as the 'descriptive error' and audit evidence.
+
+#### 2.6.1.2.0.0 Position
+
+Top
+
+#### 2.6.1.3.0.0 Participant Id
+
+*Not specified*
+
+#### 2.6.1.4.0.0 Sequence Number
+
+*Not specified*
+
+### 2.6.2.0.0.0 Content
+
+#### 2.6.2.1.0.0 Content
+
+Schema Caching: To optimize performance, the JSON Schema definition fetched in step 6 should be cached in-memory (e.g., using IMemoryCache) as it is unlikely to change frequently during a series of job runs.
+
+#### 2.6.2.2.0.0 Position
+
+Right
+
+#### 2.6.2.3.0.0 Participant Id
+
+REPO-LIB-DATA-003
+
+#### 2.6.2.4.0.0 Sequence Number
+
+7
+
+### 2.6.3.0.0.0 Content
+
+#### 2.6.3.1.0.0 Content
+
+The logged error in step 8 must be structured (JSON) and include the full list of validation failures (path, message, etc.) to provide actionable feedback and serve as complete audit evidence for this compliance check.
+
+#### 2.6.3.2.0.0 Position
+
+Left
+
+#### 2.6.3.3.0.0 Participant Id
+
+REPO-APP-API-001
+
+#### 2.6.3.4.0.0 Sequence Number
+
+8
+
+## 2.7.0.0.0.0 Implementation Guidance
+
+| Property | Value |
+|----------|-------|
+| Security Requirements | Access to create or modify JSON Schemas must be ti... |
+| Performance Targets | The schema validation step (step 6-7) must not bec... |
+| Error Handling Strategy | The `JsonSchemaValidationException` is a specific,... |
+| Testing Considerations | Unit tests must cover the `JsonSchemaValidationSer... |
+| Monitoring Requirements | A Prometheus counter (`transformation_schema_valid... |
+| Deployment Considerations | This is a low-priority feature (REQ-DTR-017). It c... |
+

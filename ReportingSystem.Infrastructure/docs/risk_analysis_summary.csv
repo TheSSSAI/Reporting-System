@@ -1,0 +1,2 @@
+"total_risks_identified","critical_risks","high_priority_risks","average_risk_score","key_risk_themes","immediate_actions_required"
+"8","0","6","15.25","[""Jint Engine Security & Performance"",""Dependency & Estimation Complexity"",""Compliance & Operational Integrity""]","[""Prioritize all tasks in EPIC-001 (Core Engine) to mitigate critical path delays."",""Define and freeze the API contract for script management (WS-002) to enable parallel development."",""Conduct a security-focused spike on Jint sandboxing (WI-002) to validate the mitigation strategy.""]"

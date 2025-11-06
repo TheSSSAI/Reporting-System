@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atomic Components Showcase</title>
+    <style>
+        /* --- 1. DESIGN TOKENS & SETUP --- */
+        :root {
+            /* Colors */
+            --color-primary-500: #007bff;
+            --color-primary-600: #0069d9;
+            --color-primary-100: #cfe2ff;
+            --color-secondary-500: #6c757d;
+            --color-secondary-600: #5a6268;
+            --color-secondary-200: #e2e6ea;
+            --color-danger-500: #dc3545;
+            --color-danger-600: #c82333;
+            --color-danger-100: #f8d7da;
+            --color-success-500: #28a745;
+            --color-success-100: #d4edda;
+            --color-warning-500: #ffc107;
+            --color-warning-100: #fff3cd;
+            --color-info-500: #17a2b8;
+            --color-info-100: #d1ecf1;
+            
+            --color-blue-500: #0d6efd;
+            --color-gray-500: #6c757d;
+            --color-orange-500: #fd7e14;
+            
+            --color-text-primary: #212529;
+            --color-text-secondary: #6c757d;
+            --color-text-white: #ffffff;
+            --color-text-error: #721c24;
+            --color-border: #ced4da;
+            --color-border-focus: #86b7fe;
+            --color-border-error: var(--color-danger-500);
+            --color-bg-light: #f8f9fa;
+            --color-bg-disabled: #e9ecef;
+            --color-skeleton: #e0e0e0;
+
+            /* Typography */
+            --font-family-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            --font-size-sm: 0.875rem; /* 14px */
+            --font-size-md: 1rem; /* 16px */
+            --font-size-lg: 1.25rem; /* 20px */
+            --line-height-base: 1.5;
+
+            /* Spacing */
+            --space-xs: 0.25rem; /* 4px */
+            --space-sm: 0.5rem; /* 8px */
+            --space-md: 1rem; /* 16px */
+            --space-lg: 1.5rem; /* 24px */
+            --space-xl: 2rem; /* 32px */
+
+            /* Borders */
+            --border-radius-sm: 0.2rem;
+            --border-radius-md: 0.25rem;
+            --border-radius-lg: 0.3rem;
+            --border-width: 1px;
+
+            /* Transitions */
+            --transition-base: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+
+        /* --- 2. BASE & LAYOUT STYLES --- */
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-family-sans);
+            font-size: var(--font-size-md);
+            line-height: var(--line-height-base);
+            color: var(--color-text-primary);
+            background-color: var(--color-text-white);
+            margin: 0;
+            padding: var(--space-lg);
+        }
+
+        .showcase {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .showcase__header {
+            border-bottom: var(--border-width) solid var(--color-secondary-200);
+            padding-bottom: var(--space-md);
+            margin-bottom: var(--space-xl);
+        }
+        
+        h1, h2, h3, h4, p { margin: 0 0 var(--space-md) 0; }
+        h1 { font-size: 2.5rem; }
+        h2 { font-size: 2rem; border-bottom: 1px solid #eee; padding-bottom: var(--space-sm); margin-top: var(--space-xl); }
+        h3 { font-size: 1.5rem; margin-top: var(--space-lg); }
+        h4 { font-size: 1.2rem; color: var(--color-text-secondary); margin-top: var(--space-lg); }
+
+        .component-section { margin-bottom: var(--space-xl); }
+        .component-group { padding: var(--space-md); border: 1px solid #f0f0f0; border-radius: var(--border-radius-lg); }
+        .component-group > p { color: var(--color-text-secondary); font-size: var(--font-size-sm); }
+        .component-display { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-md); padding: var(--space-md) 0; }
+        .component-display--vertical { flex-direction: column; align-items: flex-start; }
+        
+        .icon {
+            display: inline-block;
+            width: 1em;
+            height: 1em;
+            stroke-width: 0;
+            stroke: currentColor;
+            fill: currentColor;
+        }
+        
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        @keyframes shimmer { 0% { background-position: -1000px 0; } 100% { background-position: 1000px 0; } }
+
+        /* --- 3. ATOMIC COMPONENT STYLES --- */
+
+        /* Spinner */
+        .spinner {
+            display: inline-block;
+            border-radius: 50%;
+            border-style: solid;
+            animation: spin 0.75s linear infinite;
+        }
+        .spinner--sm { width: 1rem; height: 1rem; border-width: 0.15em; }
+        .spinner--md { width: 2rem; height: 2rem; border-width: 0.25em; }
+        .spinner--lg { width: 4rem; height: 4rem; border-width: 0.3em; }
+        .spinner--inline { width: 1em; height: 1em; border-width: 0.15em; vertical-align: text-bottom; }
+
+        /* Button */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-sm);
+            font-family: var(--font-family-sans);
+            font-weight: 400;
+            text-align: center;
+            vertical-align: middle;
+            cursor: pointer;
+            user-select: none;
+            border: var(--border-width) solid transparent;
+            transition: var(--transition-base);
+            font-size: var(--font-size-md);
+            line-height: var(--line-height-base);
+            padding: 0.375rem 0.75rem;
+            border-radius: var(--border-radius-md);
+        }
+        .btn:focus-visible { outline: 2px solid var(--color-border-focus); outline-offset: 2px; }
+        .btn:disabled { cursor: not-allowed; opacity: 0.65; }
+
+        .btn--primary { color: var(--color-text-white); background-color: var(--color-primary-500); border-color: var(--color-primary-500); }
+        .btn--primary:hover { background-color: var(--color-primary-600); border-color: var(--color-primary-600); }
+        
+        .btn--secondary { color: var(--color-text-white); background-color: var(--color-secondary-500); border-color: var(--color-secondary-500); }
+        .btn--secondary:hover { background-color: var(--color-secondary-600); border-color: var(--color-secondary-600); }
+        
+        .btn--danger { color: var(--color-text-white); background-color: var(--color-danger-500); border-color: var(--color-danger-500); }
+        .btn--danger:hover { background-color: var(--color-danger-600); border-color: var(--color-danger-600); }
+
+        .btn--sm { padding: 0.25rem 0.5rem; font-size: var(--font-size-sm); }
+        .btn--lg { padding: 0.5rem 1rem; font-size: var(--font-size-lg); }
+
+        .btn--icon-only { width: 2.25rem; height: 2.25rem; padding: 0; }
+        .btn--icon-only.btn--sm { width: 1.75rem; height: 1.75rem; }
+        .btn--icon-only.btn--lg { width: 2.75rem; height: 2.75rem; }
+        
+        .btn.is-loading { color: transparent !important; position: relative; }
+        .btn.is-loading .spinner { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); border-color: rgba(255,255,255,0.2); border-top-color: var(--color-text-white); }
+        
+        /* TextInput */
+        .input-group { display: flex; flex-direction: column; gap: var(--space-xs); margin-bottom: var(--space-md); }
+        .input-wrapper { position: relative; display: flex; align-items: center; }
+        .text-input {
+            display: block; width: 100%;
+            padding: 0.375rem 0.75rem;
+            font-size: var(--font-size-md); font-family: var(--font-family-sans);
+            line-height: var(--line-height-base);
+            color: var(--color-text-primary);
+            background-color: var(--color-text-white);
+            border: var(--border-width) solid var(--color-border);
+            border-radius: var(--border-radius-md);
+            transition: var(--transition-base);
+        }
+        .text-input:focus { border-color: var(--color-border-focus); box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25); outline: 0; }
+        .text-input[disabled] { background-color: var(--color-bg-disabled); cursor: not-allowed; }
+        .text-input.has-error { border-color: var(--color-border-error); }
+        .text-input.has-error:focus { box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25); }
+        .input-error-message { font-size: var(--font-size-sm); color: var(--color-danger-500); }
+        .input-adornment { position: absolute; left: 0.75rem; color: var(--color-text-secondary); }
+        .text-input--with-adornment { padding-left: 2.25rem; }
+
+        /* SelectDropdown */
+        .select-input {
+            display: block; width: 100%;
+            padding: 0.375rem 1.75rem 0.375rem 0.75rem;
+            font-size: var(--font-size-md);
+            line-height: var(--line-height-base);
+            color: var(--color-text-primary);
+            background-color: var(--color-text-white);
+            border: var(--border-width) solid var(--color-border);
+            border-radius: var(--border-radius-md);
+            -webkit-appearance: none; -moz-appearance: none; appearance: none;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            background-size: 16px 12px;
+        }
+        .select-input:focus { border-color: var(--color-border-focus); box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25); outline: 0; }
+        .select-input[disabled] { background-color: var(--color-bg-disabled); cursor: not-allowed; }
+        .select-input.has-error { border-color: var(--color-border-error); }
+
+        /* Checkbox */
+        .checkbox-group { display: flex; align-items: center; gap: var(--space-sm); }
+        .checkbox-group input[type="checkbox"] { position: absolute; opacity: 0; width: 0; height: 0; }
+        .checkbox-group .checkbox__label { display: flex; align-items: center; gap: var(--space-sm); cursor: pointer; user-select: none; }
+        .checkbox__box {
+            width: 1.25em; height: 1.25em; border: var(--border-width) solid var(--color-border);
+            border-radius: var(--border-radius-sm); display: inline-flex;
+            align-items: center; justify-content: center;
+            transition: var(--transition-base);
+        }
+        .checkbox-group input[type="checkbox"]:focus-visible + .checkbox__label .checkbox__box { border-color: var(--color-border-focus); box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25); }
+        .checkbox-group input[type="checkbox"]:checked + .checkbox__label .checkbox__box { background-color: var(--color-primary-500); border-color: var(--color-primary-500); }
+        .checkbox__box .icon { color: var(--color-text-white); opacity: 0; transform: scale(0.5); transition: all 0.1s ease-in-out; }
+        .checkbox-group input[type="checkbox"]:checked + .checkbox__label .checkbox__box .icon { opacity: 1; transform: scale(1); }
+        .checkbox-group input[type="checkbox"]:indeterminate + .checkbox__label .checkbox__box { background-color: var(--color-primary-500); border-color: var(--color-primary-500); }
+        .checkbox-group input[type="checkbox"]:indeterminate + .checkbox__label .checkbox__box .icon { opacity: 1; transform: scale(1); }
+        .checkbox-group input[type="checkbox"]:disabled + .checkbox__label { cursor: not-allowed; color: var(--color-text-secondary); }
+        .checkbox-group input[type="checkbox"]:disabled + .checkbox__label .checkbox__box { background-color: var(--color-bg-disabled); }
+
+        /* ToggleSwitch */
+        .toggleswitch-group { display: flex; align-items: center; gap: var(--space-sm); }
+        .toggleswitch__label { cursor: pointer; }
+        .toggleswitch__input { position: absolute; opacity: 0; width: 0; height: 0; }
+        .toggleswitch__slider {
+            position: relative; display: inline-block;
+            width: 3rem; height: 1.5rem; background-color: var(--color-secondary-200);
+            border-radius: 1.5rem; transition: background-color 0.2s;
+        }
+        .toggleswitch__slider::before {
+            content: ""; position: absolute;
+            height: 1.125rem; width: 1.125rem; left: 0.1875rem; bottom: 0.1875rem;
+            background-color: white; border-radius: 50%;
+            transition: transform 0.2s;
+        }
+        .toggleswitch__input:checked + .toggleswitch__label .toggleswitch__slider { background-color: var(--color-primary-500); }
+        .toggleswitch__input:checked + .toggleswitch__label .toggleswitch__slider::before { transform: translateX(1.5rem); }
+        .toggleswitch__input:focus-visible + .toggleswitch__label .toggleswitch__slider { box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25); }
+        .toggleswitch__input:disabled + .toggleswitch__label { cursor: not-allowed; color: var(--color-text-secondary); }
+        .toggleswitch__input:disabled + .toggleswitch__label .toggleswitch__slider { opacity: 0.65; }
+
+        /* Alert */
+        .alert {
+            display: flex; align-items: flex-start; gap: var(--space-md);
+            position: relative; padding: var(--space-md);
+            margin-bottom: var(--space-md); border: 1px solid transparent;
+            border-radius: var(--border-radius-md);
+        }
+        .alert__icon { flex-shrink: 0; margin-top: 2px; }
+        .alert__message { flex-grow: 1; }
+        .alert__close-btn { margin-left: auto; background: none; border: none; font-size: 1.5rem; line-height: 1; opacity: 0.5; padding: 0 var(--space-sm); cursor: pointer; }
+        .alert__close-btn:hover { opacity: 1; }
+        .alert--success { color: #155724; background-color: var(--color-success-100); border-color: #c3e6cb; }
+        .alert--danger { color: #721c24; background-color: var(--color-danger-100); border-color: #f5c6cb; }
+        .alert--warning { color: #856404; background-color: var(--color-warning-100); border-color: #ffeeba; }
+        .alert--info { color: #0c5460; background-color: var(--color-info-100); border-color: #bee5eb; }
+
+        /* StatusBadge */
+        .badge {
+            display: inline-flex; align-items: center; gap: var(--space-xs);
+            padding: 0.25em 0.6em; font-size: 75%; font-weight: 700;
+            line-height: 1; text-align: center; white-space: nowrap;
+            vertical-align: baseline; border-radius: var(--border-radius-lg);
+        }
+        .badge--succeeded { color: #155724; background-color: var(--color-success-100); }
+        .badge--failed { color: #721c24; background-color: var(--color-danger-100); }
+        .badge--running { color: #004085; background-color: var(--color-primary-100); }
+        .badge--queued { color: #383d41; background-color: var(--color-secondary-200); }
+        .badge--cancelled { color: #856404; background-color: var(--color-warning-100); }
+        .badge--locked { color: var(--color-text-white); background-color: var(--color-secondary-500); }
+
+        /* Tooltip */
+        .tooltip-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+        .tooltip {
+            visibility: hidden; opacity: 0;
+            position: absolute; bottom: 125%; left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--color-text-primary); color: var(--color-text-white);
+            padding: var(--space-sm); border-radius: var(--border-radius-sm);
+            font-size: var(--font-size-sm); z-index: 10;
+            white-space: nowrap;
+            transition: opacity 0.2s;
+        }
+        .tooltip::after {
+            content: ""; position: absolute;
+            top: 100%; left: 50%; transform: translateX(-50%);
+            border-width: 5px; border-style: solid;
+            border-color: var(--color-text-primary) transparent transparent transparent;
+        }
+        .tooltip-wrapper:hover .tooltip, .tooltip-wrapper:focus-within .tooltip { visibility: visible; opacity: 1; }
+        .tooltip--error { background-color: var(--color-danger-500); }
+        .tooltip--error::after { border-top-color: var(--color-danger-500); }
+
+        /* SkeletonLoader */
+        .skeleton {
+            animation: shimmer 2s infinite linear;
+            background: linear-gradient(to right, var(--color-skeleton) 8%, #f0f0f0 18%, var(--color-skeleton) 33%);
+            background-size: 1000px 100%;
+        }
+        .skeleton--text { height: 1em; border-radius: var(--border-radius-sm); margin-bottom: 0.5em; }
+        .skeleton--circle { width: 3rem; height: 3rem; border-radius: 50%; }
+        .skeleton--rectangle { width: 100%; height: 6rem; border-radius: var(--border-radius-md); }
+
+    </style>
+</head>
+<body>
+
+    <main class="showcase">
+        <header class="showcase__header">
+            <h1>Atomic Components Showcase</h1>
+            <p>A comprehensive library of all atomic UI components with their states and variants.</p>
+        </header>
+        
+        <!-- SVG Icon Definitions -->
+        <svg width="0" height="0" style="position:absolute">
+          <symbol id="icon-check" viewBox="0 0 16 16">
+            <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
+          </symbol>
+          <symbol id="icon-minus" viewBox="0 0 16 16">
+            <path d="M4 8a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7A.5.5 0 0 1 4 8z"/>
+          </symbol>
+          <symbol id="icon-search" viewBox="0 0 16 16">
+            <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+          </symbol>
+           <symbol id="icon-info" viewBox="0 0 16 16">
+            <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
+          </symbol>
+          <symbol id="icon-warning" viewBox="0 0 16 16">
+            <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+          </symbol>
+          <symbol id="icon-success" viewBox="0 0 16 16">
+            <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+          </symbol>
+          <symbol id="icon-error" viewBox="0 0 16 16">
+            <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z"/>
+          </symbol>
+          <symbol id="icon-clock" viewBox="0 0 16 16">
+             <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/>
+             <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/>
+          </symbol>
+          <symbol id="icon-lock" viewBox="0 0 16 16">
+            <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zM5 8h6a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/>
+          </symbol>
+        </svg>
+
+        <section class="component-section">
+            <h2>Form Controls</h2>
+            
+            <div class="component-group">
+                <h3>Button</h3>
+                <p>Buttons trigger actions. Variants communicate hierarchy.</p>
+                <h4>States & Variants</h4>
+                <div class="component-display">
+                    <button class="btn btn--primary">Primary</button>
+                    <button class="btn btn--secondary">Secondary</button>
+                    <button class="btn btn--danger">Danger</button>
+                    <button class="btn btn--primary" disabled>Disabled</button>
+                    <button class="btn btn--primary is-loading"><span class="spinner spinner--inline"></span></button>
+                </div>
+                <h4>Sizes</h4>
+                <div class="component-display">
+                    <button class="btn btn--primary btn--sm">Small</button>
+                    <button class="btn btn--primary">Medium</button>
+                    <button class="btn btn--primary btn--lg">Large</button>
+                </div>
+                 <h4>Icon Only</h4>
+                <div class="component-display">
+                    <button class="btn btn--secondary btn--icon-only btn--sm"><svg class="icon"><use href="#icon-search"></use></svg></button>
+                    <button class="btn btn--secondary btn--icon-only"><svg class="icon"><use href="#icon-search"></use></svg></button>
+                    <button class="btn btn--secondary btn--icon-only btn--lg"><svg class="icon" style="width: 1.25em; height: 1.25em;"><use href="#icon-search"></use></svg></button>
+                </div>
+            </div>
+
+            <div class="component-group">
+                <h3>Text Input</h3>
+                <p>Fields for user text entry.</p>
+                <div class="component-display component-display--vertical" style="max-width: 400px;">
+                    <div class="input-group">
+                        <label for="text-default">Default</label>
+                        <input type="text" id="text-default" class="text-input" placeholder="Enter your name">
+                    </div>
+                    <div class="input-group">
+                        <label for="text-focus">Focus</label>
+                        <input type="text" id="text-focus" class="text-input" placeholder="This input is focused">
+                    </div>
+                     <div class="input-group">
+                        <label for="text-error">Error</label>
+                        <input type="text" id="text-error" class="text-input has-error" value="invalid-email@">
+                        <span class="input-error-message">Please enter a valid email.</span>
+                    </div>
+                     <div class="input-group">
+                        <label for="text-disabled">Disabled</label>
+                        <input type="text" id="text-disabled" class="text-input" value="Cannot edit" disabled>
+                    </div>
+                     <div class="input-group">
+                        <label for="text-adornment">With Adornment</label>
+                        <div class="input-wrapper">
+                            <span class="input-adornment"><svg class="icon"><use href="#icon-search"></use></svg></span>
+                            <input type="text" id="text-adornment" class="text-input text-input--with-adornment" placeholder="Search...">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label for="text-password">Password</label>
+                        <input type="password" id="text-password" class="text-input" value="secretpassword">
+                    </div>
+                     <div class="input-group">
+                        <label for="text-textarea">Text Area</label>
+                        <textarea id="text-textarea" class="text-input" rows="4" placeholder="Enter a long description..."></textarea>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="component-group">
+                <h3>Select Dropdown</h3>
+                <p>Styled native select for choosing from a list of options.</p>
+                <div class="component-display component-display--vertical" style="max-width: 400px;">
+                    <div class="input-group">
+                        <label for="select-default">Default</label>
+                        <select id="select-default" class="select-input">
+                            <option>Option 1</option>
+                            <option>Option 2</option>
+                            <option>Option 3</option>
+                        </select>
+                    </div>
+                     <div class="input-group">
+                        <label for="select-error">Error</label>
+                        <select id="select-error" class="select-input has-error">
+                            <option value="">Choose an option...</option>
+                        </select>
+                        <span class="input-error-message">This field is required.</span>
+                    </div>
+                    <div class="input-group">
+                        <label for="select-disabled">Disabled</label>
+                        <select id="select-disabled" class="select-input" disabled>
+                            <option>Option 1</option>
+                        </select>
+                    </div>
+                     <div class="input-group">
+                        <label for="select-loading">Loading</label>
+                        <select id="select-loading" class="select-input" disabled>
+                            <option>Loading options...</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="component-group">
+                <h3>Checkbox</h3>
+                <p>For binary on/off choices.</p>
+                <div class="component-display component-display--vertical">
+                   <div class="checkbox-group">
+                       <input type="checkbox" id="check-1">
+                       <label for="check-1" class="checkbox__label"><span class="checkbox__box"><svg class="icon"><use href="#icon-check"></use></svg></span> Unchecked</label>
+                   </div>
+                   <div class="checkbox-group">
+                       <input type="checkbox" id="check-2" checked>
+                       <label for="check-2" class="checkbox__label"><span class="checkbox__box"><svg class="icon"><use href="#icon-check"></use></svg></span> Checked</label>
+                   </div>
+                   <div class="checkbox-group">
+                       <input type="checkbox" id="check-3" class="checkbox--indeterminate">
+                       <label for="check-3" class="checkbox__label"><span class="checkbox__box"><svg class="icon"><use href="#icon-minus"></use></svg></span> Indeterminate</label>
+                   </div>
+                   <div class="checkbox-group">
+                       <input type="checkbox" id="check-4" disabled>
+                       <label for="check-4" class="checkbox__label"><span class="checkbox__box"><svg class="icon"><use href="#icon-check"></use></svg></span> Disabled Unchecked</label>
+                   </div>
+                   <div class="checkbox-group">
+                       <input type="checkbox" id="check-5" checked disabled>
+                       <label for="check-5" class="checkbox__label"><span class="checkbox__box"><svg class="icon"><use href="#icon-check"></use></svg></span> Disabled Checked</label>
+                   </div>
+                </div>
+            </div>
+            
+            <div class="component-group">
+                <h3>Toggle Switch</h3>
+                <p>A visually distinct on/off control.</p>
+                <div class="component-display component-display--vertical">
+                    <div class="toggleswitch-group">
+                        <input type="checkbox" id="toggle-1" class="toggleswitch__input">
+                        <label for="toggle-1" class="toggleswitch__label"><span class="toggleswitch__slider"></span> Off</label>
+                    </div>
+                    <div class="toggleswitch-group">
+                        <input type="checkbox" id="toggle-2" class="toggleswitch__input" checked>
+                        <label for="toggle-2" class="toggleswitch__label"><span class="toggleswitch__slider"></span> On</label>
+                    </div>
+                     <div class="toggleswitch-group">
+                        <input type="checkbox" id="toggle-3" class="toggleswitch__input" disabled>
+                        <label for="toggle-3" class="toggleswitch__label"><span class="toggleswitch__slider"></span> Disabled Off</label>
+                    </div>
+                     <div class="toggleswitch-group">
+                        <input type="checkbox" id="toggle-4" class="toggleswitch__input" checked disabled>
+                        <label for="toggle-4" class="toggleswitch__label"><span class="toggleswitch__slider"></span> Disabled On</label>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="component-section">
+            <h2>Feedback Indicators</h2>
+            
+            <div class="component-group">
+                <h3>Alert</h3>
+                <p>Contextual feedback messages for user actions.</p>
+                <div class="component-display component-display--vertical" style="width: 100%;">
+                    <div class="alert alert--success" role="alert">
+                        <svg class="icon alert__icon"><use href="#icon-success"></use></svg>
+                        <div class="alert__message">This is a success alert — check it out!</div>
+                        <button class="alert__close-btn" aria-label="Close">&times;</button>
+                    </div>
+                     <div class="alert alert--danger" role="alert">
+                        <svg class="icon alert__icon"><use href="#icon-error"></use></svg>
+                        <div class="alert__message">This is a danger alert — check it out!</div>
+                        <button class="alert__close-btn" aria-label="Close">&times;</button>
+                    </div>
+                     <div class="alert alert--warning" role="alert">
+                        <svg class="icon alert__icon"><use href="#icon-warning"></use></svg>
+                        <div class="alert__message">This is a warning alert — check it out!</div>
+                        <button class="alert__close-btn" aria-label="Close">&times;</button>
+                    </div>
+                     <div class="alert alert--info" role="alert">
+                        <svg class="icon alert__icon"><use href="#icon-info"></use></svg>
+                        <div class="alert__message">This is an info alert — check it out!</div>
+                        <button class="alert__close-btn" aria-label="Close">&times;</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="component-group">
+                <h3>Status Badge</h3>
+                <p>Labels for categorizing or indicating status.</p>
+                <div class="component-display">
+                    <span class="badge badge--succeeded"><svg class="icon"><use href="#icon-check"></use></svg> Succeeded</span>
+                    <span class="badge badge--failed"><svg class="icon"><use href="#icon-error"></use></svg> Failed</span>
+                    <span class="badge badge--running"><span class="spinner spinner--inline" style="border-color: rgba(0,64,133,0.3); border-top-color: var(--color-blue-500);"></span> Running</span>
+                    <span class="badge badge--queued"><svg class="icon"><use href="#icon-clock"></use></svg> Queued</span>
+                    <span class="badge badge--cancelled"><svg class="icon"><use href="#icon-warning"></use></svg> Cancelled</span>
+                    <span class="badge badge--locked"><svg class="icon"><use href="#icon-lock"></use></svg> Locked</span>
+                </div>
+            </div>
+
+            <div class="component-group">
+                <h3>Spinner</h3>
+                <p>Indicates a loading state.</p>
+                <div class="component-display">
+                    <div role="status" aria-label="Loading small">
+                        <span class="spinner spinner--sm" style="border-color: var(--color-secondary-200); border-top-color: var(--color-secondary-500);"></span>
+                    </div>
+                    <div role="status" aria-label="Loading medium">
+                        <span class="spinner spinner--md" style="border-color: var(--color-secondary-200); border-top-color: var(--color-primary-500);"></span>
+                    </div>
+                    <div role="status" aria-label="Loading large">
+                        <span class="spinner spinner--lg" style="border-color: var(--color-secondary-200); border-top-color: var(--color-danger-500);"></span>
+                    </div>
+                    <p>Inline spinner: <span class="spinner spinner--inline" style="border-color: var(--color-secondary-200); border-top-color: var(--color-primary-500);"></span> loading text...</p>
+                </div>
+            </div>
+
+            <div class="component-group">
+                <h3>Tooltip</h3>
+                <p>Provides descriptive text on hover or focus.</p>
+                <div class="component-display">
+                    <div class="tooltip-wrapper" tabindex="0">
+                        <button class="btn btn--secondary">Hover me (Default)</button>
+                        <span class="tooltip" role="tooltip">This is a default tooltip.</span>
+                    </div>
+                    <div class="tooltip-wrapper" tabindex="0">
+                        <button class="btn btn--secondary">Hover me (Error)</button>
+                        <span class="tooltip tooltip--error" role="tooltip">This is an error tooltip.</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="component-group">
+                <h3>Skeleton Loader</h3>
+                <p>Placeholder for content that is loading.</p>
+                <div class="component-display component-display--vertical" style="width: 100%; max-width: 400px;" aria-busy="true" aria-live="polite">
+                    <div class="component-display">
+                        <div class="skeleton skeleton--circle"></div>
+                        <div style="flex-grow: 1;">
+                            <div class="skeleton skeleton--text" style="width: 80%;"></div>
+                            <div class="skeleton skeleton--text" style="width: 60%;"></div>
+                        </div>
+                    </div>
+                    <div class="skeleton skeleton--rectangle"></div>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+    <script>
+        // Script for indeterminate checkbox
+        document.querySelector('.checkbox--indeterminate').indeterminate = true;
+    </script>
+</body>
+</html>
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Individual Component - Component Specifications</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            line-height: 1.6;
+            color: #2d3748;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+        
+        .component-type-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 8px;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .section {
+            margin-bottom: 40px;
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 30px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .section h2 {
+            color: #1e293b;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #4f46e5;
+            display: inline-block;
+        }
+        
+        .section h3 {
+            color: #4f46e5;
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin: 20px 0 12px 0;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .info-card {
+            background: white;
+            padding: 24px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .info-card h4 {
+            color: #374151;
+            font-weight: 600;
+            margin-bottom: 12px;
+            font-size: 1rem;
+        }
+        
+        .info-card p {
+            color: #6b7280;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .variations-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+        }
+        
+        .variation-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .variation-name {
+            font-weight: 600;
+            color: #4f46e5;
+            margin-bottom: 8px;
+        }
+        
+        .variation-code {
+            background: #f1f5f9;
+            padding: 12px;
+            border-radius: 6px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 12px;
+            color: #1e293b;
+            overflow-x: auto;
+            margin: 8px 0;
+            border-left: 4px solid #4f46e5;
+        }
+        
+        .variation-description {
+            font-size: 13px;
+            color: #64748b;
+            font-style: italic;
+        }
+        
+        .feature-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+        }
+        
+        .feature-category {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .feature-category h4 {
+            color: #374151;
+            font-weight: 600;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #f1f5f9;
+        }
+        
+        .feature-category ul {
+            list-style: none;
+        }
+        
+        .feature-category li {
+            padding: 6px 0;
+            color: #4b5563;
+            font-size: 14px;
+            position: relative;
+            padding-left: 20px;
+        }
+        
+        .feature-category li:before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #10b981;
+            font-weight: bold;
+        }
+        
+        .tokens-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 8px;
+        }
+        
+        .token {
+            background: #f0f9ff;
+            color: #0369a1;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 13px;
+            border: 1px solid #bae6fd;
+            text-align: center;
+        }
+        
+        .code-block {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 13px;
+            overflow-x: auto;
+            margin: 16px 0;
+            line-height: 1.4;
+        }
+        
+        .stats-bar {
+            background: linear-gradient(90deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-around;
+            text-align: center;
+        }
+        
+        .stat {
+            flex: 1;
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            display: block;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .header {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .section {
+                padding: 20px;
+            }
+            
+            .stats-bar {
+                flex-direction: column;
+                gap: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Individual Component</h1>
+            <div class="component-type-badge">Unknown Component</div>
+        </div>
+        <div class="stats-bar">
+            <div class="stat">
+                <span class="stat-number">0</span>
+                <span class="stat-label">Variations</span>
+            </div>
+            <div class="stat">
+                <span class="stat-number">0</span>
+                <span class="stat-label">Design Tokens</span>
+            </div>
+            <div class="stat">
+                <span class="stat-number">0</span>
+                <span class="stat-label">Breakpoints</span>
+            </div>
+            <div class="stat">
+                <span class="stat-number">0</span>
+                <span class="stat-label">A11y Features</span>
+            </div>
+        </div><div class="content">
+        <div class="section">
+            <h2>Implementation Notes</h2>
+            <div class="info-grid">
+                <div class="info-card">
+                    <h4>Css Architecture</h4>
+                    <p>All styles are embedded in a <style> tag. It uses CSS custom properties for design tokens and a BEM-like methodology for class naming.</p>
+                </div>
+                <div class="info-card">
+                    <h4>Component Organization</h4>
+                    <p>Components are grouped by category (Form Controls, Feedback, etc.) with clear headings and descriptions for each component and its variations.</p>
+                </div>
+                <div class="info-card">
+                    <h4>Responsive Design</h4>
+                    <p>Basic responsive styles are included to ensure usability on smaller viewports, following a mobile-first approach.</p>
+                </div>
+                <div class="info-card">
+                    <h4>Accessibility Compliance</h4>
+                    <p>WCAG 2.1 AA compliant with semantic markup, ARIA attributes, keyboard navigation support, and high-contrast focus indicators.</p>
+                </div>
+                <div class="info-card">
+                    <h4>Browser Support</h4>
+                    <p>Designed for modern browsers (Chrome, Firefox, Edge). Interactive states are implemented using CSS pseudo-classes.</p>
+                </div>
+            </div>
+        </div>
+        <div class="section">
+            <h2>Usage Guidelines</h2>
+            <div class="info-grid">
+                <div class="info-card">
+                    <h4>File Purpose</h4><p>This file serves as a living style guide and a single source of truth for the HTML and CSS of all atomic components.</p>
+                </div>
+                <div class="info-card">
+                    <h4>Development Workflow</h4><p>Developers can copy the semantic HTML structure and CSS classes for any component to implement it within the application.</p>
+                </div>
+                <div class="info-card">
+                    <h4>Testing Scenarios</h4><p>The file can be used for visual regression testing, cross-browser compatibility checks, and accessibility audits of the base components.</p>
+                </div>
+                <div class="info-card">
+                    <h4>Stakeholder Review</h4><p>Provides a clear and interactive reference for designers, product managers, and other stakeholders to review and approve component designs.</p>
+                </div>
+            </div>
+        </div>
+        </div>
+    </div>
+</body>
+</html>

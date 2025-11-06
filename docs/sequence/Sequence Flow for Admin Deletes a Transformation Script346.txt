@@ -1,0 +1,1037 @@
+# 1 Overview
+
+## 1.1 Diagram Id
+
+SEQ-UJ-007
+
+## 1.2 Name
+
+Admin Deletes a Transformation Script
+
+## 1.3 Description
+
+An administrator deletes a transformation script from the system. The operation is blocked if the script is in use, and the action is recorded in the audit trail.
+
+## 1.4 Type
+
+🔹 UserJourney
+
+## 1.5 Purpose
+
+To allow for the removal of obsolete or incorrect transformation scripts.
+
+## 1.6 Complexity
+
+Medium
+
+## 1.7 Priority
+
+🟡 Medium
+
+## 1.8 Frequency
+
+OnDemand
+
+## 1.9 Participants
+
+- REPO-APP-UI-005
+- REPO-APP-API-001
+- REPO-LIB-DATA-003
+
+## 1.10 Key Interactions
+
+- Admin clicks 'Delete' for a script and confirms the action.
+- UI sends a DELETE request to `/api/v1/transformations/{id}`.
+- Transformation Script Service verifies the script is not associated with any reports.
+- Repository deletes the script and all its version history from the database.
+- A `TransformationScriptModified` event with action type 'DELETE' is published and handled for auditing.
+- API returns a 204 No Content response.
+- UI removes the script from the list.
+
+## 1.11 Triggers
+
+- Administrator confirms the deletion of a script in the UI.
+
+## 1.12 Outcomes
+
+- The script and its versions are permanently removed from the database.
+- An audit log entry is created for the deletion.
+
+## 1.13 Business Rules
+
+- Deletion of a script must be logged in an immutable audit trail (REQ-DTR-010).
+- A script currently associated with a report cannot be deleted.
+
+## 1.14 Error Scenarios
+
+- Script is in use, API returns a 409 Conflict with an explanatory error.
+- Script ID is invalid, API returns a 404 Not Found.
+
+## 1.15 Integration Points
+
+- Control Panel UI (React)
+- Application Database
+
+# 2.0 Details
+
+## 2.1 Diagram Id
+
+SEQ-UJ-007
+
+## 2.2 Name
+
+Admin Deletes a Transformation Script
+
+## 2.3 Description
+
+A detailed technical sequence for deleting a transformation script. This sequence covers UI state changes, API communication, business rule validation (checking for active associations), transactional data deletion, and immutable audit logging via an in-process domain event.
+
+## 2.4 Participants
+
+### 2.4.1 Frontend SPA
+
+#### 2.4.1.1 Repository Id
+
+REPO-APP-UI-005
+
+#### 2.4.1.2 Display Name
+
+Control Panel UI
+
+#### 2.4.1.3 Type
+
+🔹 Frontend SPA
+
+#### 2.4.1.4 Technology
+
+React 18, TypeScript, Axios
+
+#### 2.4.1.5 Order
+
+1
+
+#### 2.4.1.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | actor |
+| Color | #3498DB |
+| Stereotype | User Interface |
+
+### 2.4.2.0 Web API
+
+#### 2.4.2.1 Repository Id
+
+REPO-APP-API-001
+
+#### 2.4.2.2 Display Name
+
+Transformation API
+
+#### 2.4.2.3 Type
+
+🔹 Web API
+
+#### 2.4.2.4 Technology
+
+ASP.NET Core 8
+
+#### 2.4.2.5 Order
+
+2
+
+#### 2.4.2.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | component |
+| Color | #2ECC71 |
+| Stereotype | API Gateway/Controller |
+
+### 2.4.3.0 Library
+
+#### 2.4.3.1 Repository Id
+
+REPO-LIB-DATA-003
+
+#### 2.4.3.2 Display Name
+
+Data Access Library
+
+#### 2.4.3.3 Type
+
+🔹 Library
+
+#### 2.4.3.4 Technology
+
+Entity Framework Core 8
+
+#### 2.4.3.5 Order
+
+3
+
+#### 2.4.3.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | database |
+| Color | #F39C12 |
+| Stereotype | Repository/Persistence |
+
+## 2.5.0.0 Interactions
+
+### 2.5.1.0 User Interaction
+
+#### 2.5.1.1 Source Id
+
+REPO-APP-UI-005
+
+#### 2.5.1.2 Target Id
+
+REPO-APP-UI-005
+
+#### 2.5.1.3 Message
+
+1. Admin clicks 'Delete' button and confirms via modal.
+
+#### 2.5.1.4 Sequence Number
+
+1
+
+#### 2.5.1.5 Type
+
+🔹 User Interaction
+
+#### 2.5.1.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.1.7 Return Message
+
+Deletion confirmed.
+
+#### 2.5.1.8 Has Return
+
+✅ Yes
+
+#### 2.5.1.9 Is Activation
+
+❌ No
+
+#### 2.5.1.10 Technical Details
+
+##### 2.5.1.10.1 Protocol
+
+DOM Event
+
+##### 2.5.1.10.2 Method
+
+onClick() -> showModal() -> onConfirm()
+
+##### 2.5.1.10.3 Parameters
+
+scriptId
+
+##### 2.5.1.10.4 Authentication
+
+N/A
+
+##### 2.5.1.10.5 Error Handling
+
+Modal has a 'Cancel' option to abort the flow.
+
+##### 2.5.1.10.6 Performance
+
+###### 2.5.1.10.6.1 Latency
+
+<50ms UI feedback
+
+### 2.5.2.0.0.0 State Management
+
+#### 2.5.2.1.0.0 Source Id
+
+REPO-APP-UI-005
+
+#### 2.5.2.2.0.0 Target Id
+
+REPO-APP-UI-005
+
+#### 2.5.2.3.0.0 Message
+
+2. Set UI state to 'deleting' for the specific script.
+
+#### 2.5.2.4.0.0 Sequence Number
+
+2
+
+#### 2.5.2.5.0.0 Type
+
+🔹 State Management
+
+#### 2.5.2.6.0.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.2.7.0.0 Return Message
+
+Loading spinner is displayed.
+
+#### 2.5.2.8.0.0 Has Return
+
+✅ Yes
+
+#### 2.5.2.9.0.0 Is Activation
+
+❌ No
+
+#### 2.5.2.10.0.0 Technical Details
+
+##### 2.5.2.10.1.0 Protocol
+
+Internal State Update
+
+##### 2.5.2.10.2.0 Method
+
+dispatch({ type: 'scripts/delete/pending', payload: scriptId })
+
+##### 2.5.2.10.3.0 Parameters
+
+scriptId
+
+##### 2.5.2.10.4.0 Authentication
+
+N/A
+
+##### 2.5.2.10.5.0 Error Handling
+
+N/A
+
+##### 2.5.2.10.6.0 Performance
+
+###### 2.5.2.10.6.1 Latency
+
+Immediate
+
+### 2.5.3.0.0.0 API Call
+
+#### 2.5.3.1.0.0 Source Id
+
+REPO-APP-UI-005
+
+#### 2.5.3.2.0.0 Target Id
+
+REPO-APP-API-001
+
+#### 2.5.3.3.0.0 Message
+
+3. Send delete request for transformation script.
+
+#### 2.5.3.4.0.0 Sequence Number
+
+3
+
+#### 2.5.3.5.0.0 Type
+
+🔹 API Call
+
+#### 2.5.3.6.0.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.3.7.0.0 Return Message
+
+Receives HTTP 204, 404, or 409.
+
+#### 2.5.3.8.0.0 Has Return
+
+✅ Yes
+
+#### 2.5.3.9.0.0 Is Activation
+
+✅ Yes
+
+#### 2.5.3.10.0.0 Technical Details
+
+##### 2.5.3.10.1.0 Protocol
+
+HTTPS
+
+##### 2.5.3.10.2.0 Method
+
+```sql
+DELETE /api/v1/transformations/{id}
+```
+
+##### 2.5.3.10.3.0 Parameters
+
+URL segment: id (UUID)
+
+##### 2.5.3.10.4.0 Authentication
+
+###### 2.5.3.10.4.1 Scheme
+
+JWT Bearer Token
+
+###### 2.5.3.10.4.2 Headers
+
+- Authorization: Bearer <token>
+
+##### 2.5.3.10.5.0 Error Handling
+
+Handles HTTP status codes 401, 403, 404, 409, 500.
+
+##### 2.5.3.10.6.0 Performance
+
+###### 2.5.3.10.6.1 Timeout
+
+30s client-side timeout
+
+### 2.5.4.0.0.0 Service Call
+
+#### 2.5.4.1.0.0 Source Id
+
+REPO-APP-API-001
+
+#### 2.5.4.2.0.0 Target Id
+
+REPO-APP-API-001
+
+#### 2.5.4.3.0.0 Message
+
+4. [TransformationScriptsController] Authorize request and invoke service.
+
+#### 2.5.4.4.0.0 Sequence Number
+
+4
+
+#### 2.5.4.5.0.0 Type
+
+🔹 Service Call
+
+#### 2.5.4.6.0.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.4.7.0.0 Return Message
+
+Service layer result.
+
+#### 2.5.4.8.0.0 Has Return
+
+✅ Yes
+
+#### 2.5.4.9.0.0 Is Activation
+
+❌ No
+
+#### 2.5.4.10.0.0 Technical Details
+
+##### 2.5.4.10.1.0 Protocol
+
+In-process
+
+##### 2.5.4.10.2.0 Method
+
+transformationScriptService.DeleteScriptAsync(id, userContext)
+
+##### 2.5.4.10.3.0 Parameters
+
+id (Guid), userContext (ClaimsPrincipal)
+
+##### 2.5.4.10.4.0 Authentication
+
+ASP.NET Core [Authorize] attribute validation.
+
+##### 2.5.4.10.5.0 Error Handling
+
+Global exception handler catches service-layer exceptions (e.g., ConflictException, NotFoundException).
+
+##### 2.5.4.10.6.0 Performance
+
+###### 2.5.4.10.6.1 Latency
+
+<5ms orchestration overhead
+
+### 2.5.5.0.0.0 Data Access
+
+#### 2.5.5.1.0.0 Source Id
+
+REPO-APP-API-001
+
+#### 2.5.5.2.0.0 Target Id
+
+REPO-LIB-DATA-003
+
+#### 2.5.5.3.0.0 Message
+
+5. [TransformationScriptService] Verify script is not associated with reports.
+
+#### 2.5.5.4.0.0 Sequence Number
+
+5
+
+#### 2.5.5.5.0.0 Type
+
+🔹 Data Access
+
+#### 2.5.5.6.0.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.5.7.0.0 Return Message
+
+Returns boolean indicating if script is in use.
+
+#### 2.5.5.8.0.0 Has Return
+
+✅ Yes
+
+#### 2.5.5.9.0.0 Is Activation
+
+✅ Yes
+
+#### 2.5.5.10.0.0 Technical Details
+
+##### 2.5.5.10.1.0 Protocol
+
+EF Core
+
+##### 2.5.5.10.2.0 Method
+
+repository.IsScriptInUseAsync(scriptId)
+
+##### 2.5.5.10.3.0 Parameters
+
+scriptId (Guid)
+
+##### 2.5.5.10.4.0 Authentication
+
+N/A (uses application DB connection string)
+
+##### 2.5.5.10.5.0 Error Handling
+
+Throws NotFoundException if scriptId does not exist.
+
+##### 2.5.5.10.6.0 Performance
+
+###### 2.5.5.10.6.1 Latency
+
+<50ms for indexed query
+
+###### 2.5.5.10.6.2 Notes
+
+Query against the ReportConfiguration-Script association table.
+
+#### 2.5.5.11.0.0 Nested Interactions
+
+- {'sourceId': 'REPO-LIB-DATA-003', 'targetId': 'REPO-APP-API-001', 'message': '5a. [ERROR] Script is in use. Return `true`.', 'sequenceNumber': 5.1, 'type': 'Conditional Flow', 'isSynchronous': True, 'returnMessage': '', 'hasReturn': False, 'isActivation': False, 'technicalDetails': {'protocol': 'In-process', 'method': "Service throws `ConflictException('Script is currently associated with one or more reports.')`.", 'parameters': '', 'authentication': 'N/A', 'errorHandling': "The API's global exception handler catches `ConflictException` and maps it to an HTTP 409 response.", 'performance': {}}}
+
+### 2.5.6.0.0.0 Data Access
+
+#### 2.5.6.1.0.0 Source Id
+
+REPO-APP-API-001
+
+#### 2.5.6.2.0.0 Target Id
+
+REPO-LIB-DATA-003
+
+#### 2.5.6.3.0.0 Message
+
+6. [TransformationScriptService] Request deletion of script and all versions.
+
+#### 2.5.6.4.0.0 Sequence Number
+
+6
+
+#### 2.5.6.5.0.0 Type
+
+🔹 Data Access
+
+#### 2.5.6.6.0.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.6.7.0.0 Return Message
+
+Task completes upon successful transaction commit.
+
+#### 2.5.6.8.0.0 Has Return
+
+✅ Yes
+
+#### 2.5.6.9.0.0 Is Activation
+
+❌ No
+
+#### 2.5.6.10.0.0 Technical Details
+
+##### 2.5.6.10.1.0 Protocol
+
+EF Core
+
+##### 2.5.6.10.2.0 Method
+
+repository.DeleteAsync(scriptId)
+
+##### 2.5.6.10.3.0 Parameters
+
+scriptId (Guid)
+
+##### 2.5.6.10.4.0 Authentication
+
+N/A
+
+##### 2.5.6.10.5.0 Error Handling
+
+Handled within a Unit of Work / DbContext transaction. Failures will roll back.
+
+##### 2.5.6.10.6.0 Performance
+
+###### 2.5.6.10.6.1 Latency
+
+<100ms for cascade delete
+
+### 2.5.7.0.0.0 Event Publication
+
+#### 2.5.7.1.0.0 Source Id
+
+REPO-APP-API-001
+
+#### 2.5.7.2.0.0 Target Id
+
+REPO-APP-API-001
+
+#### 2.5.7.3.0.0 Message
+
+7. [TransformationScriptService] Publish domain event for auditing.
+
+#### 2.5.7.4.0.0 Sequence Number
+
+7
+
+#### 2.5.7.5.0.0 Type
+
+🔹 Event Publication
+
+#### 2.5.7.6.0.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.7.7.0.0 Return Message
+
+Handler completes execution.
+
+#### 2.5.7.8.0.0 Has Return
+
+✅ Yes
+
+#### 2.5.7.9.0.0 Is Activation
+
+❌ No
+
+#### 2.5.7.10.0.0 Technical Details
+
+##### 2.5.7.10.1.0 Protocol
+
+In-process Mediator
+
+##### 2.5.7.10.2.0 Method
+
+mediator.Publish(new TransformationScriptModifiedEvent(...))
+
+##### 2.5.7.10.3.0 Parameters
+
+Event payload: { UserId, ActionType: 'DELETE', EntityId: scriptId }
+
+##### 2.5.7.10.4.0 Authentication
+
+N/A
+
+##### 2.5.7.10.5.0 Error Handling
+
+Handler execution is part of the same transaction. An exception in the handler will cause a rollback.
+
+##### 2.5.7.10.6.0 Performance
+
+###### 2.5.7.10.6.1 Latency
+
+<10ms
+
+#### 2.5.7.11.0.0 Nested Interactions
+
+- {'sourceId': 'REPO-APP-API-001', 'targetId': 'REPO-LIB-DATA-003', 'message': '7a. [AuditLogHandler] Persist audit log entry.', 'sequenceNumber': 7.1, 'type': 'Data Access', 'isSynchronous': True, 'returnMessage': 'AuditLog entity is added to the DbContext.', 'hasReturn': True, 'isActivation': False, 'technicalDetails': {'protocol': 'EF Core', 'method': 'auditLogRepository.AddAsync(auditLog)', 'parameters': 'AuditLog entity', 'authentication': 'N/A', 'errorHandling': 'Part of the parent transaction.', 'performance': {}}}
+
+### 2.5.8.0.0.0 Data Access
+
+#### 2.5.8.1.0.0 Source Id
+
+REPO-LIB-DATA-003
+
+#### 2.5.8.2.0.0 Target Id
+
+REPO-APP-API-001
+
+#### 2.5.8.3.0.0 Message
+
+8. [DbContext] Commit transaction.
+
+#### 2.5.8.4.0.0 Sequence Number
+
+8
+
+#### 2.5.8.5.0.0 Type
+
+🔹 Data Access
+
+#### 2.5.8.6.0.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.8.7.0.0 Return Message
+
+Transaction successfully committed.
+
+#### 2.5.8.8.0.0 Has Return
+
+✅ Yes
+
+#### 2.5.8.9.0.0 Is Activation
+
+❌ No
+
+#### 2.5.8.10.0.0 Technical Details
+
+##### 2.5.8.10.1.0 Protocol
+
+EF Core
+
+##### 2.5.8.10.2.0 Method
+
+dbContext.SaveChangesAsync()
+
+##### 2.5.8.10.3.0 Parameters
+
+N/A
+
+##### 2.5.8.10.4.0 Authentication
+
+N/A
+
+##### 2.5.8.10.5.0 Error Handling
+
+Throws exceptions on commit failure (e.g., concurrency conflicts, DB connection loss), which are caught by the global handler.
+
+##### 2.5.8.10.6.0 Performance
+
+###### 2.5.8.10.6.1 Notes
+
+Commits both the script deletion and the audit log entry atomically.
+
+### 2.5.9.0.0.0 State Management
+
+#### 2.5.9.1.0.0 Source Id
+
+REPO-APP-UI-005
+
+#### 2.5.9.2.0.0 Target Id
+
+REPO-APP-UI-005
+
+#### 2.5.9.3.0.0 Message
+
+9. [SUCCESS] Update UI state to reflect successful deletion.
+
+#### 2.5.9.4.0.0 Sequence Number
+
+9
+
+#### 2.5.9.5.0.0 Type
+
+🔹 State Management
+
+#### 2.5.9.6.0.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.9.7.0.0 Return Message
+
+Script is removed from the list.
+
+#### 2.5.9.8.0.0 Has Return
+
+✅ Yes
+
+#### 2.5.9.9.0.0 Is Activation
+
+❌ No
+
+#### 2.5.9.10.0.0 Technical Details
+
+##### 2.5.9.10.1.0 Protocol
+
+Internal State Update
+
+##### 2.5.9.10.2.0 Method
+
+dispatch({ type: 'scripts/delete/fulfilled', payload: scriptId })
+
+##### 2.5.9.10.3.0 Parameters
+
+scriptId
+
+##### 2.5.9.10.4.0 Authentication
+
+N/A
+
+##### 2.5.9.10.5.0 Error Handling
+
+N/A
+
+##### 2.5.9.10.6.0 Performance
+
+###### 2.5.9.10.6.1 Latency
+
+Immediate UI update post-API response.
+
+### 2.5.10.0.0.0 User Notification
+
+#### 2.5.10.1.0.0 Source Id
+
+REPO-APP-UI-005
+
+#### 2.5.10.2.0.0 Target Id
+
+REPO-APP-UI-005
+
+#### 2.5.10.3.0.0 Message
+
+10. Display success notification to the user.
+
+#### 2.5.10.4.0.0 Sequence Number
+
+10
+
+#### 2.5.10.5.0.0 Type
+
+🔹 User Notification
+
+#### 2.5.10.6.0.0 Is Synchronous
+
+❌ No
+
+#### 2.5.10.7.0.0 Return Message
+
+Toast message appears: 'Script deleted successfully.'
+
+#### 2.5.10.8.0.0 Has Return
+
+✅ Yes
+
+#### 2.5.10.9.0.0 Is Activation
+
+❌ No
+
+#### 2.5.10.10.0.0 Technical Details
+
+##### 2.5.10.10.1.0 Protocol
+
+UI Component Render
+
+##### 2.5.10.10.2.0 Method
+
+toast.success('Script deleted successfully.')
+
+##### 2.5.10.10.3.0 Parameters
+
+Message, Type
+
+##### 2.5.10.10.4.0 Authentication
+
+N/A
+
+##### 2.5.10.10.5.0 Error Handling
+
+N/A
+
+##### 2.5.10.10.6.0 Performance
+
+*No data available*
+
+### 2.5.11.0.0.0 State Management
+
+#### 2.5.11.1.0.0 Source Id
+
+REPO-APP-UI-005
+
+#### 2.5.11.2.0.0 Target Id
+
+REPO-APP-UI-005
+
+#### 2.5.11.3.0.0 Message
+
+9a. [ERROR] Update UI state to show error.
+
+#### 2.5.11.4.0.0 Sequence Number
+
+11
+
+#### 2.5.11.5.0.0 Type
+
+🔹 State Management
+
+#### 2.5.11.6.0.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.11.7.0.0 Return Message
+
+Error state is set.
+
+#### 2.5.11.8.0.0 Has Return
+
+✅ Yes
+
+#### 2.5.11.9.0.0 Is Activation
+
+❌ No
+
+#### 2.5.11.10.0.0 Technical Details
+
+##### 2.5.11.10.1.0 Protocol
+
+Internal State Update
+
+##### 2.5.11.10.2.0 Method
+
+dispatch({ type: 'scripts/delete/rejected', payload: { id: scriptId, error: errorMessage } })
+
+##### 2.5.11.10.3.0 Parameters
+
+scriptId, errorMessage from API response (e.g., 409 or 404)
+
+##### 2.5.11.10.4.0 Authentication
+
+N/A
+
+##### 2.5.11.10.5.0 Error Handling
+
+Error is cleared on next user action or timeout.
+
+##### 2.5.11.10.6.0 Performance
+
+*No data available*
+
+### 2.5.12.0.0.0 User Notification
+
+#### 2.5.12.1.0.0 Source Id
+
+REPO-APP-UI-005
+
+#### 2.5.12.2.0.0 Target Id
+
+REPO-APP-UI-005
+
+#### 2.5.12.3.0.0 Message
+
+10a. Display error notification to the user.
+
+#### 2.5.12.4.0.0 Sequence Number
+
+12
+
+#### 2.5.12.5.0.0 Type
+
+🔹 User Notification
+
+#### 2.5.12.6.0.0 Is Synchronous
+
+❌ No
+
+#### 2.5.12.7.0.0 Return Message
+
+Toast message appears with specific error from API.
+
+#### 2.5.12.8.0.0 Has Return
+
+✅ Yes
+
+#### 2.5.12.9.0.0 Is Activation
+
+❌ No
+
+#### 2.5.12.10.0.0 Technical Details
+
+##### 2.5.12.10.1.0 Protocol
+
+UI Component Render
+
+##### 2.5.12.10.2.0 Method
+
+toast.error(errorMessage)
+
+##### 2.5.12.10.3.0 Parameters
+
+Message, Type
+
+##### 2.5.12.10.4.0 Authentication
+
+N/A
+
+##### 2.5.12.10.5.0 Error Handling
+
+N/A
+
+##### 2.5.12.10.6.0 Performance
+
+*No data available*
+
+## 2.6.0.0.0.0 Notes
+
+### 2.6.1.0.0.0 Content
+
+#### 2.6.1.1.0.0 Content
+
+The core business rule is to prevent deletion of a script that is actively associated with a report configuration. This is checked first to provide immediate, actionable feedback to the user and avoid unnecessary database work.
+
+#### 2.6.1.2.0.0 Position
+
+Top
+
+#### 2.6.1.3.0.0 Participant Id
+
+*Not specified*
+
+#### 2.6.1.4.0.0 Sequence Number
+
+5
+
+### 2.6.2.0.0.0 Content
+
+#### 2.6.2.1.0.0 Content
+
+Auditing is implemented via a synchronous, in-process domain event. This ensures the audit log entry is created within the same database transaction as the script deletion, guaranteeing atomicity and consistency as required by REQ-DTR-010.
+
+#### 2.6.2.2.0.0 Position
+
+Bottom
+
+#### 2.6.2.3.0.0 Participant Id
+
+REPO-APP-API-001
+
+#### 2.6.2.4.0.0 Sequence Number
+
+7
+
+## 2.7.0.0.0.0 Implementation Guidance
+
+| Property | Value |
+|----------|-------|
+| Security Requirements | The API endpoint MUST be protected by role-based a... |
+| Performance Targets | The entire end-to-end operation (from user confirm... |
+| Error Handling Strategy | The API provides distinct, structured error respon... |
+| Testing Considerations | Integration tests should cover the 204 (success), ... |
+| Monitoring Requirements | Monitor the latency of the DELETE API endpoint. Cr... |
+| Deployment Considerations | The database schema changes for audit logging and ... |
+

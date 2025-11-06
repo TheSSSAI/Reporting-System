@@ -1,0 +1,725 @@
+# 1 Overview
+
+## 1.1 Diagram Id
+
+SEQ-UJ-004
+
+## 1.2 Name
+
+Administrator Views Version History and Reverts a Configuration
+
+## 1.3 Description
+
+An Administrator navigates to a specific configuration (e.g., a Report Configuration) and views its version history. They can compare two versions to see a 'diff' of the changes and choose to restore a previous version, which makes it the new current, active version.
+
+## 1.4 Type
+
+🔹 UserJourney
+
+## 1.5 Purpose
+
+To allow administrators to track changes and recover from misconfigurations by reverting to a known good state.
+
+## 1.6 Complexity
+
+Medium
+
+## 1.7 Priority
+
+🟡 Medium
+
+## 1.8 Frequency
+
+OnDemand
+
+## 1.9 Participants
+
+- presentationlayerreact
+- apiweblayer
+- application_layer
+- infrastructure_layer
+
+## 1.10 Key Interactions
+
+- Admin selects a configuration and clicks 'View History'.
+- UI requests the version history for that entity from the API.
+- Admin selects two versions to compare; UI requests the content of both and displays a side-by-side diff.
+- Admin selects a previous version and clicks 'Restore'.
+- UI sends a request to a 'restore' endpoint for that entity and version.
+- Application Layer retrieves the old version's data, creates a new version record with that data, and marks it as the current active version.
+- The action is recorded in the audit log.
+
+## 1.11 Triggers
+
+- Administrator chooses to view or restore a previous configuration version.
+
+## 1.12 Outcomes
+
+- A new version is created that is a copy of the selected older version.
+- The system's active configuration for that item is now the restored version.
+- An audit trail of the restore action is created.
+
+## 1.13 Business Rules
+
+- Restoring a version does not delete history; it creates a new version record.
+
+## 1.14 Error Scenarios
+
+- The selected version for restore no longer exists.
+
+## 1.15 Integration Points
+
+*No items available*
+
+# 2.0 Details
+
+## 2.1 Diagram Id
+
+SEQ-UJ-004
+
+## 2.2 Name
+
+Administrator Configuration Version Management and Rollback
+
+## 2.3 Description
+
+Technical sequence for an administrator viewing the version history of a configuration entity, comparing two versions via a side-by-side diff, and restoring a previous version as the new active configuration. The sequence covers the full user journey from the React UI to the backend transaction and audit logging.
+
+## 2.4 Participants
+
+### 2.4.1 React SPA
+
+#### 2.4.1.1 Repository Id
+
+presentation_layer_react
+
+#### 2.4.1.2 Display Name
+
+Control Panel UI
+
+#### 2.4.1.3 Type
+
+🔹 React SPA
+
+#### 2.4.1.4 Technology
+
+React 18, TypeScript, MUI v5, Zustand
+
+#### 2.4.1.5 Order
+
+1
+
+#### 2.4.1.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | actor |
+| Color | #4287f5 |
+| Stereotype | <<UI>> |
+
+### 2.4.2.0 REST API Controller
+
+#### 2.4.2.1 Repository Id
+
+api_web_layer
+
+#### 2.4.2.2 Display Name
+
+API/Web Layer
+
+#### 2.4.2.3 Type
+
+🔹 REST API Controller
+
+#### 2.4.2.4 Technology
+
+ASP.NET Core 8
+
+#### 2.4.2.5 Order
+
+2
+
+#### 2.4.2.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | component |
+| Color | #2ab57d |
+| Stereotype | <<Controller>> |
+
+### 2.4.3.0 Application Service
+
+#### 2.4.3.1 Repository Id
+
+application_layer
+
+#### 2.4.3.2 Display Name
+
+Application Layer
+
+#### 2.4.3.3 Type
+
+🔹 Application Service
+
+#### 2.4.3.4 Technology
+
+.NET 8
+
+#### 2.4.3.5 Order
+
+3
+
+#### 2.4.3.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | component |
+| Color | #fdc16a |
+| Stereotype | <<Service>> |
+
+### 2.4.4.0 Repository/Persistence
+
+#### 2.4.4.1 Repository Id
+
+infrastructure_layer
+
+#### 2.4.4.2 Display Name
+
+Infrastructure Layer
+
+#### 2.4.4.3 Type
+
+🔹 Repository/Persistence
+
+#### 2.4.4.4 Technology
+
+Entity Framework Core 8, PostgreSQL
+
+#### 2.4.4.5 Order
+
+4
+
+#### 2.4.4.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | database |
+| Color | #6c757d |
+| Stereotype | <<Repository>> |
+
+## 2.5.0.0 Interactions
+
+### 2.5.1.0 API Call
+
+#### 2.5.1.1 Source Id
+
+presentation_layer_react
+
+#### 2.5.1.2 Target Id
+
+api_web_layer
+
+#### 2.5.1.3 Message
+
+1. GET /api/v1/reports/{configId}/versions - Request version history for a configuration.
+
+#### 2.5.1.4 Sequence Number
+
+1
+
+#### 2.5.1.5 Type
+
+🔹 API Call
+
+#### 2.5.1.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.1.7 Return Message
+
+6. 200 OK - [ { version: 5, modifiedAt: '...', modifiedBy: '...' }, ... ]
+
+#### 2.5.1.8 Has Return
+
+✅ Yes
+
+#### 2.5.1.9 Is Activation
+
+✅ Yes
+
+#### 2.5.1.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | HTTPS |
+| Method | GET |
+| Parameters | Path: configId (UUID). State: UI shows loading spi... |
+| Authentication | Requires valid JWT Bearer token in Authorization h... |
+| Error Handling | Handle 401 (Unauthorized), 403 (Forbidden), 404 (N... |
+| Performance | P95 latency < 200ms. |
+
+### 2.5.2.0 Method Call
+
+#### 2.5.2.1 Source Id
+
+api_web_layer
+
+#### 2.5.2.2 Target Id
+
+application_layer
+
+#### 2.5.2.3 Message
+
+2. GetVersionHistoryForConfig(configId)
+
+#### 2.5.2.4 Sequence Number
+
+2
+
+#### 2.5.2.5 Type
+
+🔹 Method Call
+
+#### 2.5.2.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.2.7 Return Message
+
+5. return List<VersionMetadataDto>
+
+#### 2.5.2.8 Has Return
+
+✅ Yes
+
+#### 2.5.2.9 Is Activation
+
+✅ Yes
+
+#### 2.5.2.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-Process |
+| Method | GetVersionHistoryForConfigAsync |
+| Parameters | configId (Guid). Security: User context is passed ... |
+| Authentication | N/A (handled by API layer middleware). |
+| Error Handling | Propagates exceptions (e.g., EntityNotFoundExcepti... |
+| Performance | Negligible overhead. |
+
+### 2.5.3.0 Method Call
+
+#### 2.5.3.1 Source Id
+
+application_layer
+
+#### 2.5.3.2 Target Id
+
+infrastructure_layer
+
+#### 2.5.3.3 Message
+
+3. IReportRepository.GetVersionsAsync(configId)
+
+#### 2.5.3.4 Sequence Number
+
+3
+
+#### 2.5.3.5 Type
+
+🔹 Method Call
+
+#### 2.5.3.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.3.7 Return Message
+
+4. return List<ReportConfigurationVersion>
+
+#### 2.5.3.8 Has Return
+
+✅ Yes
+
+#### 2.5.3.9 Is Activation
+
+✅ Yes
+
+#### 2.5.3.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-Process |
+| Method | GetVersionsAsync |
+| Parameters | configId (Guid). Executes SQL: SELECT version, mod... |
+| Authentication | N/A. |
+| Error Handling | Handles DbException, maps to application-specific ... |
+| Performance | Query must use an index on `config_id`. |
+
+### 2.5.4.0 API Call
+
+#### 2.5.4.1 Source Id
+
+presentation_layer_react
+
+#### 2.5.4.2 Target Id
+
+api_web_layer
+
+#### 2.5.4.3 Message
+
+7. POST /api/v1/reports/{configId}/versions/{versionId}/restore - Restore a specific version.
+
+#### 2.5.4.4 Sequence Number
+
+7
+
+#### 2.5.4.5 Type
+
+🔹 API Call
+
+#### 2.5.4.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.4.7 Return Message
+
+14. 200 OK - { newVersion: 6, ... }
+
+#### 2.5.4.8 Has Return
+
+✅ Yes
+
+#### 2.5.4.9 Is Activation
+
+✅ Yes
+
+#### 2.5.4.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | HTTPS |
+| Method | POST |
+| Parameters | Path: configId (UUID), versionId (UUID). State: UI... |
+| Authentication | Requires valid JWT Bearer token. Role: Administrat... |
+| Error Handling | Handle 400 (Invalid Request), 404 (Version Not Fou... |
+| Performance | P95 latency < 500ms. |
+
+#### 2.5.4.11 Nested Interactions
+
+*No items available*
+
+### 2.5.5.0 Method Call
+
+#### 2.5.5.1 Source Id
+
+api_web_layer
+
+#### 2.5.5.2 Target Id
+
+application_layer
+
+#### 2.5.5.3 Message
+
+8. RestoreConfigurationVersion(configId, versionId, userId)
+
+#### 2.5.5.4 Sequence Number
+
+8
+
+#### 2.5.5.5 Type
+
+🔹 Method Call
+
+#### 2.5.5.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.5.7 Return Message
+
+13. return NewVersionDto
+
+#### 2.5.5.8 Has Return
+
+✅ Yes
+
+#### 2.5.5.9 Is Activation
+
+✅ Yes
+
+#### 2.5.5.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-Process |
+| Method | RestoreConfigurationVersionAsync |
+| Parameters | configId (Guid), versionId (Guid), userId (from Cl... |
+| Authentication | N/A. |
+| Error Handling | Orchestrates a database transaction. Throws except... |
+| Performance | Contains multiple dependent database calls. |
+
+#### 2.5.5.11 Nested Interactions
+
+##### 2.5.5.11.1 Transactional Method Call
+
+###### 2.5.5.11.1.1 Source Id
+
+application_layer
+
+###### 2.5.5.11.1.2 Target Id
+
+infrastructure_layer
+
+###### 2.5.5.11.1.3 Message
+
+9. GetVersionContentAsync(versionId)
+
+###### 2.5.5.11.1.4 Sequence Number
+
+9
+
+###### 2.5.5.11.1.5 Type
+
+🔹 Transactional Method Call
+
+###### 2.5.5.11.1.6 Is Synchronous
+
+✅ Yes
+
+###### 2.5.5.11.1.7 Return Message
+
+Return ReportConfigurationVersion entity.
+
+###### 2.5.5.11.1.8 Has Return
+
+✅ Yes
+
+###### 2.5.5.11.1.9 Is Activation
+
+❌ No
+
+###### 2.5.5.11.1.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-Process (within transaction) |
+| Method | IReportRepository.GetByIdAsync |
+| Parameters | versionId (Guid). |
+| Authentication | N/A |
+| Error Handling | If entity is null, throw EntityNotFoundException, ... |
+| Performance | Primary key lookup, very fast. |
+
+##### 2.5.5.11.2.0 Transactional Method Call
+
+###### 2.5.5.11.2.1 Source Id
+
+application_layer
+
+###### 2.5.5.11.2.2 Target Id
+
+infrastructure_layer
+
+###### 2.5.5.11.2.3 Message
+
+10. CreateNewVersionFromExisting(configId, oldContent, userId)
+
+###### 2.5.5.11.2.4 Sequence Number
+
+10
+
+###### 2.5.5.11.2.5 Type
+
+🔹 Transactional Method Call
+
+###### 2.5.5.11.2.6 Is Synchronous
+
+✅ Yes
+
+###### 2.5.5.11.2.7 Return Message
+
+Return new ReportConfigurationVersion entity.
+
+###### 2.5.5.11.2.8 Has Return
+
+✅ Yes
+
+###### 2.5.5.11.2.9 Is Activation
+
+❌ No
+
+###### 2.5.5.11.2.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-Process (within transaction) |
+| Method | IReportRepository.AddAsync |
+| Parameters | New ReportConfigurationVersion object with copied ... |
+| Authentication | N/A |
+| Error Handling | Database constraints (e.g., unique version) will c... |
+| Performance | Single row insert. |
+
+##### 2.5.5.11.3.0 Transactional Method Call
+
+###### 2.5.5.11.3.1 Source Id
+
+application_layer
+
+###### 2.5.5.11.3.2 Target Id
+
+infrastructure_layer
+
+###### 2.5.5.11.3.3 Message
+
+11. LogRestoreAction(userId, configId, versionId)
+
+###### 2.5.5.11.3.4 Sequence Number
+
+11
+
+###### 2.5.5.11.3.5 Type
+
+🔹 Transactional Method Call
+
+###### 2.5.5.11.3.6 Is Synchronous
+
+✅ Yes
+
+###### 2.5.5.11.3.7 Return Message
+
+void
+
+###### 2.5.5.11.3.8 Has Return
+
+❌ No
+
+###### 2.5.5.11.3.9 Is Activation
+
+❌ No
+
+###### 2.5.5.11.3.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-Process (post-transaction commit) |
+| Method | IAuditLogger.LogAsync |
+| Parameters | AuditLog entry object with details of the restore ... |
+| Authentication | N/A |
+| Error Handling | Logging failures should be handled gracefully and ... |
+| Performance | Asynchronous fire-and-forget or queued operation. |
+
+##### 2.5.5.11.4.0 DB Operation
+
+###### 2.5.5.11.4.1 Source Id
+
+infrastructure_layer
+
+###### 2.5.5.11.4.2 Target Id
+
+application_layer
+
+###### 2.5.5.11.4.3 Message
+
+12. Commit Transaction
+
+###### 2.5.5.11.4.4 Sequence Number
+
+12
+
+###### 2.5.5.11.4.5 Type
+
+🔹 DB Operation
+
+###### 2.5.5.11.4.6 Is Synchronous
+
+✅ Yes
+
+###### 2.5.5.11.4.7 Return Message
+
+Return success.
+
+###### 2.5.5.11.4.8 Has Return
+
+✅ Yes
+
+###### 2.5.5.11.4.9 Is Activation
+
+❌ No
+
+###### 2.5.5.11.4.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | EF Core Transaction |
+| Method | DbContext.SaveChangesAsync() |
+| Parameters | N/A |
+| Authentication | N/A |
+| Error Handling | Throws exception on failure, caught by Application... |
+| Performance | Dependent on DB performance. |
+
+## 2.6.0.0.0.0 Notes
+
+### 2.6.1.0.0.0 Content
+
+#### 2.6.1.1.0.0 Content
+
+Administrator can also select two versions to compare. The UI would make parallel GET requests for the content of each version (e.g., GET /api/v1/reports/{configId}/versions/{versionId}) and then compute/display the diff client-side.
+
+#### 2.6.1.2.0.0 Position
+
+top-right
+
+#### 2.6.1.3.0.0 Participant Id
+
+presentation_layer_react
+
+#### 2.6.1.4.0.0 Sequence Number
+
+6
+
+### 2.6.2.0.0.0 Content
+
+#### 2.6.2.1.0.0 Content
+
+The 'Restore' operation does not modify or delete existing version records. It creates a new version that is a clone of the old one, preserving a complete and immutable history.
+
+#### 2.6.2.2.0.0 Position
+
+bottom-left
+
+#### 2.6.2.3.0.0 Participant Id
+
+application_layer
+
+#### 2.6.2.4.0.0 Sequence Number
+
+10
+
+### 2.6.3.0.0.0 Content
+
+#### 2.6.3.1.0.0 Content
+
+UI must handle accessibility for the version history modal, including focus trapping, keyboard navigation (Tab, Esc), and screen reader announcements for actions.
+
+#### 2.6.3.2.0.0 Position
+
+top-left
+
+#### 2.6.3.3.0.0 Participant Id
+
+presentation_layer_react
+
+#### 2.6.3.4.0.0 Sequence Number
+
+1
+
+## 2.7.0.0.0.0 Implementation Guidance
+
+| Property | Value |
+|----------|-------|
+| Security Requirements | All API endpoints must enforce authentication and ... |
+| Performance Targets | The version history query must be highly optimized... |
+| Error Handling Strategy | The API Layer uses a global exception handling mid... |
+| Testing Considerations | Integration tests should cover the entire restore ... |
+| Monitoring Requirements | Monitor the rate of 5xx errors on the restore endp... |
+| Deployment Considerations | Database migrations must be applied before deployi... |
+

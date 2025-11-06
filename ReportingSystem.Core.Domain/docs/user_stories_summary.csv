@@ -1,0 +1,2 @@
+"total_stories","total_story_points","must_have_stories","should_have_stories","could_have_stories","epics_identified","estimated_sprints","key_dependencies"
+"6","42","5","1","0","[""Core Data Transformation Engine"",""Transformation Script Management UI & API"",""Operations, Observability, and Deployment"",""Database and Data Management"",""Custom Connector and Licensing Framework""]","3","[""Finalized IConnector Interface"",""Stable Jint Library API""]"

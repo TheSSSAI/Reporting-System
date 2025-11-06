@@ -1,0 +1,106 @@
+# This .gitignore file is based on the standard Visual Studio template.
+
+## User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+## User-specific files (MonoDevelop/Xamarin Studio)
+*.userprefs
+
+## Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+
+## Visual Studio cache files
+.vs/
+.vscode/
+TestResults/
+
+## .NET Core build VS special files
+.vs
+.idea
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+## Rider
+*.sln.iml
+*.sln.DotSettings.user
+*.suo
+*.user
+.idea/
+.idea/**/workspace.xml
+.idea/**/tasks.xml
+.idea/**/dictionaries
+.idea/**/shelf
+
+## Mac
+*.DS_Store
+
+## Others
+*~
+*.swp
+
+# Nuget Packages
+*.nupkg
+# The packages folder can be ignored because of Package Restore
+**/[Pp]ackages/*
+# except build/, which is used as an MSBuild target.
+!**/[Pp]ackages/build/
+# The obj/ version of this directory is created on command line builds.
+**/[Oo]bj/project.assets.json
+**/[Oo]bj/project.nuget.cache
+# pdbs in packages
+**/[Pp]ackages/**/*.pdb
+
+# Visual Studio files
+*.vspscc
+*.vssscc
+*.pidb
+*.vsk
+*_i.c
+*_p.c
+*_h.h
+*.ilk
+*.meta
+*.obj
+*.pch
+*.pdb
+*.pgc
+*.pgd
+*.rsp
+*.sbr
+*.tlb
+*.tli
+*.tlh
+*.tmp
+*.tmp_proj
+*.log
+*.vsix
+*.manifest
+*.vcproj
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+*.DotSettings
+*.vssettings
+
+# Enable tracking of the secrets.json file, but not its contents
+secrets.json
+!secrets.json
+
+# Local secrets file
+appsettings.Development.json

@@ -1,0 +1,920 @@
+# 1 Overview
+
+## 1.1 Diagram Id
+
+SEQ-UJ-001
+
+## 1.2 Name
+
+Admin Creates a New Transformation Script
+
+## 1.3 Description
+
+An administrator uses the Control Panel UI to author a new JavaScript transformation script and save it to the system. This process involves the script DTO being sent to the backend, validated, encrypted by an encryption service, and persisted to the database via a repository, which triggers an in-process domain event for auditing.
+
+## 1.4 Type
+
+🔹 UserJourney
+
+## 1.5 Purpose
+
+To enable administrators to create new, reusable data transformation logic for reports.
+
+## 1.6 Complexity
+
+Medium
+
+## 1.7 Priority
+
+🚨 Critical
+
+## 1.8 Frequency
+
+OnDemand
+
+## 1.9 Participants
+
+- REPO-APP-UI-005
+- REPO-APP-API-001
+- REPO-LIB-DATA-003
+
+## 1.10 Key Interactions
+
+- Admin authors script in Monaco Editor and clicks 'Save'.
+- UI sends a POST request to `/api/v1/transformations` with a `CreateScriptRequest` DTO.
+- API controller validates the DTO and invokes `TransformationScriptService.CreateScriptAsync`.
+- Service calls `IEncryptionService.Encrypt` on the script content.
+- Service creates `TransformationScript` and `ScriptVersion` entities.
+- Repository (`ITransformationScriptRepository.AddAsync`) saves the new entities to the database within a transaction.
+- Service publishes a `TransformationScriptModified` domain event via a mediator.
+- A synchronous `AuditLogEventHandler` handles the event and adds an `AuditLog` entry to the same transaction.
+- The transaction is committed.
+
+## 1.11 Triggers
+
+- Administrator clicks the 'Save' button for a new script in the Control Panel UI.
+
+## 1.12 Outcomes
+
+- A new transformation script and its initial version are created and stored encrypted in the database.
+- An atomic audit trail entry is created for the script creation event.
+- The UI receives a success confirmation and the new script's ID.
+
+## 1.13 Business Rules
+
+- Script content must be stored encrypted at rest (REQ-DTR-010).
+- Creation of a script must be logged transactionally in an immutable audit trail (REQ-DTR-010).
+
+## 1.14 Error Scenarios
+
+- API returns a 403 Forbidden if the user is not authorized.
+- Database transaction fails, rolling back both the script creation and the audit log entry.
+- API returns a 400 Bad Request if DTO validation fails.
+
+## 1.15 Integration Points
+
+- Control Panel UI (React)
+- Application Database
+
+# 2.0 Details
+
+## 2.1 Diagram Id
+
+SEQ-UJ-001
+
+## 2.2 Name
+
+Implementation: Admin Creates New Transformation Script
+
+## 2.3 Description
+
+Provides a comprehensive, implementation-ready technical sequence for an administrator creating a new transformation script. This sequence details the user journey from the React UI through the ASP.NET Core API, including DTO validation, content encryption, transactional database persistence of both the script and its audit log entry via an in-process domain event, and the final success response to the client. It covers all necessary security, performance, and error handling considerations.
+
+## 2.4 Participants
+
+### 2.4.1 Frontend Application
+
+#### 2.4.1.1 Repository Id
+
+REPO-APP-UI-005
+
+#### 2.4.1.2 Display Name
+
+Control Panel UI
+
+#### 2.4.1.3 Type
+
+🔹 Frontend Application
+
+#### 2.4.1.4 Technology
+
+React 18, TypeScript, Axios
+
+#### 2.4.1.5 Order
+
+1
+
+#### 2.4.1.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | actor |
+| Color | #3498DB |
+| Stereotype | <<React SPA>> |
+
+### 2.4.2.0 API Gateway / Application Service
+
+#### 2.4.2.1 Repository Id
+
+REPO-APP-API-001
+
+#### 2.4.2.2 Display Name
+
+Transformation API
+
+#### 2.4.2.3 Type
+
+🔹 API Gateway / Application Service
+
+#### 2.4.2.4 Technology
+
+ASP.NET Core 8, C#
+
+#### 2.4.2.5 Order
+
+2
+
+#### 2.4.2.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | component |
+| Color | #2ECC71 |
+| Stereotype | <<Web API>> |
+
+### 2.4.3.0 Data Persistence Library
+
+#### 2.4.3.1 Repository Id
+
+REPO-LIB-DATA-003
+
+#### 2.4.3.2 Display Name
+
+Data Access Layer
+
+#### 2.4.3.3 Type
+
+🔹 Data Persistence Library
+
+#### 2.4.3.4 Technology
+
+Entity Framework Core 8, PostgreSQL Driver
+
+#### 2.4.3.5 Order
+
+3
+
+#### 2.4.3.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | database |
+| Color | #E67E22 |
+| Stereotype | <<Repository>> |
+
+## 2.5.0.0 Interactions
+
+### 2.5.1.0 User Interaction
+
+#### 2.5.1.1 Source Id
+
+REPO-APP-UI-005
+
+#### 2.5.1.2 Target Id
+
+REPO-APP-UI-005
+
+#### 2.5.1.3 Message
+
+1. Admin fills script details (name, description, content) in the form and clicks 'Save'.
+
+#### 2.5.1.4 Sequence Number
+
+1
+
+#### 2.5.1.5 Type
+
+🔹 User Interaction
+
+#### 2.5.1.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.1.7 Return Message
+
+
+
+#### 2.5.1.8 Has Return
+
+❌ No
+
+#### 2.5.1.9 Is Activation
+
+❌ No
+
+#### 2.5.1.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | DOM Event |
+| Method | onClick -> handleSubmit() |
+| Parameters | Form state containing { name: string, description:... |
+| Authentication | N/A |
+| Error Handling | Standard form event handling. |
+| Performance | UI interaction must be immediate (<100ms). |
+
+### 2.5.2.0 State Change
+
+#### 2.5.2.1 Source Id
+
+REPO-APP-UI-005
+
+#### 2.5.2.2 Target Id
+
+REPO-APP-UI-005
+
+#### 2.5.2.3 Message
+
+2. Set UI state to 'loading' and perform client-side validation (e.g., check for empty fields).
+
+#### 2.5.2.4 Sequence Number
+
+2
+
+#### 2.5.2.5 Type
+
+🔹 State Change
+
+#### 2.5.2.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.2.7 Return Message
+
+
+
+#### 2.5.2.8 Has Return
+
+❌ No
+
+#### 2.5.2.9 Is Activation
+
+❌ No
+
+#### 2.5.2.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | React State Management |
+| Method | useState/setState, Formik/React-Hook-Form validati... |
+| Parameters | N/A |
+| Authentication | N/A |
+| Error Handling | If validation fails, display inline error messages... |
+| Performance | Validation should be instantaneous. |
+
+### 2.5.3.0 API Request
+
+#### 2.5.3.1 Source Id
+
+REPO-APP-UI-005
+
+#### 2.5.3.2 Target Id
+
+REPO-APP-API-001
+
+#### 2.5.3.3 Message
+
+3. POST /api/v1/transformations
+
+#### 2.5.3.4 Sequence Number
+
+3
+
+#### 2.5.3.5 Type
+
+🔹 API Request
+
+#### 2.5.3.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.3.7 Return Message
+
+HTTP 201 Created | 400 Bad Request | 403 Forbidden | 500 Internal Server Error
+
+#### 2.5.3.8 Has Return
+
+✅ Yes
+
+#### 2.5.3.9 Is Activation
+
+✅ Yes
+
+#### 2.5.3.10 Technical Details
+
+##### 2.5.3.10.1 Protocol
+
+HTTPS
+
+##### 2.5.3.10.2 Method
+
+POST
+
+##### 2.5.3.10.3 Parameters
+
+| Property | Value |
+|----------|-------|
+| Headers | Authorization: Bearer <JWT>, Content-Type: applica... |
+| Body (create Script Request Dto) | { "name": string, "description": string, "scriptCo... |
+
+##### 2.5.3.10.4 Authentication
+
+JWT Bearer Token required.
+
+##### 2.5.3.10.5 Error Handling
+
+Handle HTTP status codes in response. On network error, display generic 'Network error' message.
+
+##### 2.5.3.10.6 Performance
+
+Request timeout set to 30 seconds.
+
+#### 2.5.3.11.0 Nested Interactions
+
+##### 2.5.3.11.1 Security Check
+
+###### 2.5.3.11.1.1 Source Id
+
+REPO-APP-API-001
+
+###### 2.5.3.11.1.2 Target Id
+
+REPO-APP-API-001
+
+###### 2.5.3.11.1.3 Message
+
+4. [Middleware] Authenticate and Authorize user based on JWT. Check for 'Administrator' role.
+
+###### 2.5.3.11.1.4 Sequence Number
+
+4
+
+###### 2.5.3.11.1.5 Type
+
+🔹 Security Check
+
+###### 2.5.3.11.1.6 Is Synchronous
+
+✅ Yes
+
+###### 2.5.3.11.1.7 Return Message
+
+
+
+###### 2.5.3.11.1.8 Has Return
+
+❌ No
+
+###### 2.5.3.11.1.9 Is Activation
+
+❌ No
+
+###### 2.5.3.11.1.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-process |
+| Method | [Authorize(Roles = "SystemAdministrator")] attribu... |
+| Parameters | HttpContext with Authorization header |
+| Authentication | ASP.NET Core JWT Bearer authentication handler |
+| Error Handling | If auth fails, middleware pipeline is short-circui... |
+| Performance | Sub-millisecond operation. |
+
+##### 2.5.3.11.2.0 Validation
+
+###### 2.5.3.11.2.1 Source Id
+
+REPO-APP-API-001
+
+###### 2.5.3.11.2.2 Target Id
+
+REPO-APP-API-001
+
+###### 2.5.3.11.2.3 Message
+
+5. [Controller] Validate CreateScriptRequest DTO using DataAnnotations/FluentValidation.
+
+###### 2.5.3.11.2.4 Sequence Number
+
+5
+
+###### 2.5.3.11.2.5 Type
+
+🔹 Validation
+
+###### 2.5.3.11.2.6 Is Synchronous
+
+✅ Yes
+
+###### 2.5.3.11.2.7 Return Message
+
+
+
+###### 2.5.3.11.2.8 Has Return
+
+❌ No
+
+###### 2.5.3.11.2.9 Is Activation
+
+❌ No
+
+###### 2.5.3.11.2.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-process |
+| Method | Model Binding & Validation |
+| Parameters | CreateScriptRequest DTO |
+| Authentication | N/A |
+| Error Handling | If validation fails, return HTTP 400 Bad Request w... |
+| Performance | Sub-millisecond operation. |
+
+##### 2.5.3.11.3.0 Service Call
+
+###### 2.5.3.11.3.1 Source Id
+
+REPO-APP-API-001
+
+###### 2.5.3.11.3.2 Target Id
+
+REPO-APP-API-001
+
+###### 2.5.3.11.3.3 Message
+
+6. [Service] Invoke TransformationScriptService.CreateScriptAsync(dto, userId).
+
+###### 2.5.3.11.3.4 Sequence Number
+
+6
+
+###### 2.5.3.11.3.5 Type
+
+🔹 Service Call
+
+###### 2.5.3.11.3.6 Is Synchronous
+
+✅ Yes
+
+###### 2.5.3.11.3.7 Return Message
+
+TransformationScriptDto
+
+###### 2.5.3.11.3.8 Has Return
+
+✅ Yes
+
+###### 2.5.3.11.3.9 Is Activation
+
+❌ No
+
+###### 2.5.3.11.3.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-process (DI) |
+| Method | CreateScriptAsync |
+| Parameters | CreateScriptRequest, Guid |
+| Authentication | N/A |
+| Error Handling | Exceptions are caught by global exception handler,... |
+| Performance | Depends on database and crypto operations. |
+
+###### 2.5.3.11.3.11 Nested Interactions
+
+####### 2.5.3.11.3.11.1 Internal Call
+
+######## 2.5.3.11.3.11.1.1 Source Id
+
+REPO-APP-API-001
+
+######## 2.5.3.11.3.11.1.2 Target Id
+
+REPO-APP-API-001
+
+######## 2.5.3.11.3.11.1.3 Message
+
+7. [Service] Encrypt script content via IEncryptionService.Encrypt(scriptContent).
+
+######## 2.5.3.11.3.11.1.4 Sequence Number
+
+7
+
+######## 2.5.3.11.3.11.1.5 Type
+
+🔹 Internal Call
+
+######## 2.5.3.11.3.11.1.6 Is Synchronous
+
+✅ Yes
+
+######## 2.5.3.11.3.11.1.7 Return Message
+
+encryptedContent (string/byte[])
+
+######## 2.5.3.11.3.11.1.8 Has Return
+
+✅ Yes
+
+######## 2.5.3.11.3.11.1.9 Is Activation
+
+❌ No
+
+######## 2.5.3.11.3.11.1.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-process (DI) |
+| Method | Encrypt |
+| Parameters | string |
+| Authentication | N/A |
+| Error Handling | Cryptography exceptions will bubble up. |
+| Performance | Expected latency ~1-5ms for typical script sizes. |
+
+####### 2.5.3.11.3.11.2.0 Object Instantiation
+
+######## 2.5.3.11.3.11.2.1 Source Id
+
+REPO-APP-API-001
+
+######## 2.5.3.11.3.11.2.2 Target Id
+
+REPO-APP-API-001
+
+######## 2.5.3.11.3.11.2.3 Message
+
+8. [Service] Create TransformationScript and ScriptVersion domain entities with encrypted content.
+
+######## 2.5.3.11.3.11.2.4 Sequence Number
+
+8
+
+######## 2.5.3.11.3.11.2.5 Type
+
+🔹 Object Instantiation
+
+######## 2.5.3.11.3.11.2.6 Is Synchronous
+
+✅ Yes
+
+######## 2.5.3.11.3.11.2.7 Return Message
+
+
+
+######## 2.5.3.11.3.11.2.8 Has Return
+
+❌ No
+
+######## 2.5.3.11.3.11.2.9 Is Activation
+
+❌ No
+
+######## 2.5.3.11.3.11.2.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-process |
+| Method | new TransformationScript(...), new ScriptVersion(.... |
+| Parameters | DTO data, encrypted content |
+| Authentication | N/A |
+| Error Handling | N/A |
+| Performance | Negligible. |
+
+####### 2.5.3.11.3.11.3.0 Data Access
+
+######## 2.5.3.11.3.11.3.1 Source Id
+
+REPO-APP-API-001
+
+######## 2.5.3.11.3.11.3.2 Target Id
+
+REPO-LIB-DATA-003
+
+######## 2.5.3.11.3.11.3.3 Message
+
+9. [Repository] Invoke ITransformationScriptRepository.AddAsync(script).
+
+######## 2.5.3.11.3.11.3.4 Sequence Number
+
+9
+
+######## 2.5.3.11.3.11.3.5 Type
+
+🔹 Data Access
+
+######## 2.5.3.11.3.11.3.6 Is Synchronous
+
+✅ Yes
+
+######## 2.5.3.11.3.11.3.7 Return Message
+
+void
+
+######## 2.5.3.11.3.11.3.8 Has Return
+
+✅ Yes
+
+######## 2.5.3.11.3.11.3.9 Is Activation
+
+✅ Yes
+
+######## 2.5.3.11.3.11.3.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-process (DI) |
+| Method | AddAsync |
+| Parameters | TransformationScript entity |
+| Authentication | N/A |
+| Error Handling | Database exceptions (e.g., connection issues, cons... |
+| Performance | Depends on database connection pooling and write s... |
+
+######## 2.5.3.11.3.11.3.11 Nested Interactions
+
+- {'sourceId': 'REPO-LIB-DATA-003', 'targetId': 'REPO-LIB-DATA-003', 'message': '10. [EF Core] Add TransformationScript and related ScriptVersion entities to the DbContext change tracker.', 'sequenceNumber': 10, 'type': 'Internal Data Operation', 'isSynchronous': True, 'returnMessage': '', 'hasReturn': False, 'isActivation': False, 'technicalDetails': {'protocol': 'In-process', 'method': 'DbContext.Scripts.AddAsync()', 'parameters': 'Entity objects', 'authentication': 'N/A', 'errorHandling': 'N/A', 'performance': 'In-memory operation, negligible.'}}
+
+####### 2.5.3.11.3.11.4.0 Event Publishing
+
+######## 2.5.3.11.3.11.4.1 Source Id
+
+REPO-APP-API-001
+
+######## 2.5.3.11.3.11.4.2 Target Id
+
+REPO-APP-API-001
+
+######## 2.5.3.11.3.11.4.3 Message
+
+11. [Service] Publish TransformationScriptModified domain event via IMediator.
+
+######## 2.5.3.11.3.11.4.4 Sequence Number
+
+11
+
+######## 2.5.3.11.3.11.4.5 Type
+
+🔹 Event Publishing
+
+######## 2.5.3.11.3.11.4.6 Is Synchronous
+
+✅ Yes
+
+######## 2.5.3.11.3.11.4.7 Return Message
+
+
+
+######## 2.5.3.11.3.11.4.8 Has Return
+
+❌ No
+
+######## 2.5.3.11.3.11.4.9 Is Activation
+
+❌ No
+
+######## 2.5.3.11.3.11.4.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-process (MediatR) |
+| Method | mediator.Publish(new TransformationScriptModified(... |
+| Parameters | Domain event object with UserID, ActionType='CREAT... |
+| Authentication | N/A |
+| Error Handling | Handler exceptions will bubble up and fail the tra... |
+| Performance | Sub-millisecond dispatch. |
+
+######## 2.5.3.11.3.11.4.11 Nested Interactions
+
+- {'sourceId': 'REPO-APP-API-001', 'targetId': 'REPO-APP-API-001', 'message': '12. [Handler] AuditLogEventHandler receives and handles the event synchronously.', 'sequenceNumber': 12, 'type': 'Event Handling', 'isSynchronous': True, 'returnMessage': '', 'hasReturn': False, 'isActivation': False, 'technicalDetails': {'protocol': 'In-process (MediatR)', 'method': 'Handle(TransformationScriptModified notification)', 'parameters': 'Domain event', 'authentication': 'N/A', 'errorHandling': 'Exceptions will propagate back to the publisher.', 'performance': 'Depends on data access.'}, 'nestedInteractions': [{'sourceId': 'REPO-APP-API-001', 'targetId': 'REPO-LIB-DATA-003', 'message': '13. [Repository] Invoke IAuditLogRepository.AddAsync(auditLog).', 'sequenceNumber': 13, 'type': 'Data Access', 'isSynchronous': True, 'returnMessage': '', 'hasReturn': False, 'isActivation': False, 'technicalDetails': {'protocol': 'In-process (DI)', 'method': 'AddAsync', 'parameters': 'AuditLog entity', 'authentication': 'N/A', 'errorHandling': 'Database exceptions will bubble up.', 'performance': 'Adds to existing transaction, minimal overhead.'}, 'nestedInteractions': [{'sourceId': 'REPO-LIB-DATA-003', 'targetId': 'REPO-LIB-DATA-003', 'message': '14. [EF Core] Add AuditLog entity to the same DbContext change tracker.', 'sequenceNumber': 14, 'type': 'Internal Data Operation', 'isSynchronous': True, 'returnMessage': '', 'hasReturn': False, 'isActivation': False, 'technicalDetails': {'protocol': 'In-process', 'method': 'DbContext.AuditLogs.AddAsync()', 'parameters': 'Entity object', 'authentication': 'N/A', 'errorHandling': 'N/A', 'performance': 'In-memory operation, negligible.'}}]}]}
+
+####### 2.5.3.11.3.11.5.0 Data Commit
+
+######## 2.5.3.11.3.11.5.1 Source Id
+
+REPO-APP-API-001
+
+######## 2.5.3.11.3.11.5.2 Target Id
+
+REPO-LIB-DATA-003
+
+######## 2.5.3.11.3.11.5.3 Message
+
+15. [Unit of Work] Commit transaction via DbContext.SaveChangesAsync().
+
+######## 2.5.3.11.3.11.5.4 Sequence Number
+
+15
+
+######## 2.5.3.11.3.11.5.5 Type
+
+🔹 Data Commit
+
+######## 2.5.3.11.3.11.5.6 Is Synchronous
+
+✅ Yes
+
+######## 2.5.3.11.3.11.5.7 Return Message
+
+int (rows affected)
+
+######## 2.5.3.11.3.11.5.8 Has Return
+
+✅ Yes
+
+######## 2.5.3.11.3.11.5.9 Is Activation
+
+❌ No
+
+######## 2.5.3.11.3.11.5.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-process |
+| Method | SaveChangesAsync |
+| Parameters | CancellationToken |
+| Authentication | N/A |
+| Error Handling | A DbUpdateException will trigger a transaction rol... |
+| Performance | Expected latency 10-100ms depending on DB load. |
+
+##### 2.5.3.11.4.0.0.0 Response Formatting
+
+###### 2.5.3.11.4.1.0.0 Source Id
+
+REPO-APP-API-001
+
+###### 2.5.3.11.4.2.0.0 Target Id
+
+REPO-APP-API-001
+
+###### 2.5.3.11.4.3.0.0 Message
+
+16. [Controller] Map resulting domain entity to a response DTO and return HTTP 201 Created.
+
+###### 2.5.3.11.4.4.0.0 Sequence Number
+
+16
+
+###### 2.5.3.11.4.5.0.0 Type
+
+🔹 Response Formatting
+
+###### 2.5.3.11.4.6.0.0 Is Synchronous
+
+✅ Yes
+
+###### 2.5.3.11.4.7.0.0 Return Message
+
+
+
+###### 2.5.3.11.4.8.0.0 Has Return
+
+❌ No
+
+###### 2.5.3.11.4.9.0.0 Is Activation
+
+❌ No
+
+###### 2.5.3.11.4.10.0.0 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-process |
+| Method | CreatedAtAction(...) |
+| Parameters | Route data, Response DTO |
+| Authentication | N/A |
+| Error Handling | N/A |
+| Performance | Sub-millisecond. |
+
+### 2.5.4.0.0.0.0.0 State Change
+
+#### 2.5.4.1.0.0.0.0 Source Id
+
+REPO-APP-UI-005
+
+#### 2.5.4.2.0.0.0.0 Target Id
+
+REPO-APP-UI-005
+
+#### 2.5.4.3.0.0.0.0 Message
+
+17. On success (201), set UI state to 'success', clear 'loading', display a confirmation toast, and navigate to the edit page for the new script.
+
+#### 2.5.4.4.0.0.0.0 Sequence Number
+
+17
+
+#### 2.5.4.5.0.0.0.0 Type
+
+🔹 State Change
+
+#### 2.5.4.6.0.0.0.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.4.7.0.0.0.0 Return Message
+
+
+
+#### 2.5.4.8.0.0.0.0 Has Return
+
+❌ No
+
+#### 2.5.4.9.0.0.0.0 Is Activation
+
+❌ No
+
+#### 2.5.4.10.0.0.0.0 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | React State Management |
+| Method | setState, toast.success(), router.push() |
+| Parameters | Response data containing new script ID |
+| Authentication | N/A |
+| Error Handling | If the response is an error (4xx/5xx), set state t... |
+| Performance | UI updates should be immediate. |
+
+## 2.6.0.0.0.0.0.0 Notes
+
+### 2.6.1.0.0.0.0.0 Content
+
+#### 2.6.1.1.0.0.0.0 Content
+
+Transactional Integrity: The entire operation, including script creation and audit logging, is wrapped in a single database transaction by EF Core's Unit of Work pattern. Failure at any step after the service call begins results in a full rollback, ensuring data consistency.
+
+#### 2.6.1.2.0.0.0.0 Position
+
+bottom
+
+#### 2.6.1.3.0.0.0.0 Participant Id
+
+REPO-APP-API-001
+
+#### 2.6.1.4.0.0.0.0 Sequence Number
+
+6
+
+### 2.6.2.0.0.0.0.0 Content
+
+#### 2.6.2.1.0.0.0.0 Content
+
+In-Process Mediator: A lightweight in-process pub/sub mechanism (like MediatR) is used to decouple the core business logic from cross-cutting concerns like auditing. The event handler is synchronous to participate in the same transaction.
+
+#### 2.6.2.2.0.0.0.0 Position
+
+bottom
+
+#### 2.6.2.3.0.0.0.0 Participant Id
+
+REPO-APP-API-001
+
+#### 2.6.2.4.0.0.0.0 Sequence Number
+
+11
+
+### 2.6.3.0.0.0.0.0 Content
+
+#### 2.6.3.1.0.0.0.0 Content
+
+Client-Side State: The UI maintains a state machine (e.g., idle, loading, success, error) to provide clear feedback to the user throughout the asynchronous save operation.
+
+#### 2.6.3.2.0.0.0.0 Position
+
+bottom
+
+#### 2.6.3.3.0.0.0.0 Participant Id
+
+REPO-APP-UI-005
+
+#### 2.6.3.4.0.0.0.0 Sequence Number
+
+2
+
+## 2.7.0.0.0.0.0.0 Implementation Guidance
+
+| Property | Value |
+|----------|-------|
+| Security Requirements | 1. API endpoints must be protected by RBAC, restri... |
+| Performance Targets | 1. End-to-end user experience (click 'Save' to UI ... |
+| Error Handling Strategy | 1. Client-side: If form validation fails, display ... |
+| Testing Considerations | 1. Unit tests for `TransformationScriptService` sh... |
+| Monitoring Requirements | 1. Log all script creation events at an INFO level... |
+| Deployment Considerations | Database schema changes for the `TransformationScr... |
+

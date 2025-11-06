@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Organism: DataTableWithToolbar</title>
+    <style>
+        /* --- 1. DESIGN TOKENS & SETUP --- */
+        :root {
+            /* Colors */
+            --color-primary-500: #0068FF;
+            --color-primary-600: #0052CC;
+            --color-primary-50: #E6F0FF;
+            --color-secondary-500: #6c757d;
+            --color-danger-500: #D32F2F;
+            --color-danger-600: #c82333;
+            --color-white: #FFFFFF;
+            --color-gray-50: #F8F9FA;
+            --color-gray-100: #F1F3F5;
+            --color-gray-200: #E9ECEF;
+            --color-gray-300: #DEE2E6;
+            --color-gray-400: #CED4DA;
+            --color-gray-500: #ADB5BD;
+            --color-gray-600: #868E96;
+            --color-gray-700: #495057;
+            --color-gray-900: #212529;
+            --color-text-primary: #212529;
+            --color-text-secondary: #6c757d;
+            --color-text-white: #ffffff;
+            --color-border-focus: #5C9EFF;
+            /* Typography */
+            --font-family-primary: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            --font-family-secondary: 'Inter', sans-serif;
+            --font-size-sm: 0.875rem;
+            --font-size-md: 1rem;
+            --font-size-lg: 1.25rem;
+            /* Spacing */
+            --space-xs: 4px;
+            --space-sm: 8px;
+            --space-md: 16px;
+            --space-lg: 24px;
+            --space-xl: 32px;
+            /* Borders & Shadows */
+            --border-radius-sm: 0.2rem;
+            --border-radius-md: 0.25rem;
+            --border-radius-lg: 8px;
+            --transition-base: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+
+        /* --- 2. BASE & LAYOUT STYLES --- */
+        *, *::before, *::after { box-sizing: border-box; }
+        body {
+            font-family: var(--font-family-primary);
+            background-color: var(--color-gray-100);
+            color: var(--color-text-primary);
+            margin: 0;
+            padding: var(--space-lg);
+        }
+        .showcase { max-width: 1280px; margin: 0 auto; }
+        .showcase h2 { margin-top: var(--space-xl); margin-bottom: var(--space-md); }
+        .icon { display: inline-block; width: 1em; height: 1em; stroke-width: 0; stroke: currentColor; fill: currentColor; }
+
+        /* --- 3. ATOMIC & MOLECULAR DEPENDENCY STYLES --- */
+        /* Button */
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center; gap: var(--space-sm);
+            font-weight: 600; text-align: center; vertical-align: middle; cursor: pointer; user-select: none;
+            border: 1px solid transparent; transition: var(--transition-base);
+            font-size: var(--font-size-sm); line-height: 1.5; padding: 8px 16px;
+            border-radius: var(--border-radius-md);
+        }
+        .btn:focus-visible { outline: 2px solid var(--color-border-focus); outline-offset: 2px; }
+        .btn:disabled { cursor: not-allowed; opacity: 0.65; }
+        .btn--primary { color: var(--color-text-white); background-color: var(--color-primary-500); border-color: var(--color-primary-500); }
+        .btn--primary:hover { background-color: var(--color-primary-600); border-color: var(--color-primary-600); }
+        .btn--secondary { color: var(--color-text-primary); background-color: var(--color-white); border-color: var(--color-gray-300); }
+        .btn--secondary:hover { border-color: var(--color-gray-400); background-color: var(--color-gray-50); }
+        .btn--danger { color: var(--color-text-white); background-color: var(--color-danger-500); border-color: var(--color-danger-500); }
+        .btn--danger:hover { background-color: var(--color-danger-600); border-color: var(--color-danger-600); }
+        
+        /* SearchBar (variant of TextInput) */
+        .search-bar__wrapper { position: relative; display: flex; align-items: center; }
+        .search-bar__icon { position: absolute; left: var(--space-md); color: var(--color-gray-500); }
+        .search-bar__input {
+            width: 100%; padding: 8px var(--space-md) 8px 40px;
+            font-size: var(--font-size-sm); border: 1px solid var(--color-gray-300);
+            border-radius: var(--border-radius-md); transition: var(--transition-base);
+        }
+        .search-bar__input:focus { border-color: var(--color-primary-500); box-shadow: 0 0 0 3px rgba(0, 104, 255, 0.1); outline: 0; }
+
+        /* SelectDropdown */
+        .select-input {
+            padding: 8px 32px 8px 12px; font-size: var(--font-size-sm);
+            color: var(--color-text-primary); background-color: var(--color-white);
+            border: 1px solid var(--color-gray-300); border-radius: var(--border-radius-md);
+            -webkit-appearance: none; -moz-appearance: none; appearance: none;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+            background-repeat: no-repeat; background-position: right 0.75rem center; background-size: 16px 12px;
+        }
+        .select-input:focus { border-color: var(--color-primary-500); box-shadow: 0 0 0 3px rgba(0, 104, 255, 0.1); outline: 0; }
+        
+        /* Checkbox */
+        .checkbox-group { display: flex; }
+        .checkbox-group input[type="checkbox"] { position: absolute; opacity: 0; }
+        .checkbox-group .checkbox__label { display: flex; align-items: center; cursor: pointer; user-select: none; }
+        .checkbox__box {
+            width: 1.25em; height: 1.25em; border: 1px solid var(--color-gray-400);
+            border-radius: var(--border-radius-sm); display: inline-flex;
+            align-items: center; justify-content: center; transition: var(--transition-base);
+        }
+        .checkbox-group input[type="checkbox"]:focus-visible + .checkbox__label .checkbox__box { border-color: var(--color-border-focus); box-shadow: 0 0 0 0.25rem rgba(0, 104, 255, 0.2); }
+        .checkbox-group input[type="checkbox"]:checked + .checkbox__label .checkbox__box { background-color: var(--color-primary-500); border-color: var(--color-primary-500); }
+        .checkbox__box .icon { color: var(--color-text-white); opacity: 0; transform: scale(0.5); transition: all 0.1s ease-in-out; }
+        .checkbox-group input[type="checkbox"]:checked + .checkbox__label .checkbox__box .icon { opacity: 1; transform: scale(1); }
+        .checkbox-group input[type="checkbox"]:indeterminate + .checkbox__label .checkbox__box { background-color: var(--color-primary-500); border-color: var(--color-primary-500); }
+        .checkbox-group input[type="checkbox"]:indeterminate + .checkbox__label .checkbox__box .icon { opacity: 1; transform: scale(1); }
+        
+        /* DataTable */
+        .data-table-scroll-container { overflow-x: auto; }
+        .data-table {
+            width: 100%; border-collapse: collapse; border-spacing: 0;
+            white-space: nowrap; font-family: var(--font-family-secondary);
+        }
+        .data-table thead { background-color: var(--color-gray-50); }
+        .data-table th, .data-table td { padding: var(--space-md); text-align: left; vertical-align: middle; border-bottom: 1px solid var(--color-gray-200); }
+        .data-table th { font-weight: 600; color: var(--color-gray-700); font-size: var(--font-size-sm); text-transform: uppercase; }
+        .data-table th.sortable { cursor: pointer; user-select: none; position: relative; padding-right: 32px; }
+        .data-table th.sortable:hover { background-color: var(--color-gray-100); }
+        .sort-icon { position: absolute; right: var(--space-md); top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--color-gray-500); opacity: 0.5; }
+        .data-table th.sortable:hover .sort-icon, .data-table th[aria-sort] .sort-icon { opacity: 1; }
+        .data-table th[aria-sort] .sort-icon { color: var(--color-primary-500); }
+        .data-table th[aria-sort="descending"] .sort-icon { transform: translateY(-50%) rotate(180deg); }
+        .data-table tbody tr:hover { background-color: var(--color-gray-50); }
+        .data-table tbody tr.is-selected { background-color: var(--color-primary-50); }
+        .data-table__footer { padding: var(--space-md); display: flex; justify-content: flex-end; }
+
+        /* --- 4. ORGANISM COMPONENT: DataTableWithToolbar --- */
+        .data-table-organism {
+            background-color: var(--color-white);
+            border-radius: var(--border-radius-lg);
+            border: 1px solid var(--color-gray-200);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.02);
+            overflow: hidden;
+        }
+
+        .data-table-organism__toolbar {
+            padding: var(--space-md);
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: var(--space-md);
+            border-bottom: 1px solid var(--color-gray-200);
+        }
+
+        .toolbar__primary-actions,
+        .toolbar__bulk-actions {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: var(--space-md);
+            flex-grow: 1;
+        }
+
+        .toolbar__bulk-actions {
+            display: none; /* Hidden by default */
+        }
+
+        /* State: Bulk Actions Active */
+        .data-table-organism.is-bulk-active .toolbar__primary-actions {
+            display: none;
+        }
+
+        .data-table-organism.is-bulk-active .toolbar__bulk-actions {
+            display: flex;
+        }
+        
+        .toolbar__search {
+            min-width: 250px;
+            flex-grow: 1;
+        }
+
+        .toolbar__filters {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            flex-shrink: 0;
+        }
+
+        .toolbar__actions {
+            flex-shrink: 0;
+        }
+
+        .toolbar__bulk-info {
+            font-weight: 600;
+            color: var(--color-primary-500);
+            flex-grow: 1;
+            font-size: var(--font-size-sm);
+        }
+
+        /* Responsive Adaptations */
+        @media (max-width: 900px) {
+            .data-table-organism__toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .toolbar__primary-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .toolbar__search {
+                min-width: 100%;
+            }
+
+            .toolbar__filters {
+                justify-content: space-between;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="showcase">
+        <!-- SVG Icon Definitions -->
+        <svg width="0" height="0" style="position:absolute">
+            <symbol id="icon-check" viewBox="0 0 16 16"><path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/></symbol>
+            <symbol id="icon-minus" viewBox="0 0 16 16"><path d="M4 8a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7A.5.5 0 0 1 4 8z"/></symbol>
+            <symbol id="icon-search" viewBox="0 0 16 16"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/></symbol>
+            <symbol id="icon-sort-arrow" viewBox="0 0 320 512"><path d="M137.4 41.4c12.5-12.5 32.8-12.5 45.3 0l128 128c9.2 9.2 11.9 22.9 6.9 34.9s-16.6 19.8-29.6 19.8H32c-12.9 0-24.6-7.8-29.6-19.8s-2.2-25.7 6.9-34.9l128-128z"/></symbol>
+        </svg>
+
+        <h2>DataTableWithToolbar Organism</h2>
+
+        <!-- Default State -->
+        <div class="data-table-organism">
+            <header class="data-table-organism__toolbar">
+                <div class="toolbar__primary-actions">
+                    <div class="toolbar__search search-bar__wrapper">
+                        <svg class="icon search-bar__icon"><use href="#icon-search"></use></svg>
+                        <input type="search" class="search-bar__input" placeholder="Search reports...">
+                    </div>
+                    <div class="toolbar__filters">
+                        <label for="status-filter" class="sr-only">Status</label>
+                        <select id="status-filter" class="select-input">
+                            <option>All Statuses</option>
+                            <option>Succeeded</option>
+                            <option>Failed</option>
+                        </select>
+                        <button class="btn btn--secondary">Apply</button>
+                    </div>
+                </div>
+                <div class="toolbar__actions">
+                     <button class="btn btn--primary">Create New Report</button>
+                </div>
+            </header>
+            <div class="data-table-scroll-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th scope="col" style="width: 50px;"><div class="checkbox-group"><input type="checkbox" id="select-all-1" aria-label="Select all"><label for="select-all-1" class="checkbox__label"><span class="checkbox__box"><svg class="icon"><use href="#icon-check"></use></svg></span></label></div></th>
+                            <th scope="col" class="sortable" aria-sort="descending">Report Name <svg class="icon sort-icon"><use href="#icon-sort-arrow"></use></svg></th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Last Run</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><div class="checkbox-group"><input type="checkbox" id="row-1-1"><label for="row-1-1" class="checkbox__label"><span class="checkbox__box"><svg class="icon"><use href="#icon-check"></use></svg></span></label></div></td>
+                            <td>Monthly Sales Summary</td>
+                            <td>Succeeded</td>
+                            <td>2025-01-15 10:30:00</td>
+                        </tr>
+                        <tr>
+                           <td><div class="checkbox-group"><input type="checkbox" id="row-1-2"><label for="row-1-2" class="checkbox__label"><span class="checkbox__box"><svg class="icon"><use href="#icon-check"></use></svg></span></label></div></td>
+                            <td>Daily Inventory Check</td>
+                            <td>Failed</td>
+                            <td>2025-01-15 09:00:00</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <footer class="data-table__footer">
+                <!-- Pagination can go here -->
+            </footer>
+        </div>
+
+        <h2>State: Bulk Actions Active</h2>
+
+        <div class="data-table-organism is-bulk-active">
+            <header class="data-table-organism__toolbar">
+                <!-- This section is hidden by the is-bulk-active class -->
+                <div class="toolbar__primary-actions">
+                    <div class="toolbar__search search-bar__wrapper">
+                        <input type="search" class="search-bar__input" placeholder="Search reports...">
+                    </div>
+                </div>
+                <!-- This section becomes visible -->
+                <div class="toolbar__bulk-actions">
+                    <div class="toolbar__bulk-info" aria-live="polite">
+                        3 items selected
+                    </div>
+                    <div class="toolbar__actions">
+                        <button class="btn btn--secondary">Re-deliver</button>
+                        <button class="btn btn--danger">Delete Selected</button>
+                    </div>
+                </div>
+            </header>
+            <div class="data-table-scroll-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                             <th scope="col" style="width: 50px;"><div class="checkbox-group"><input type="checkbox" id="select-all-2" class="checkbox--indeterminate"><label for="select-all-2" class="checkbox__label"><span class="checkbox__box"><svg class="icon"><use href="#icon-minus"></use></svg></span></label></div></th>
+                            <th scope="col">Report Name</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Last Run</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="is-selected">
+                           <td><div class="checkbox-group"><input type="checkbox" id="row-2-1" checked><label for="row-2-1" class="checkbox__label"><span class="checkbox__box"><svg class="icon"><use href="#icon-check"></use></svg></span></label></div></td>
+                            <td>Monthly Sales Summary</td>
+                            <td>Succeeded</td>
+                            <td>2025-01-15 10:30:00</td>
+                        </tr>
+                        <tr class="is-selected">
+                            <td><div class="checkbox-group"><input type="checkbox" id="row-2-2" checked><label for="row-2-2" class="checkbox__label"><span class="checkbox__box"><svg class="icon"><use href="#icon-check"></use></svg></span></label></div></td>
+                            <td>Weekly User Activity</td>
+                            <td>Succeeded</td>
+                            <td>2025-01-14 17:00:00</td>
+                        </tr>
+                         <tr class="is-selected">
+                            <td><div class="checkbox-group"><input type="checkbox" id="row-2-3" checked><label for="row-2-3" class="checkbox__label"><span class="checkbox__box"><svg class="icon"><use href="#icon-check"></use></svg></span></label></div></td>
+                            <td>Q4 Financials</td>
+                            <td>Succeeded</td>
+                            <td>2025-01-13 11:00:00</td>
+                        </tr>
+                        <tr>
+                            <td><div class="checkbox-group"><input type="checkbox" id="row-2-4"><label for="row-2-4" class="checkbox__label"><span class="checkbox__box"><svg class="icon"><use href="#icon-check"></use></svg></span></label></div></td>
+                            <td>Daily Inventory Check</td>
+                            <td>Failed</td>
+                            <td>2025-01-15 09:00:00</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+	 <div class="showcase" style="margin-top: 2rem; padding: 1.5rem; background-color: #fff; border-radius: 8px;"> <h2> Component Variations</h2>      <div>        <h3>Variant Name: Default</h3>		<!--description--><p> The standard view with primary toolbar actions like search and filtering visible.</p>		      <div>
+	 </div>
+      <div>
+        <h3>Variant Name: filtering</h3>		<!--description--><p> A state where a filter or search term has been applied. This is primarily a data state, but the UI might reflect it with populated input fields or an active 'Clear Filters' button.</p>		      <div>
+	 </div>
+      <div>
+        <h3>Variant Name: bulk_actions_active</h3>		<!--description--><p> A state triggered when one or more rows in the data table are selected. The primary toolbar is replaced with a context-specific toolbar for performing actions on the selected items.</p>		      <div>
+	 </div>
+	 </div></body>
+</html>

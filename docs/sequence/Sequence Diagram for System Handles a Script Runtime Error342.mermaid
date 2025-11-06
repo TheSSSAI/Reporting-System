@@ -1,0 +1,29 @@
+sequenceDiagram
+    participant "React Control Panel" as ReactControlPanel
+    participant "ScriptPreviewController" as ScriptPreviewController
+    participant "ScriptExecutionService" as ScriptExecutionService
+    participant "JintEngineWrapper" as JintEngineWrapper
+    participant "Jint Engine" as JintEngine
+
+    activate ScriptPreviewController
+    ReactControlPanel->>ScriptPreviewController: 1. Sends script preview request with faulty script content.
+    activate ScriptExecutionService
+    ScriptPreviewController->>ScriptExecutionService: 2. Invokes service to execute the script preview.
+    activate JintEngineWrapper
+    ScriptExecutionService->>JintEngineWrapper: 3. Requests script execution from the sandboxed engine wrapper.
+    activate JintEngine
+    JintEngineWrapper->>JintEngine: 4. Calls engine.Execute() with user script inside a try...catch block.
+    JintEngine->>JintEngineWrapper: 5. Throws Jint.Runtime.JavaScriptException (e.g., ReferenceError: 'b' is not defined).
+    JintEngineWrapper->>ScriptExecutionService: 6. Catches exception, extracts details, and throws a new domain-specific ScriptRuntimeException.
+    ScriptExecutionService->>ScriptPreviewController: 7. Catches ScriptRuntimeException, logs it, formats a ScriptErrorDto, and returns a failure result.
+    ScriptPreviewController-->>ScriptExecutionService: Returns ExecutionResult.Failure(ScriptErrorDto)
+    ScriptPreviewController->>ReactControlPanel: 8. Receives failure result and returns a structured error payload.
+    ReactControlPanel-->>ScriptPreviewController: HTTP 400 Bad Request with JSON body
+
+    note over ScriptExecutionService: The ScriptExecutionService logs the detailed error to a centralized logging system (e.g., Serilog...
+    note over ScriptPreviewController: For a full report generation job (not a preview), the controller would return an HTTP 500 Interna...
+
+    deactivate JintEngine
+    deactivate JintEngineWrapper
+    deactivate ScriptExecutionService
+    deactivate ScriptPreviewController

@@ -1,0 +1,493 @@
+# 1 Overview
+
+## 1.1 Diagram Id
+
+SEQ-OF-002
+
+## 1.2 Name
+
+System Health Check Probe
+
+## 1.3 Description
+
+An external monitoring tool (like Prometheus) sends an HTTP GET request to the system's dedicated health check endpoint (/healthz). The system, using ASP.NET Core Health Checks, executes a series of internal checks, including connectivity to the SQLite database. It returns an aggregated status indicating whether the service and its dependencies are healthy.
+
+## 1.4 Type
+
+🔹 OperationalFlow
+
+## 1.5 Purpose
+
+To provide a simple, automated way for monitoring systems to determine the availability and health of the application, supporting the 99.9% uptime requirement.
+
+## 1.6 Complexity
+
+Low
+
+## 1.7 Priority
+
+🔴 High
+
+## 1.8 Frequency
+
+OnDemand
+
+## 1.9 Participants
+
+- apiweblayer
+- infrastructure_layer
+
+## 1.10 Key Interactions
+
+- An external monitoring tool sends a GET request to the /healthz endpoint.
+- The ASP.NET Core Health Checks middleware intercepts the request.
+- The middleware invokes all registered health checks, such as the database check.
+- The Infrastructure Layer's database health check attempts a simple, fast query against the SQLite database (e.g., 'SELECT 1').
+- Each check reports its status (Healthy, Degraded, Unhealthy) and response time.
+- The middleware aggregates these statuses and returns a single overall status with an appropriate HTTP status code (200 OK for Healthy, 503 Service Unavailable for Unhealthy).
+
+## 1.11 Triggers
+
+- An external monitoring system or load balancer probes the health check endpoint.
+
+## 1.12 Outcomes
+
+- The monitoring system receives a status indicating the real-time health of the application and its critical dependencies.
+
+## 1.13 Business Rules
+
+- The overall status is 'Unhealthy' if any one of the critical dependency checks fails.
+- Health checks should have a short, aggressive timeout to avoid blocking the monitoring tool.
+
+## 1.14 Error Scenarios
+
+- The database connection check fails due to corruption or file lock, resulting in an 'Unhealthy' status.
+- The service itself is unresponsive and fails to return any response.
+
+## 1.15 Integration Points
+
+- External Monitoring System (e.g., Prometheus, Kubernetes Liveness Probe)
+
+# 2.0 Details
+
+## 2.1 Diagram Id
+
+SEQ-IMPLEMENTATION-OF-002
+
+## 2.2 Name
+
+System Health Check Probe Implementation
+
+## 2.3 Description
+
+Detailed technical sequence for an external monitoring tool probing the /healthz endpoint. The ASP.NET Core Health Checks middleware, hosted in the Service Host, orchestrates parallel calls to all registered health checks, including a critical database connectivity check implemented in the Infrastructure layer. The sequence aggregates individual results to return a consolidated system health status, which is fundamental for SRE/SLO monitoring, load balancer decisions, and automated recovery systems like Kubernetes probes.
+
+## 2.4 Participants
+
+### 2.4.1 ExternalSystem
+
+#### 2.4.1.1 Repository Id
+
+EXTERNAL-MONITOR
+
+#### 2.4.1.2 Display Name
+
+Monitoring Tool
+
+#### 2.4.1.3 Type
+
+🔹 ExternalSystem
+
+#### 2.4.1.4 Technology
+
+Prometheus, Kubernetes Probe, Load Balancer
+
+#### 2.4.1.5 Order
+
+1
+
+#### 2.4.1.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | actor |
+| Color | #90A4AE |
+| Stereotype | «External» |
+
+### 2.4.2.0 ApplicationService
+
+#### 2.4.2.1 Repository Id
+
+REPO-08-SERVICE-HOST
+
+#### 2.4.2.2 Display Name
+
+Service Host (API/Web Layer)
+
+#### 2.4.2.3 Type
+
+🔹 ApplicationService
+
+#### 2.4.2.4 Technology
+
+ASP.NET Core 8
+
+#### 2.4.2.5 Order
+
+2
+
+#### 2.4.2.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | participant |
+| Color | #42A5F5 |
+| Stereotype | «ASP.NET Core» |
+
+### 2.4.3.0 InfrastructureService
+
+#### 2.4.3.1 Repository Id
+
+REPO-05-INFRASTRUCTURE
+
+#### 2.4.3.2 Display Name
+
+Infrastructure Layer
+
+#### 2.4.3.3 Type
+
+🔹 InfrastructureService
+
+#### 2.4.3.4 Technology
+
+.NET 8, EF Core 8, Microsoft.Data.Sqlite
+
+#### 2.4.3.5 Order
+
+3
+
+#### 2.4.3.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | participant |
+| Color | #81C784 |
+| Stereotype | «Infrastructure» |
+
+## 2.5.0.0 Interactions
+
+### 2.5.1.0 Request
+
+#### 2.5.1.1 Source Id
+
+EXTERNAL-MONITOR
+
+#### 2.5.1.2 Target Id
+
+REPO-08-SERVICE-HOST
+
+#### 2.5.1.3 Message
+
+Probe health: GET /healthz
+
+#### 2.5.1.4 Sequence Number
+
+1
+
+#### 2.5.1.5 Type
+
+🔹 Request
+
+#### 2.5.1.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.1.7 Return Message
+
+Return aggregated health status (e.g., HTTP 200 OK or 503 Service Unavailable)
+
+#### 2.5.1.8 Has Return
+
+✅ Yes
+
+#### 2.5.1.9 Is Activation
+
+✅ Yes
+
+#### 2.5.1.10 Technical Details
+
+##### 2.5.1.10.1 Protocol
+
+HTTP/1.1, HTTP/2
+
+##### 2.5.1.10.2 Method
+
+GET
+
+##### 2.5.1.10.3 Parameters
+
+- {'name': 'Headers', 'value': 'Accept: application/json, User-Agent: Prometheus/2.45.0'}
+
+##### 2.5.1.10.4 Authentication
+
+None. Endpoint is public but may be network-restricted.
+
+##### 2.5.1.10.5 Error Handling
+
+Client should handle timeouts (e.g., >2s) as an 'Unhealthy' signal. Client should treat any non-200 status code as 'Unhealthy'.
+
+##### 2.5.1.10.6 Performance
+
+###### 2.5.1.10.6.1 Latency
+
+<5s (client-side timeout)
+
+### 2.5.2.0.0.0 InternalCall
+
+#### 2.5.2.1.0.0 Source Id
+
+REPO-08-SERVICE-HOST
+
+#### 2.5.2.2.0.0 Target Id
+
+REPO-08-SERVICE-HOST
+
+#### 2.5.2.3.0.0 Message
+
+Intercept request: HealthCheckMiddleware.InvokeAsync(context)
+
+#### 2.5.2.4.0.0 Sequence Number
+
+2
+
+#### 2.5.2.5.0.0 Type
+
+🔹 InternalCall
+
+#### 2.5.2.6.0.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.2.7.0.0 Return Message
+
+
+
+#### 2.5.2.8.0.0 Has Return
+
+❌ No
+
+#### 2.5.2.9.0.0 Is Activation
+
+❌ No
+
+#### 2.5.2.10.0.0 Technical Details
+
+##### 2.5.2.10.1.0 Protocol
+
+In-process
+
+##### 2.5.2.10.2.0 Method
+
+InvokeAsync
+
+##### 2.5.2.10.3.0 Parameters
+
+- {'name': 'context', 'value': 'HttpContext for the /healthz request'}
+
+##### 2.5.2.10.4.0 Authentication
+
+N/A
+
+##### 2.5.2.10.5.0 Error Handling
+
+Exceptions are caught and result in a 503 Service Unavailable response.
+
+##### 2.5.2.10.6.0 Performance
+
+*No data available*
+
+### 2.5.3.0.0.0 MethodCall
+
+#### 2.5.3.1.0.0 Source Id
+
+REPO-08-SERVICE-HOST
+
+#### 2.5.3.2.0.0 Target Id
+
+REPO-05-INFRASTRUCTURE
+
+#### 2.5.3.3.0.0 Message
+
+Invoke all registered checks: healthCheckService.CheckHealthAsync(cancellationToken)
+
+#### 2.5.3.4.0.0 Sequence Number
+
+3
+
+#### 2.5.3.5.0.0 Type
+
+🔹 MethodCall
+
+#### 2.5.3.6.0.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.3.7.0.0 Return Message
+
+Return aggregated HealthReport
+
+#### 2.5.3.8.0.0 Has Return
+
+✅ Yes
+
+#### 2.5.3.9.0.0 Is Activation
+
+✅ Yes
+
+#### 2.5.3.10.0.0 Technical Details
+
+##### 2.5.3.10.1.0 Protocol
+
+In-process (via DI)
+
+##### 2.5.3.10.2.0 Method
+
+CheckHealthAsync
+
+##### 2.5.3.10.3.0 Parameters
+
+- {'name': 'cancellationToken', 'value': 'Token with a configured timeout (e.g., 30s for the entire operation)'}
+
+##### 2.5.3.10.4.0 Authentication
+
+N/A
+
+##### 2.5.3.10.5.0 Error Handling
+
+The service executes all checks and aggregates results; it does not fail if one check fails.
+
+##### 2.5.3.10.6.0 Performance
+
+###### 2.5.3.10.6.1 Note
+
+Checks are typically run in parallel by the framework.
+
+#### 2.5.3.11.0.0 Nested Interactions
+
+- {'sourceId': 'REPO-05-INFRASTRUCTURE', 'targetId': 'REPO-05-INFRASTRUCTURE', 'message': 'Execute DB Check: SQLiteHealthCheck.CheckHealthAsync(context, cancellationToken)', 'sequenceNumber': '3.1', 'type': 'InternalCall', 'isSynchronous': True, 'returnMessage': 'Return HealthCheckResult', 'hasReturn': True, 'isActivation': False, 'technicalDetails': {'protocol': 'In-process', 'method': 'CheckHealthAsync', 'parameters': [{'name': 'context', 'value': 'HealthCheckContext'}, {'name': 'cancellationToken', 'value': 'Token with an aggressive timeout (e.g., 1s)'}], 'authentication': 'N/A', 'errorHandling': 'Catch SqliteException, TimeoutException. Return HealthCheckResult.Unhealthy with exception details.', 'performance': {'latency': 'P99 < 50ms'}}, 'nestedInteractions': [{'sourceId': 'REPO-05-INFRASTRUCTURE', 'targetId': 'REPO-05-INFRASTRUCTURE', 'message': 'Open connection and execute lightweight query: command.ExecuteScalarAsync("SELECT 1", cancellationToken)', 'sequenceNumber': '3.1.1', 'type': 'DatabaseQuery', 'isSynchronous': True, 'returnMessage': "Return '1' on success", 'hasReturn': True, 'isActivation': False, 'technicalDetails': {'protocol': 'SQLite Engine', 'method': 'ExecuteScalarAsync', 'parameters': [{'name': 'query', 'value': 'SELECT 1'}], 'authentication': 'N/A (uses connection string)', 'errorHandling': 'A SqliteException indicates a connectivity or file lock issue. A TaskCanceledException indicates a timeout.', 'performance': {'latency': 'P99 < 20ms'}}}]}
+
+### 2.5.4.0.0.0 InternalProcessing
+
+#### 2.5.4.1.0.0 Source Id
+
+REPO-08-SERVICE-HOST
+
+#### 2.5.4.2.0.0 Target Id
+
+REPO-08-SERVICE-HOST
+
+#### 2.5.4.3.0.0 Message
+
+Aggregate results and format response using configured HealthCheckResponseWriter
+
+#### 2.5.4.4.0.0 Sequence Number
+
+4
+
+#### 2.5.4.5.0.0 Type
+
+🔹 InternalProcessing
+
+#### 2.5.4.6.0.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.4.7.0.0 Return Message
+
+
+
+#### 2.5.4.8.0.0 Has Return
+
+❌ No
+
+#### 2.5.4.9.0.0 Is Activation
+
+❌ No
+
+#### 2.5.4.10.0.0 Technical Details
+
+##### 2.5.4.10.1.0 Protocol
+
+In-process
+
+##### 2.5.4.10.2.0 Method
+
+Custom Response Writer Delegate
+
+##### 2.5.4.10.3.0 Parameters
+
+- {'name': 'report', 'value': 'The aggregated HealthReport object'}
+
+##### 2.5.4.10.4.0 Authentication
+
+N/A
+
+##### 2.5.4.10.5.0 Error Handling
+
+N/A
+
+##### 2.5.4.10.6.0 Performance
+
+###### 2.5.4.10.6.1 Latency
+
+< 1ms
+
+## 2.6.0.0.0.0 Notes
+
+### 2.6.1.0.0.0 Content
+
+#### 2.6.1.1.0.0 Content
+
+Business Rule: The overall status is 'Unhealthy' and the HTTP status is 503 if any single health check fails. This ensures that load balancers or orchestrators will quickly remove the instance from rotation.
+
+#### 2.6.1.2.0.0 Position
+
+bottom
+
+#### 2.6.1.3.0.0 Participant Id
+
+REPO-08-SERVICE-HOST
+
+#### 2.6.1.4.0.0 Sequence Number
+
+4
+
+### 2.6.2.0.0.0 Content
+
+#### 2.6.2.1.0.0 Content
+
+Implementation Detail: Individual health checks MUST be configured with aggressive, short timeouts (e.g., 1-2 seconds) to prevent the health check endpoint itself from becoming a source of instability or resource exhaustion.
+
+#### 2.6.2.2.0.0 Position
+
+right
+
+#### 2.6.2.3.0.0 Participant Id
+
+REPO-05-INFRASTRUCTURE
+
+#### 2.6.2.4.0.0 Sequence Number
+
+3.1
+
+## 2.7.0.0.0.0 Implementation Guidance
+
+| Property | Value |
+|----------|-------|
+| Security Requirements | The health check endpoint should not return sensit... |
+| Performance Targets | The overall P99 latency of the /healthz endpoint m... |
+| Error Handling Strategy | If the SQLite database connection check fails due ... |
+| Testing Considerations | Integration tests are critical. A dedicated test m... |
+| Monitoring Requirements | The result of each health check should be exposed ... |
+| Deployment Considerations | This endpoint is essential for zero-downtime deplo... |
+

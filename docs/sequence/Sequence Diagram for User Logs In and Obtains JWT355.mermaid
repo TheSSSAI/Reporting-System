@@ -1,0 +1,30 @@
+sequenceDiagram
+    actor "React Client" as ReactClient
+    participant "API/Web Layer" as APIWebLayer
+    participant "Application Layer" as ApplicationLayer
+    participant "Infrastructure Layer" as InfrastructureLayer
+
+    activate APIWebLayer
+    ReactClient->>APIWebLayer: 1. User submits credentials via Login form.
+    APIWebLayer-->>ReactClient: Returns JWT on success or error response on failure.
+    activate ApplicationLayer
+    APIWebLayer->>ApplicationLayer: 2. Invokes authentication service with credentials DTO.
+    ApplicationLayer-->>APIWebLayer: Returns AuthenticationResult object (Success/Failure/LockedOut).
+    activate InfrastructureLayer
+    ApplicationLayer->>InfrastructureLayer: 3. Find user by username using UserManager.
+    InfrastructureLayer-->>ApplicationLayer: Returns User object or null if not found.
+    ApplicationLayer->>ApplicationLayer: 4. Check if user account is locked.
+    ApplicationLayer-->>ApplicationLayer: Boolean indicating locked status.
+    ApplicationLayer->>InfrastructureLayer: 5. Validate password and handle lockout policy using SignInManager.
+    InfrastructureLayer-->>ApplicationLayer: Returns SignInResult object.
+    ApplicationLayer->>ApplicationLayer: 6. Log successful or failed login attempt to audit log.
+    APIWebLayer->>APIWebLayer: 7. If authentication successful, generate signed JWT.
+    APIWebLayer-->>APIWebLayer: Signed JWT string.
+
+    note over ApplicationLayer: ASP.NET Core Identity's UserManager and SignInManager abstract away the direct database interacti...
+    note over APIWebLayer: The generated JWT contains claims such as 'sub' (user ID), 'name', 'jti' (unique token ID), 'exp'...
+    note over ReactClient: The React client must store the received JWT securely and include it in the 'Authorization: Beare...
+
+    deactivate InfrastructureLayer
+    deactivate ApplicationLayer
+    deactivate APIWebLayer

@@ -1,0 +1,43 @@
+erDiagram
+    User {
+        UUID userId PK
+    }
+    Role {
+        SERIAL roleId PK
+    }
+    UserRole {
+        UUID userId PK,FK
+        INT roleId PK,FK
+    }
+    TransformationScript {
+        UUID transformationScriptId PK
+    }
+    TransformationScriptVersion {
+        UUID transformationScriptVersionId PK
+    }
+    ReportConfiguration {
+        UUID reportConfigurationId PK
+    }
+    JobExecutionLog {
+        UUID jobExecutionLogId PK
+    }
+    ApplicationConfiguration {
+        VARCHAR configurationKey PK
+    }
+
+    User ||--o{ UserRole : "has"
+    Role ||--o{ UserRole : "has"
+
+    User ||--o{ TransformationScript : "created by"
+    User ||--o{ TransformationScript : "updated by"
+    User ||--o{ TransformationScriptVersion : "created by"
+    User ||--o{ ReportConfiguration : "created by"
+    User ||--o{ ReportConfiguration : "updated by"
+
+    TransformationScript ||--o{ TransformationScriptVersion : "contains versions"
+    TransformationScript }o--|| TransformationScriptVersion : "has active version"
+
+    TransformationScriptVersion }o--o{ ReportConfiguration : "is used by"
+    TransformationScriptVersion }o--o{ JobExecutionLog : "ran in"
+
+    ReportConfiguration ||--o{ JobExecutionLog : "executes as"

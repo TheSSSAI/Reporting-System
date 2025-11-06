@@ -1,0 +1,51 @@
+erDiagram
+    TransformationScript {
+        Guid transformationScriptId PK
+    }
+    TransformationScriptVersion {
+        Guid transformationScriptVersionId PK
+    }
+    ReportConfiguration {
+        Guid reportConfigurationId PK
+    }
+    ReportJob {
+        Guid reportJobId PK
+    }
+    User {
+        Guid userId PK
+    }
+    Role {
+        INT roleId PK
+    }
+    UserRole {
+        Guid userId PK
+        INT roleId PK
+    }
+    AuditLog {
+        BIGINT auditLogId PK
+    }
+    ApplicationConfiguration {
+        VARCHAR configurationKey PK
+    }
+    ReportingDashboardMV {
+        DATE aggregationDate PK
+        Guid reportConfigurationId PK
+    }
+
+    TransformationScript ||--o{ TransformationScriptVersion : TransformationScriptVersions
+    TransformationScript ||--|o TransformationScriptVersion : TransformationScriptActiveVersion
+    TransformationScript ||--o{ ReportConfiguration : TransformationScriptReportConfigurations
+
+    ReportConfiguration ||--o{ ReportJob : ReportConfigurationJobs
+
+    TransformationScriptVersion ||--o{ ReportJob : TransformationScriptVersionJobs
+
+    User ||--o{ TransformationScript : UserCreatedTransformationScripts
+    User ||--o{ TransformationScript : UserUpdatedTransformationScripts
+    User ||--o{ TransformationScriptVersion : UserCreatedTransformationScriptVersions
+    User ||--o{ ReportConfiguration : UserCreatedReportConfigurations
+    User ||--o{ ReportConfiguration : UserUpdatedReportConfigurations
+    User ||--o{ AuditLog : UserAuditLogs
+    User ||--o{ UserRole : UserRoleAssignments
+
+    Role ||--o{ UserRole : RoleUserAssignments

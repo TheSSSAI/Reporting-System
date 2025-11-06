@@ -1,0 +1,2 @@
+"total_risks_identified","critical_risks","high_priority_risks","average_risk_score","key_risk_themes","immediate_actions_required"
+"7","0","4","13.29","[""Technical Complexity of Extensibility"",""Security of Script Sandboxing"",""Operational Risk in Migration & Deployment""]","[""Assign senior developers to the Custom Connector (RISK-001) and Jint Sandboxing (RISK-003) tasks."",""Mandate a formal security review for the Jint transformation engine implementation."",""Develop a detailed, multi-stage testing plan for the legacy data migration script (RISK-004).""]"

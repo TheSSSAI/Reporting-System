@@ -1,0 +1,836 @@
+# 1 Overview
+
+## 1.1 Diagram Id
+
+SEQ-OF-001
+
+## 1.2 Name
+
+System Performs Periodic License Validation Check
+
+## 1.3 Description
+
+A background job managed by Quartz.NET runs periodically (every 30 days) to re-validate the active license key. It makes a secure API call to the external cloud-based licensing service. Based on the response, it either maintains the 'Active' state or, upon failure, transitions the system into a 7-day Grace Period.
+
+## 1.4 Type
+
+🔹 OperationalFlow
+
+## 1.5 Purpose
+
+To ensure ongoing license compliance and manage the subscription lifecycle of the software.
+
+## 1.6 Complexity
+
+Medium
+
+## 1.7 Priority
+
+🔴 High
+
+## 1.8 Frequency
+
+Monthly
+
+## 1.9 Participants
+
+- application_layer
+- infrastructure_layer
+
+## 1.10 Key Interactions
+
+- A scheduled Quartz.NET job triggers the validation process.
+- The Application Layer retrieves the current license key from the encrypted configuration.
+- The Infrastructure Layer makes a secure HTTPS call to the cloud licensing service API, sending the key.
+- The licensing service validates the key against its records and returns its status (e.g., 'Valid', 'Expired', 'Invalid').
+- If the response indicates the key is 'Valid', the system updates a 'last validated' timestamp.
+- If the response is anything other than 'Valid', the system transitions its internal state to 'Grace Period' and records the start date.
+
+## 1.11 Triggers
+
+- The 30-day periodic validation interval elapses.
+
+## 1.12 Outcomes
+
+- The system's license state is confirmed as valid, and operation continues normally.
+- The system enters a 7-day grace period if validation fails, during which it remains fully functional.
+
+## 1.13 Business Rules
+
+- Validation interval is 30 days.
+- Grace Period is 7 days.
+- Communication with the licensing service must be over HTTPS on port 443.
+
+## 1.14 Error Scenarios
+
+- The cloud licensing service is unreachable; the system should enter the grace period as a fail-safe.
+- Outbound internet access from the host server is blocked by a firewall.
+
+## 1.15 Integration Points
+
+- Cloud-Based Licensing Service (External API)
+
+# 2.0 Details
+
+## 2.1 Diagram Id
+
+SEQ-OP-001
+
+## 2.2 Name
+
+Implementation of Periodic License Validation Background Job
+
+## 2.3 Description
+
+Provides a detailed technical specification for the automated, periodic license validation process. This sequence is triggered by a Quartz.NET scheduled job and orchestrates a secure call to an external licensing API. The flow includes comprehensive error handling using Polly for resiliency, detailed structured logging, and emission of Prometheus metrics for observability, adhering to SRE principles. The system's state transitions (e.g., to a Grace Period) are handled as a fail-safe mechanism to ensure operational continuity.
+
+## 2.4 Participants
+
+### 2.4.1 Job Scheduler
+
+#### 2.4.1.1 Repository Id
+
+Quartz.NET-Scheduler
+
+#### 2.4.1.2 Display Name
+
+Quartz.NET Scheduler
+
+#### 2.4.1.3 Type
+
+🔹 Job Scheduler
+
+#### 2.4.1.4 Technology
+
+Quartz.NET 3.x
+
+#### 2.4.1.5 Order
+
+1
+
+#### 2.4.1.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | actor |
+| Color | #C0C0C0 |
+| Stereotype | «Timer» |
+
+### 2.4.2.0 Background Job
+
+#### 2.4.2.1 Repository Id
+
+REPO-08-SERVICE-HOST
+
+#### 2.4.2.2 Display Name
+
+LicenseValidationJob
+
+#### 2.4.2.3 Type
+
+🔹 Background Job
+
+#### 2.4.2.4 Technology
+
+IJob (Quartz.NET)
+
+#### 2.4.2.5 Order
+
+2
+
+#### 2.4.2.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | participant |
+| Color | #D3D3D3 |
+| Stereotype | «Hosted Service» |
+
+### 2.4.3.0 Application Service
+
+#### 2.4.3.1 Repository Id
+
+REPO-08-SERVICE-HOST
+
+#### 2.4.3.2 Display Name
+
+LicensingService
+
+#### 2.4.3.3 Type
+
+🔹 Application Service
+
+#### 2.4.3.4 Technology
+
+.NET 8 Service
+
+#### 2.4.3.5 Order
+
+3
+
+#### 2.4.3.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | participant |
+| Color | #ADD8E6 |
+| Stereotype | «Application» |
+
+### 2.4.4.0 Infrastructure Repository
+
+#### 2.4.4.1 Repository Id
+
+REPO-05-INFRASTRUCTURE
+
+#### 2.4.4.2 Display Name
+
+ConfigurationRepository
+
+#### 2.4.4.3 Type
+
+🔹 Infrastructure Repository
+
+#### 2.4.4.4 Technology
+
+EF Core 8 / .NET DPAPI
+
+#### 2.4.4.5 Order
+
+4
+
+#### 2.4.4.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | participant |
+| Color | #90EE90 |
+| Stereotype | «Infrastructure» |
+
+### 2.4.5.0 Infrastructure Client
+
+#### 2.4.5.1 Repository Id
+
+REPO-05-INFRASTRUCTURE
+
+#### 2.4.5.2 Display Name
+
+LicensingApiClient
+
+#### 2.4.5.3 Type
+
+🔹 Infrastructure Client
+
+#### 2.4.5.4 Technology
+
+HttpClient / Polly
+
+#### 2.4.5.5 Order
+
+5
+
+#### 2.4.5.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | participant |
+| Color | #90EE90 |
+| Stereotype | «Infrastructure» |
+
+### 2.4.6.0 External API
+
+#### 2.4.6.1 Repository Id
+
+External-Licensing-API
+
+#### 2.4.6.2 Display Name
+
+Cloud Licensing Service API
+
+#### 2.4.6.3 Type
+
+🔹 External API
+
+#### 2.4.6.4 Technology
+
+HTTPS/REST
+
+#### 2.4.6.5 Order
+
+6
+
+#### 2.4.6.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | participant |
+| Color | #FFA07A |
+| Stereotype | «External» |
+
+## 2.5.0.0 Interactions
+
+### 2.5.1.0 Scheduled Trigger
+
+#### 2.5.1.1 Source Id
+
+Quartz.NET-Scheduler
+
+#### 2.5.1.2 Target Id
+
+REPO-08-SERVICE-HOST
+
+#### 2.5.1.3 Message
+
+Trigger: Execute(IJobExecutionContext context)
+
+#### 2.5.1.4 Sequence Number
+
+1
+
+#### 2.5.1.5 Type
+
+🔹 Scheduled Trigger
+
+#### 2.5.1.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.1.7 Return Message
+
+
+
+#### 2.5.1.8 Has Return
+
+❌ No
+
+#### 2.5.1.9 Is Activation
+
+✅ Yes
+
+#### 2.5.1.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-Process |
+| Method | Execute |
+| Parameters | IJobExecutionContext containing job details and a ... |
+| Authentication | N/A |
+| Error Handling | Quartz.NET handles exceptions thrown by the job, l... |
+| Performance | Trigger fires based on a CRON schedule: '0 0 0 1/3... |
+
+### 2.5.2.0 Service Call
+
+#### 2.5.2.1 Source Id
+
+REPO-08-SERVICE-HOST
+
+#### 2.5.2.2 Target Id
+
+REPO-08-SERVICE-HOST
+
+#### 2.5.2.3 Message
+
+Invoke: PerformValidationAsync()
+
+#### 2.5.2.4 Sequence Number
+
+2
+
+#### 2.5.2.5 Type
+
+🔹 Service Call
+
+#### 2.5.2.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.2.7 Return Message
+
+Task
+
+#### 2.5.2.8 Has Return
+
+✅ Yes
+
+#### 2.5.2.9 Is Activation
+
+✅ Yes
+
+#### 2.5.2.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-Process (DI) |
+| Method | PerformValidationAsync |
+| Parameters | None. A new Correlation ID for the job run is crea... |
+| Authentication | N/A |
+| Error Handling | Wraps entire logic in a try/catch block to log any... |
+| Performance | N/A |
+
+### 2.5.3.0 Data Request
+
+#### 2.5.3.1 Source Id
+
+REPO-08-SERVICE-HOST
+
+#### 2.5.3.2 Target Id
+
+REPO-05-INFRASTRUCTURE
+
+#### 2.5.3.3 Message
+
+Request: GetLicenseKeyAsync()
+
+#### 2.5.3.4 Sequence Number
+
+3
+
+#### 2.5.3.5 Type
+
+🔹 Data Request
+
+#### 2.5.3.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.3.7 Return Message
+
+Task<string>
+
+#### 2.5.3.8 Has Return
+
+✅ Yes
+
+#### 2.5.3.9 Is Activation
+
+❌ No
+
+#### 2.5.3.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-Process (DI) |
+| Method | GetLicenseKeyAsync |
+| Parameters | None |
+| Authentication | N/A |
+| Error Handling | Throws InvalidOperationException if no license key... |
+| Performance | Expected latency < 50ms. |
+
+### 2.5.4.0 Data Response
+
+#### 2.5.4.1 Source Id
+
+REPO-05-INFRASTRUCTURE
+
+#### 2.5.4.2 Target Id
+
+REPO-08-SERVICE-HOST
+
+#### 2.5.4.3 Message
+
+Return: Encrypted License Key
+
+#### 2.5.4.4 Sequence Number
+
+4
+
+#### 2.5.4.5 Type
+
+🔹 Data Response
+
+#### 2.5.4.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.4.7 Return Message
+
+The key is decrypted using .NET's DPAPI before being returned.
+
+#### 2.5.4.8 Has Return
+
+✅ Yes
+
+#### 2.5.4.9 Is Activation
+
+❌ No
+
+#### 2.5.4.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-Process |
+| Method |  |
+| Parameters | string licenseKey |
+| Authentication | N/A |
+| Error Handling | N/A |
+| Performance | N/A |
+
+### 2.5.5.0 API Client Call
+
+#### 2.5.5.1 Source Id
+
+REPO-08-SERVICE-HOST
+
+#### 2.5.5.2 Target Id
+
+REPO-05-INFRASTRUCTURE
+
+#### 2.5.5.3 Message
+
+Call: ValidateKeyAsync(licenseKey)
+
+#### 2.5.5.4 Sequence Number
+
+5
+
+#### 2.5.5.5 Type
+
+🔹 API Client Call
+
+#### 2.5.5.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.5.7 Return Message
+
+Task<LicenseStatus>
+
+#### 2.5.5.8 Has Return
+
+✅ Yes
+
+#### 2.5.5.9 Is Activation
+
+✅ Yes
+
+#### 2.5.5.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-Process (DI) |
+| Method | ValidateKeyAsync |
+| Parameters | string licenseKey |
+| Authentication | N/A |
+| Error Handling | Propagates exceptions from the HttpClient, such as... |
+| Performance | N/A |
+
+### 2.5.6.0 External API Call
+
+#### 2.5.6.1 Source Id
+
+REPO-05-INFRASTRUCTURE
+
+#### 2.5.6.2 Target Id
+
+External-Licensing-API
+
+#### 2.5.6.3 Message
+
+POST /v1/validate
+
+#### 2.5.6.4 Sequence Number
+
+6
+
+#### 2.5.6.5 Type
+
+🔹 External API Call
+
+#### 2.5.6.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.6.7 Return Message
+
+200 OK with JSON body
+
+#### 2.5.6.8 Has Return
+
+✅ Yes
+
+#### 2.5.6.9 Is Activation
+
+❌ No
+
+#### 2.5.6.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | HTTPS/REST |
+| Method | POST |
+| Parameters | JSON Body: { "key": "..." }. Header: 'X-Api-Key' f... |
+| Authentication | Secure API key retrieved from Windows Certificate ... |
+| Error Handling | Wrapped in a Polly resiliency policy: 3 retries wi... |
+| Performance | P99 latency target < 2000ms. A 'license_validation... |
+
+### 2.5.7.0 API Response
+
+#### 2.5.7.1 Source Id
+
+External-Licensing-API
+
+#### 2.5.7.2 Target Id
+
+REPO-05-INFRASTRUCTURE
+
+#### 2.5.7.3 Message
+
+Return: { "status": "Valid" }
+
+#### 2.5.7.4 Sequence Number
+
+7
+
+#### 2.5.7.5 Type
+
+🔹 API Response
+
+#### 2.5.7.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.7.7 Return Message
+
+JSON payload indicating the license status.
+
+#### 2.5.7.8 Has Return
+
+✅ Yes
+
+#### 2.5.7.9 Is Activation
+
+❌ No
+
+#### 2.5.7.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | HTTPS/REST |
+| Method |  |
+| Parameters | Possible statuses: 'Valid', 'Expired', 'Invalid', ... |
+| Authentication | N/A |
+| Error Handling | If the response is not 200 OK or the body is malfo... |
+| Performance | N/A |
+
+### 2.5.8.0 Service Response
+
+#### 2.5.8.1 Source Id
+
+REPO-05-INFRASTRUCTURE
+
+#### 2.5.8.2 Target Id
+
+REPO-08-SERVICE-HOST
+
+#### 2.5.8.3 Message
+
+Return: LicenseStatus.Valid
+
+#### 2.5.8.4 Sequence Number
+
+8
+
+#### 2.5.8.5 Type
+
+🔹 Service Response
+
+#### 2.5.8.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.8.7 Return Message
+
+Returns a strongly-typed enum representing the result.
+
+#### 2.5.8.8 Has Return
+
+✅ Yes
+
+#### 2.5.8.9 Is Activation
+
+❌ No
+
+#### 2.5.8.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-Process |
+| Method |  |
+| Parameters | LicenseStatus status |
+| Authentication | N/A |
+| Error Handling | N/A |
+| Performance | N/A |
+
+### 2.5.9.0 Conditional Logic
+
+#### 2.5.9.1 Source Id
+
+REPO-08-SERVICE-HOST
+
+#### 2.5.9.2 Target Id
+
+REPO-08-SERVICE-HOST
+
+#### 2.5.9.3 Message
+
+[ALT: Success] Process Valid Status
+
+#### 2.5.9.4 Sequence Number
+
+9
+
+#### 2.5.9.5 Type
+
+🔹 Conditional Logic
+
+#### 2.5.9.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.9.7 Return Message
+
+
+
+#### 2.5.9.8 Has Return
+
+❌ No
+
+#### 2.5.9.9 Is Activation
+
+❌ No
+
+#### 2.5.9.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | N/A |
+| Method |  |
+| Parameters | Condition: if (status == LicenseStatus.Valid) |
+| Authentication | N/A |
+| Error Handling | N/A |
+| Performance | N/A |
+
+#### 2.5.9.11 Nested Interactions
+
+- {'sourceId': 'REPO-08-SERVICE-HOST', 'targetId': 'REPO-05-INFRASTRUCTURE', 'message': 'Update: UpdateLastValidatedTimestampAsync(DateTime.UtcNow)', 'sequenceNumber': 9.1, 'type': 'Data Update', 'isSynchronous': True, 'returnMessage': 'Task', 'hasReturn': True, 'isActivation': False, 'technicalDetails': {'protocol': 'In-Process (DI)', 'method': 'UpdateLastValidatedTimestampAsync', 'parameters': 'DateTime timestamp', 'authentication': 'N/A', 'errorHandling': 'Database-level exceptions are logged and propagated.', 'performance': 'Expected latency < 50ms.'}}
+
+### 2.5.10.0 Conditional Logic
+
+#### 2.5.10.1 Source Id
+
+REPO-08-SERVICE-HOST
+
+#### 2.5.10.2 Target Id
+
+REPO-08-SERVICE-HOST
+
+#### 2.5.10.3 Message
+
+[ALT: Failure or Exception] Process Failure
+
+#### 2.5.10.4 Sequence Number
+
+10
+
+#### 2.5.10.5 Type
+
+🔹 Conditional Logic
+
+#### 2.5.10.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.10.7 Return Message
+
+
+
+#### 2.5.10.8 Has Return
+
+❌ No
+
+#### 2.5.10.9 Is Activation
+
+❌ No
+
+#### 2.5.10.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | N/A |
+| Method |  |
+| Parameters | Condition: if (status != LicenseStatus.Valid \|\| ... |
+| Authentication | N/A |
+| Error Handling | Catches LicensingServiceUnavailableException or ot... |
+| Performance | N/A |
+
+#### 2.5.10.11 Nested Interactions
+
+- {'sourceId': 'REPO-08-SERVICE-HOST', 'targetId': 'REPO-05-INFRASTRUCTURE', 'message': 'Update: EnterGracePeriodAsync()', 'sequenceNumber': 10.1, 'type': 'Data Update', 'isSynchronous': True, 'returnMessage': 'Task', 'hasReturn': True, 'isActivation': False, 'technicalDetails': {'protocol': 'In-Process (DI)', 'method': 'EnterGracePeriodAsync', 'parameters': "Updates system state to 'GracePeriod' and sets 'GracePeriodStartDate' to DateTime.UtcNow.", 'authentication': 'N/A', 'errorHandling': 'Database-level exceptions are logged and propagated.', 'performance': 'Expected latency < 50ms.'}}
+
+## 2.6.0.0 Notes
+
+### 2.6.1.0 Content
+
+#### 2.6.1.1 Content
+
+Observability: On completion, the job increments the 'license_validation_job_runs_total' counter with a status label ('success' or 'failure') and updates the 'license_status' gauge to reflect the current state ('active' or 'grace_period').
+
+#### 2.6.1.2 Position
+
+bottom
+
+#### 2.6.1.3 Participant Id
+
+*Not specified*
+
+#### 2.6.1.4 Sequence Number
+
+10.1
+
+### 2.6.2.0 Content
+
+#### 2.6.2.1 Content
+
+Logging: The entire job execution is wrapped in a Serilog LogContext with a unique CorrelationId. Key state transitions (e.g., entering grace period) are logged at a 'Warning' or 'Error' level.
+
+#### 2.6.2.2 Position
+
+bottom
+
+#### 2.6.2.3 Participant Id
+
+*Not specified*
+
+#### 2.6.2.4 Sequence Number
+
+10.1
+
+### 2.6.3.0 Content
+
+#### 2.6.3.1 Content
+
+Configuration: The 30-day validation interval and 7-day grace period duration are configurable application settings, not hardcoded values, to allow for operational flexibility.
+
+#### 2.6.3.2 Position
+
+bottom
+
+#### 2.6.3.3 Participant Id
+
+*Not specified*
+
+#### 2.6.3.4 Sequence Number
+
+10.1
+
+## 2.7.0.0 Implementation Guidance
+
+| Property | Value |
+|----------|-------|
+| Security Requirements | The external API key for the licensing service MUS... |
+| Performance Targets | The end-to-end execution time for a successful val... |
+| Error Handling Strategy | The system MUST enter the 7-day grace period as a ... |
+| Testing Considerations | An integration test suite must be developed that m... |
+| Monitoring Requirements | The following Prometheus metrics are REQUIRED: 
+1.... |
+| Deployment Considerations | The Quartz.NET `LicenseValidationJob` and its sche... |
+

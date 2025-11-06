@@ -1,0 +1,41 @@
+sequenceDiagram
+    participant "Presentation: Report Viewer (React SPA)" as PresentationReportViewerReactSPA
+    participant "API/Web Layer" as APIWebLayer
+    participant "Application Layer" as ApplicationLayer
+    participant "Infrastructure Layer" as InfrastructureLayer
+
+    activate PresentationReportViewerReactSPA
+    PresentationReportViewerReactSPA->>PresentationReportViewerReactSPA: 1. User navigates to '/reports'. React Router mounts ReportViewerPage. useEffect hook triggers data fetch and sets UI state to 'loading'.
+    activate APIWebLayer
+    PresentationReportViewerReactSPA->>APIWebLayer: 2. GET /api/v1/reports/viewer
+    APIWebLayer-->>PresentationReportViewerReactSPA: 200 OK: ReportViewerItemDto[] | 401 Unauthorized | 500 Internal Server Error
+    activate ApplicationLayer
+    APIWebLayer->>ApplicationLayer: 3. reportsController.GetReports(userContext)
+    ApplicationLayer-->>APIWebLayer: List<ReportViewerItemDto>
+    activate InfrastructureLayer
+    ApplicationLayer->>InfrastructureLayer: 4. reportRepository.GetReportsForUserAsync(userId, roles)
+    InfrastructureLayer-->>ApplicationLayer: List<JobExecutionLog>
+    PresentationReportViewerReactSPA->>PresentationReportViewerReactSPA: 5. On API success, update Zustand store with report list and set UI state to 'success'. Component re-renders to display reports.
+    PresentationReportViewerReactSPA->>APIWebLayer: 6. User filters reports. Debounced API call: GET /api/v1/reports/viewer?search=Sales&status=Succeeded
+    APIWebLayer-->>PresentationReportViewerReactSPA: 200 OK: Filtered ReportViewerItemDto[]
+    APIWebLayer->>InfrastructureLayer: 6.1. The request flows through the application layer to the repository, which now executes a parameterized query with WHERE clauses for the search and filter criteria.
+    InfrastructureLayer-->>APIWebLayer: Filtered List<JobExecutionLog>
+    PresentationReportViewerReactSPA->>APIWebLayer: 7. User clicks download for a report. GET /api/v1/jobs/{jobId}/result
+    APIWebLayer-->>PresentationReportViewerReactSPA: 200 OK: File Stream | 403 Forbidden | 404 Not Found
+    APIWebLayer->>ApplicationLayer: 8. jobsController.GetResult(jobId, userContext)
+    ApplicationLayer-->>APIWebLayer: FileStreamResult
+    ApplicationLayer->>InfrastructureLayer: 9. First, check permissions: reportRepository.CanUserAccessJobAsync(userId, jobId)
+    InfrastructureLayer-->>ApplicationLayer: bool
+    ApplicationLayer->>InfrastructureLayer: 10. If authorized, fetch artifact: artifactStorage.GetArtifactStreamAsync(jobId)
+    InfrastructureLayer-->>ApplicationLayer: Stream (or null if not found)
+    APIWebLayer->>PresentationReportViewerReactSPA: 11. Return FileStreamResult. Sets 'Content-Disposition' and 'Content-Type' headers to trigger browser download.
+    PresentationReportViewerReactSPA-->>APIWebLayer: HTTP 200 with file stream body
+
+    note over PresentationReportViewerReactSPA: State management on the client is crucial. The UI must handle 'idle', 'loading', 'success', and '...
+    note over InfrastructureLayer: All data access from the Infrastructure Layer that is based on user identity MUST include tenancy...
+    note over ApplicationLayer: The secure download endpoint (/api/v1/jobs/{jobId}/result) MUST re-validate the user's permission...
+
+    deactivate InfrastructureLayer
+    deactivate ApplicationLayer
+    deactivate APIWebLayer
+    deactivate PresentationReportViewerReactSPA

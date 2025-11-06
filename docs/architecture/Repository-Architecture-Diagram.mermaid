@@ -1,0 +1,83 @@
+mermaid
+graph TD
+    subgraph User Interaction
+        UserBrowser["User's Browser (React SPA)"]
+    end
+
+    subgraph "Reporting System (On-Premise Host)"
+        subgraph "Presentation Layer (UI)"
+            UI[('REPO-09-WEB-UI<br><i>React, TypeScript, Vite</i>')]
+        end
+
+        subgraph "API & Application Layer (Composition Root)"
+            ServiceHost[('REPO-08-SERVICE-HOST<br><i>ASP.NET Core, Quartz.NET</i>')]
+        end
+
+        subgraph "Domain Layer (Core Business Logic)"
+            Domain[('REPO-02-CORE-DOMAIN<br><i>Entities, Interfaces</i>')]
+        end
+
+        subgraph "Infrastructure Layer (External Systems & I/O)"
+            Infrastructure[('REPO-05-INFRASTRUCTURE<br><i>EF Core, Jint, Redis, Polly</i>')]
+        end
+
+        subgraph "Shared Libraries"
+            Contracts[('REPO-03-SHARED-CONTRACTS<br><i>API DTOs</i>')]
+            Common[('REPO-04-SHARED-COMMON<br><i>Utility Code</i>')]
+        end
+
+        subgraph "Extensibility Framework"
+            SDK[('REPO-06-PLUGINS-SDK<br><i>IConnector Interface</i>')]
+            Examples[('REPO-07-PLUGINS-EXAMPLES<br><i>FHIR & HL7 Connectors</i>')]
+        end
+    end
+
+    subgraph External Dependencies
+        PostgresDB[('PostgreSQL Database<br><i>Configuration, Logs, Users</i>')]
+        RedisCache[('Redis Cache<br><i>Sessions, Roles, Config</i>')]
+        ExternalSources["External Data Sources<br>(DBs, OPC UA, Files)"]
+        DeliveryTargets["Delivery Targets<br>(S3, SMTP, FTP)"]
+    end
+
+    %% -- Primary Flows & Dependencies --
+    UserBrowser --> |HTTPS/REST API Calls| ServiceHost
+    ServiceHost --> |Serves Static Files| UI
+
+    %% -- Backend Dependencies (Clean Architecture) --
+    ServiceHost --> |References & Orchestrates| Domain
+    ServiceHost --> |Injects & Uses| Infrastructure
+    Infrastructure --> |Implements Interfaces From| Domain
+    Infrastructure --> |Connects to| PostgresDB
+    Infrastructure --> |Connects to| RedisCache
+    Infrastructure --> |Communicates with| DeliveryTargets
+
+    %% -- Shared Library Dependencies --
+    ServiceHost --> |References| Contracts
+    ServiceHost --> |References| Common
+    Domain --> |References| Common
+    Infrastructure --> |References| Common
+    SDK --> |References| Contracts
+
+    %% -- Extensibility Dependencies --
+    ServiceHost --> |Dynamically Loads Plugins Implementing| SDK
+    Examples -- Implements --> SDK
+
+    %% -- Plugin Data Flow --
+    ServiceHost --> |Via Loaded Plugins| ExternalSources
+
+    %% -- Style Definitions --
+    classDef ui fill:#e6f3ff,stroke:#333,stroke-width:2px;
+    classDef service fill:#d5f5e3,stroke:#333,stroke-width:2px;
+    classDef domain fill:#fff0b3,stroke:#333,stroke-width:4px;
+    classDef infra fill:#f5e3d5,stroke:#333,stroke-width:2px;
+    classDef shared fill:#e3d5f5,stroke:#333,stroke-width:2px;
+    classDef sdk fill:#d5e8f5,stroke:#333,stroke-width:2px;
+    classDef external fill:#f5d7d5,stroke:#333,stroke-width:2px;
+
+    class UI,UserBrowser ui;
+    class ServiceHost service;
+    class Domain domain;
+    class Infrastructure infra;
+    class Contracts,Common shared;
+    class SDK,Examples sdk;
+    class PostgresDB,RedisCache,ExternalSources,DeliveryTargets external;

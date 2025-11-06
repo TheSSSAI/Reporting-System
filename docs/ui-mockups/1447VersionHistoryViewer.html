@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Organism: VersionHistoryViewer</title>
+    <style>
+        /* --- 1. DESIGN TOKENS & SETUP --- */
+        :root {
+            /* Colors */
+            --color-primary-500: #0068FF;
+            --color-primary-600: #0052CC;
+            --color-primary-50: #E6F0FF;
+            --color-secondary-500: #6c757d;
+            --color-secondary-600: #5a6268;
+            --color-text-primary: #212529;
+            --color-text-secondary: #6c757d;
+            --color-text-white: #FFFFFF;
+            --color-text-disabled: #ADB5BD;
+            --color-border: #DEE2E6;
+            --color-border-focus: #5C9EFF;
+            --color-bg-light: #F8F9FA;
+            --color-bg-overlay: rgba(33, 37, 41, 0.6);
+            --color-bg-disabled: #E9ECEF;
+            --color-success-100: #E8F5E9;
+            --color-success-500: #2E7D32;
+            --color-success-700: #1E4620;
+            --color-skeleton: #e9ecef;
+            --color-diff-add: #ddf4dd;
+            --color-diff-del: #f8d7da;
+            --color-diff-add-dark: #144216;
+            --color-diff-del-dark: #5f2120;
+
+
+            /* Typography */
+            --font-family-primary: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            --font-family-secondary: 'Inter', sans-serif;
+            --font-family-mono: 'IBM Plex Mono', monospace;
+            --font-size-h3: 1.5rem;
+            --font-size-body: 1rem;
+            --font-size-sm: 0.875rem;
+            --font-weight-semibold: 600;
+            --line-height-base: 1.5;
+
+            /* Spacing */
+            --space-xs: 4px;
+            --space-sm: 8px;
+            --space-md: 16px;
+            --space-lg: 24px;
+            --space-xl: 32px;
+
+            /* Borders & Shadows */
+            --border-radius-main: 8px;
+            --border-radius-sm: 0.2rem;
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+
+            /* Transitions */
+            --transition-base: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* --- 2. BASE & SHOWCASE STYLES --- */
+        *, *::before, *::after { box-sizing: border-box; }
+        body {
+            font-family: var(--font-family-primary);
+            background-color: var(--color-bg-light);
+            margin: 0;
+            padding: var(--space-xl);
+            color: var(--color-text-primary);
+        }
+        .showcase-container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: white;
+            border-radius: var(--border-radius-main);
+        }
+        h1, h2, h3 { margin: 0 0 1rem 0; }
+        .showcase-trigger { margin-bottom: 1rem; }
+        
+        /* --- 3. ORGANISM: VersionHistoryViewer --- */
+        
+        /* ModalDialog (Dependency) Styles */
+        .modal-toggle { display: none; }
+        .modal-backdrop {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: var(--color-bg-overlay);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: var(--space-md);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s ease, visibility 0s 0.2s;
+        }
+        .modal-toggle:checked ~ .modal-backdrop {
+            opacity: 1;
+            visibility: visible;
+            transition: opacity 0.2s ease;
+        }
+        .modal-dialog {
+            background: white;
+            border-radius: var(--border-radius-main);
+            box-shadow: var(--shadow-lg);
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            flex-direction: column;
+            max-height: 90vh;
+            transform: scale(0.95);
+            transition: transform 0.2s ease;
+        }
+        .modal-toggle:checked ~ .modal-backdrop .modal-dialog {
+            transform: scale(1);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--space-md) var(--space-lg);
+            border-bottom: 1px solid var(--color-border);
+            flex-shrink: 0;
+        }
+        .modal-title {
+            font-size: var(--font-size-h3);
+            font-weight: var(--font-weight-semibold);
+            color: var(--color-text-primary);
+            margin: 0;
+        }
+        .modal-body {
+            padding: 0;
+            overflow: hidden; /*Let table container scroll*/
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .modal-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: var(--space-sm);
+            padding: var(--space-md) var(--space-lg);
+            border-top: 1px solid var(--color-border);
+            background-color: var(--color-bg-light);
+            border-bottom-left-radius: var(--border-radius-main);
+            border-bottom-right-radius: var(--border-radius-main);
+            flex-shrink: 0;
+        }
+        .modal-footer__actions {
+            display: flex;
+            gap: var(--space-sm);
+        }
+
+        /* DataTable (Dependency) Styles */
+        .data-table-container {
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .data-table thead {
+            background-color: var(--color-bg-light);
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+        .data-table th, .data-table td {
+            padding: var(--space-md);
+            text-align: left;
+            vertical-align: middle;
+            border-bottom: 1px solid var(--color-border);
+            white-space: nowrap;
+            font-size: var(--font-size-sm);
+        }
+        .data-table th {
+            font-weight: var(--font-weight-semibold);
+            color: var(--color-text-secondary);
+        }
+        .data-table tbody tr:hover {
+            background-color: var(--color-bg-light);
+        }
+        .data-table tbody tr.is-active-version td {
+            background-color: var(--color-success-100);
+            box-shadow: inset 3px 0 0 0 var(--color-success-500);
+        }
+        .data-table .version-col { width: 10%; }
+        .data-table .date-col { width: 30%; }
+        .data-table .user-col { width: 30%; }
+        
+        /* VersionHistoryViewer Specific Styles */
+        .version-history-viewer__status-badge {
+            font-size: 0.8em;
+            font-weight: 700;
+            padding: 0.25em 0.6em;
+            border-radius: 1em;
+            background-color: var(--color-success-100);
+            color: var(--color-success-700);
+            margin-left: var(--space-sm);
+        }
+        .version-history-viewer__footer-info {
+            font-size: var(--font-size-sm);
+            color: var(--color-text-secondary);
+        }
+        .version-history-viewer__table .align-right {
+            text-align: right;
+        }
+        .version-history-viewer__empty-state, .version-history-viewer__loading-state {
+            padding: var(--space-xl);
+            text-align: center;
+            color: var(--color-text-secondary);
+        }
+        
+        /* Button (Dependency) Styles */
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center; gap: var(--space-sm);
+            font-weight: var(--font-weight-semibold); text-align: center; vertical-align: middle;
+            cursor: pointer; user-select: none; border: 1px solid transparent;
+            transition: var(--transition-base); font-size: var(--font-size-sm); padding: 8px 14px;
+            border-radius: var(--border-radius-main);
+        }
+        .btn:focus-visible { outline: 2px solid var(--color-border-focus); outline-offset: 2px; }
+        .btn--primary { color: var(--color-text-white); background-color: var(--color-primary-500); }
+        .btn--primary:hover { background-color: var(--color-primary-600); }
+        .btn--secondary { color: var(--color-text-primary); background-color: transparent; border-color: var(--color-border); }
+        .btn--secondary:hover { background-color: var(--color-bg-light); }
+        .btn:disabled { background-color: var(--color-bg-disabled); color: var(--color-text-disabled); border-color: var(--color-border); cursor: not-allowed; }
+
+        /* Checkbox (Dependency) Styles */
+        .checkbox__input { position: absolute; opacity: 0; width: 0; height: 0; }
+        .checkbox__label { display: flex; align-items: center; cursor: pointer; }
+        .checkbox__box { width: 1.25em; height: 1.25em; border: 1px solid var(--color-border); border-radius: 4px; display: inline-flex; align-items: center; justify-content: center; transition: var(--transition-base); background-color: var(--color-text-white); }
+        .checkbox__input:checked + .checkbox__label .checkbox__box { background-color: var(--color-primary-500); border-color: var(--color-primary-500); }
+        .checkbox__input:focus-visible + .checkbox__label .checkbox__box { border-color: var(--color-border-focus); box-shadow: 0 0 0 3px rgba(0, 104, 255, 0.1); }
+        .checkbox__box svg { color: var(--color-text-white); opacity: 0; transform: scale(0.5); transition: all 0.1s ease; }
+        .checkbox__input:checked + .checkbox__label .checkbox__box svg { opacity: 1; transform: scale(1); }
+
+        /* SkeletonLoader (Dependency) Styles */
+        .skeleton { animation: shimmer 2s infinite linear; background: linear-gradient(to right, #f8f9fa 8%, #e9ecef 18%, #f8f9fa 33%); background-size: 1000px 100%; }
+        .skeleton--text { height: 1em; border-radius: 4px; }
+        
+        /* DiffViewer Styles */
+        .diff-viewer {
+            font-family: var(--font-family-mono);
+            font-size: 0.85em;
+            white-space: pre-wrap;
+            padding: var(--space-md);
+            border: 1px solid var(--color-border);
+            border-radius: var(--border-radius-main);
+            margin: var(--space-lg);
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .diff-viewer__line {
+            display: flex;
+        }
+        .diff-viewer__line--add { background-color: var(--color-diff-add); }
+        .diff-viewer__line--del { background-color: var(--color-diff-del); }
+        .diff-viewer__line-num {
+            min-width: 50px;
+            padding-right: 10px;
+            text-align: right;
+            color: var(--color-text-secondary);
+            flex-shrink: 0;
+        }
+        .diff-viewer__line-prefix {
+            min-width: 20px;
+            text-align: center;
+        }
+        .diff-viewer__line--add .diff-viewer__line-prefix { color: var(--color-diff-add-dark); }
+        .diff-viewer__line--del .diff-viewer__line-prefix { color: var(--color-diff-del-dark); }
+        .diff-viewer__line-content {
+            word-break: break-all;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- SVG Icon Definitions -->
+    <svg width="0" height="0" style="position:absolute">
+        <symbol id="icon-check" viewBox="0 0 16 16">
+            <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
+        </symbol>
+        <symbol id="icon-close" viewBox="0 0 16 16">
+            <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+        </symbol>
+    </svg>
+
+    <div class="showcase-container">
+        <h1>Version History Viewer</h1>
+        <p>This organism component displays the version history of a configuration item inside a modal dialog. It supports selection for comparison and actions like restoring versions.</p>
+        
+        <div class="showcase-trigger">
+            <h3>Triggers</h3>
+            <label for="modal-toggle-loaded" class="btn btn--primary">View History (Loaded State)</label>
+            <label for="modal-toggle-loading" class="btn btn--secondary">View History (Loading State)</label>
+            <label for="modal-toggle-compare" class="btn btn--secondary">View History (Compare Mode)</label>
+        </div>
+    </div>
+
+    <!-- MODAL: Loaded State -->
+    <input type="checkbox" id="modal-toggle-loaded" class="modal-toggle">
+    <div class="modal-backdrop">
+        <div class="modal-dialog version-history-viewer" role="dialog" aria-modal="true" aria-labelledby="modal-title-1">
+            <header class="modal-header">
+                <h2 id="modal-title-1" class="modal-title">Version History: Monthly Sales Report</h2>
+                <label for="modal-toggle-loaded" class="btn btn--secondary btn--icon-only" aria-label="Close">
+                    <svg class="icon" width="16" height="16"><use href="#icon-close"></use></svg>
+                </label>
+            </header>
+            <main class="modal-body">
+                <div class="data-table-container">
+                    <table class="data-table version-history-viewer__table">
+                        <thead>
+                            <tr>
+                                <th scope="col"><div class="checkbox__input" style="width: 1.25em"></div></th>
+                                <th scope="col" class="version-col">Version</th>
+                                <th scope="col" class="date-col">Date Modified</th>
+                                <th scope="col" class="user-col">Modified By</th>
+                                <th scope="col" class="align-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="is-active-version">
+                                <td>
+                                    <div class="checkbox-group">
+                                        <input type="checkbox" id="v5-check" class="checkbox__input" disabled>
+                                        <label for="v5-check" class="checkbox__label"><span class="checkbox__box"></span></label>
+                                    </div>
+                                </td>
+                                <td>5 <span class="version-history-viewer__status-badge">Active</span></td>
+                                <td>2025-01-15 10:30:15 UTC</td>
+                                <td>admin@example.com</td>
+                                <td class="version-history-viewer__actions">
+                                    <button class="btn btn--secondary" disabled>Restore</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="checkbox-group">
+                                        <input type="checkbox" id="v4-check" class="checkbox__input">
+                                        <label for="v4-check" class="checkbox__label"><span class="checkbox__box"><svg width="12" height="12"><use href="#icon-check"></use></svg></span></label>
+                                    </div>
+                                </td>
+                                <td>4</td>
+                                <td>2025-01-14 09:15:00 UTC</td>
+                                <td>admin@example.com</td>
+                                <td class="version-history-viewer__actions">
+                                    <button class="btn btn--secondary">Restore</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="checkbox-group">
+                                        <input type="checkbox" id="v3-check" class="checkbox__input">
+                                        <label for="v3-check" class="checkbox__label"><span class="checkbox__box"><svg width="12" height="12"><use href="#icon-check"></use></svg></span></label>
+                                    </div>
+                                </td>
+                                <td>3</td>
+                                <td>2025-01-10 16:45:21 UTC</td>
+                                <td>support@example.com</td>
+                                <td class="version-history-viewer__actions">
+                                    <button class="btn btn--secondary">Restore</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="checkbox-group">
+                                        <input type="checkbox" id="v2-check" class="checkbox__input">
+                                        <label for="v2-check" class="checkbox__label"><span class="checkbox__box"><svg width="12" height="12"><use href="#icon-check"></use></svg></span></label>
+                                    </div>
+                                </td>
+                                <td>2</td>
+                                <td>2025-01-05 11:05:10 UTC</td>
+                                <td>admin@example.com</td>
+                                <td class="version-history-viewer__actions">
+                                    <button class="btn btn--secondary">Restore</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="checkbox-group">
+                                        <input type="checkbox" id="v1-check" class="checkbox__input">
+                                        <label for="v1-check" class="checkbox__label"><span class="checkbox__box"><svg width="12" height="12"><use href="#icon-check"></use></svg></span></label>
+                                    </div>
+                                </td>
+                                <td>1</td>
+                                <td>2025-01-01 12:00:00 UTC</td>
+                                <td>admin@example.com</td>
+                                <td class="version-history-viewer__actions">
+                                    <button class="btn btn--secondary">Restore</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </main>
+            <footer class="modal-footer">
+                <div class="version-history-viewer__footer-info">Select 2 versions to compare.</div>
+                <div class="modal-footer__actions">
+                    <button class="btn btn--primary" disabled>Compare (0)</button>
+                    <label for="modal-toggle-loaded" class="btn btn--secondary">Close</label>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <!-- MODAL: Loading State -->
+    <input type="checkbox" id="modal-toggle-loading" class="modal-toggle">
+    <div class="modal-backdrop">
+        <div class="modal-dialog version-history-viewer" role="dialog" aria-modal="true" aria-labelledby="modal-title-2">
+            <header class="modal-header">
+                <h2 id="modal-title-2" class="modal-title">Version History: Loading...</h2>
+                <label for="modal-toggle-loading" class="btn btn--secondary btn--icon-only" aria-label="Close">
+                     <svg class="icon" width="16" height="16"><use href="#icon-close"></use></svg>
+                </label>
+            </header>
+            <main class="modal-body">
+                 <div class="data-table-container">
+                    <table class="data-table version-history-viewer__table">
+                        <thead>
+                            <tr>
+                                <th scope="col"><div class="checkbox__input" style="width: 1.25em"></div></th>
+                                <th scope="col" class="version-col">Version</th>
+                                <th scope="col" class="date-col">Date Modified</th>
+                                <th scope="col" class="user-col">Modified By</th>
+                                <th scope="col" class="align-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><div class="skeleton" style="width: 20px; height: 20px; border-radius: 4px;"></div></td>
+                                <td><div class="skeleton skeleton--text" style="width: 60%;"></div></td>
+                                <td><div class="skeleton skeleton--text" style="width: 90%;"></div></td>
+                                <td><div class="skeleton skeleton--text" style="width: 80%;"></div></td>
+                                <td><div class="skeleton" style="width: 80px; height: 34px; border-radius: 8px; margin-left:auto;"></div></td>
+                            </tr>
+                            <tr>
+                                <td><div class="skeleton" style="width: 20px; height: 20px; border-radius: 4px;"></div></td>
+                                <td><div class="skeleton skeleton--text" style="width: 50%;"></div></td>
+                                <td><div class="skeleton skeleton--text" style="width: 95%;"></div></td>
+                                <td><div class="skeleton skeleton--text" style="width: 75%;"></div></td>
+                                <td><div class="skeleton" style="width: 80px; height: 34px; border-radius: 8px; margin-left:auto;"></div></td>
+                            </tr>
+                            <tr>
+                                <td><div class="skeleton" style="width: 20px; height: 20px; border-radius: 4px;"></div></td>
+                                <td><div class="skeleton skeleton--text" style="width: 55%;"></div></td>
+                                <td><div class="skeleton skeleton--text" style="width: 80%;"></div></td>
+                                <td><div class="skeleton skeleton--text" style="width: 85%;"></div></td>
+                                <td><div class="skeleton" style="width: 80px; height: 34px; border-radius: 8px; margin-left:auto;"></div></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </main>
+            <footer class="modal-footer">
+                 <div class="version-history-viewer__footer-info">Loading history...</div>
+                 <div class="modal-footer__actions">
+                    <button class="btn btn--primary" disabled>Compare</button>
+                    <label for="modal-toggle-loading" class="btn btn--secondary">Close</label>
+                </div>
+            </footer>
+        </div>
+    </div>
+    
+    <!-- MODAL: Compare Mode -->
+    <input type="checkbox" id="modal-toggle-compare" class="modal-toggle">
+    <div class="modal-backdrop">
+        <div class="modal-dialog version-history-viewer" role="dialog" aria-modal="true" aria-labelledby="modal-title-3">
+            <header class="modal-header">
+                <h2 id="modal-title-3" class="modal-title">Comparing Version 3 and Version 4</h2>
+                <label for="modal-toggle-compare" class="btn btn--secondary btn--icon-only" aria-label="Close">
+                    <svg class="icon" width="16" height="16"><use href="#icon-close"></use></svg>
+                </label>
+            </header>
+            <main class="modal-body">
+                <div class="diff-viewer">
+                    <div class="diff-viewer__line"><span class="diff-viewer__line-num">1</span><span class="diff-viewer__line-prefix"> </span><span class="diff-viewer__line-content">{</span></div>
+                    <div class="diff-viewer__line"><span class="diff-viewer__line-num">2</span><span class="diff-viewer__line-prefix"> </span><span class="diff-viewer__line-content">  "name": "Monthly Sales Report",</span></div>
+                    <div class="diff-viewer__line diff-viewer__line--del"><span class="diff-viewer__line-num">3</span><span class="diff-viewer__line-prefix">-</span><span class="diff-viewer__line-content">  "schedule": "0 8 * * 1"</span></div>
+                    <div class="diff-viewer__line diff-viewer__line--add"><span class="diff-viewer__line-num">4</span><span class="diff-viewer__line-prefix">+</span><span class="diff-viewer__line-content">  "schedule": "0 9 * * 1-5"</span></div>
+                    <div class="diff-viewer__line"><span class="diff-viewer__line-num">5</span><span class="diff-viewer__line-prefix"> </span><span class="diff-viewer__line-content">}</span></div>
+                </div>
+            </main>
+            <footer class="modal-footer">
+                <div class="version-history-viewer__footer-info">Showing differences between versions.</div>
+                <div class="modal-footer__actions">
+                    <label for="modal-toggle-compare" class="btn btn--secondary">Back to History</label>
+                </div>
+            </footer>
+        </div>
+    </div>
+    
+    <div class="showcase-container">
+        <h2>Component Variations</h2>
+        <div>
+          <h3>Variant Name: modal_view</h3>
+          <p>The primary and only variant. The entire component is designed to be presented within a modal dialog overlay.</p>
+        </div>
+    </div>
+
+</body>
+</html>

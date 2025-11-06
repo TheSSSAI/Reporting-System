@@ -1,0 +1,21 @@
+sequenceDiagram
+    participant "LegacyTransformationService" as LegacyTransformationService
+    actor "LegacyTransformationService" as LegacyTransformationService
+    participant "External: Feature Flag System" as ExternalFeatureFlagSystem
+    participant "LegacyTransformationService" as LegacyTransformationService
+    participant "LegacyTransformationService" as LegacyTransformationService
+
+    activate LegacyTransformationService
+    LegacyTransformationService->>LegacyTransformationService: 1. ExecuteTransformationAsync(data, script, userContext)
+    LegacyTransformationService->>LegacyTransformationService: 2. IsEnabledAsync("DataTransformationFeature", userContext)
+    LegacyTransformationService-->>LegacyTransformationService: bool isEnabled
+    LegacyTransformationService->>LegacyTransformationService: 5. [ALT: isEnabled is true] Execute(script, data)
+    LegacyTransformationService-->>LegacyTransformationService: JsonNode transformedData
+    LegacyTransformationService->>LegacyTransformationService: 6. [ALT: isEnabled is false or error occurred] ExecuteLegacy(data)
+    LegacyTransformationService-->>LegacyTransformationService: JsonNode transformedData
+
+    note over LegacyTransformationService: The FeatureFlagService Client should implement caching (e.g., in-memory with short TTL) to minimi...
+    note over LegacyTransformationService: If the call to the external system fails (timeout, 5xx error), the client MUST catch the exceptio...
+    note over LegacyTransformationService: This conditional block represents the core of the Feature Toggle pattern. The application logic b...
+
+    deactivate LegacyTransformationService

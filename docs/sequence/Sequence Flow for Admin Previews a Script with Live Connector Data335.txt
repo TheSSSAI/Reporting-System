@@ -1,0 +1,938 @@
+# 1 Overview
+
+## 1.1 Diagram Id
+
+SEQ-UJ-003
+
+## 1.2 Name
+
+Admin Previews a Script with Live Connector Data
+
+## 1.3 Description
+
+An administrator tests a transformation script by selecting a live data connector. The backend fetches a limited sample of data from that connector, executes the script against it in the secure sandbox, and returns the result to the UI.
+
+## 1.4 Type
+
+🔹 UserJourney
+
+## 1.5 Purpose
+
+To validate script logic against the actual data structure and content from a live source before applying it to a full report.
+
+## 1.6 Complexity
+
+High
+
+## 1.7 Priority
+
+🟡 Medium
+
+## 1.8 Frequency
+
+OnDemand
+
+## 1.9 Participants
+
+- REPO-APP-UI-005
+- REPO-APP-API-001
+- REPO-LIB-JINT-002
+- External: Data Connector Service
+
+## 1.10 Key Interactions
+
+- Admin selects a connector and clicks 'Preview with Live Data'.
+- UI sends POST to `/api/v1/transformations/preview` with script and `connectorId`.
+- API controller calls `ScriptExecutionService.ExecutePreviewAsync`.
+- Service invokes a `DataConnectorService` to fetch a limited sample (default 100 records) from the specified connector.
+- Service passes the script and the `JsonNode` representation of the sampled data to `JintEngineWrapper.ExecuteAsync`.
+- The transformed JSON is returned to the UI.
+
+## 1.11 Triggers
+
+- Administrator clicks 'Preview with Live Data' and selects a data source.
+
+## 1.12 Outcomes
+
+- The UI displays the transformed output based on a sample of live data.
+- The administrator can confirm the script works as expected with real data.
+
+## 1.13 Business Rules
+
+- The number of sample records fetched is configurable with a default of 100 (REQ-DTR-004).
+- The preview API must still adhere to its execution timeout (REQ-DTR-005).
+
+## 1.14 Error Scenarios
+
+- The selected data connector is unavailable or returns an error, which is returned as a 502 Bad Gateway.
+- The script fails to execute on the live data, returning a structured error to the UI.
+
+## 1.15 Integration Points
+
+- Control Panel UI (React)
+- External Data Connector Services
+
+# 2.0 Details
+
+## 2.1 Diagram Id
+
+SEQ-UJ-003
+
+## 2.2 Name
+
+User Journey: Admin Previews a Script with Live Connector Data
+
+## 2.3 Description
+
+This sequence details the end-to-end user journey for an administrator previewing a transformation script using a live data connector. It covers the initial UI interaction, the API request, fetching sample data from an external service, secure script execution in the backend, and the final display of the result or error in the UI. The design emphasizes clear UI state transitions, robust error handling for external dependencies, and adherence to security and performance requirements.
+
+## 2.4 Participants
+
+### 2.4.1 FrontendSPA
+
+#### 2.4.1.1 Repository Id
+
+REPO-APP-UI-005
+
+#### 2.4.1.2 Display Name
+
+Control Panel SPA
+
+#### 2.4.1.3 Type
+
+🔹 FrontendSPA
+
+#### 2.4.1.4 Technology
+
+React 18+, TypeScript
+
+#### 2.4.1.5 Order
+
+1
+
+#### 2.4.1.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | actor |
+| Color | #4CAF50 |
+| Stereotype | UI |
+
+### 2.4.2.0 APIService
+
+#### 2.4.2.1 Repository Id
+
+REPO-APP-API-001
+
+#### 2.4.2.2 Display Name
+
+Transformation API
+
+#### 2.4.2.3 Type
+
+🔹 APIService
+
+#### 2.4.2.4 Technology
+
+ASP.NET Core 8
+
+#### 2.4.2.5 Order
+
+2
+
+#### 2.4.2.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | component |
+| Color | #2196F3 |
+| Stereotype | API |
+
+### 2.4.3.0 ExternalAPI
+
+#### 2.4.3.1 Repository Id
+
+EXT-DCS-001
+
+#### 2.4.3.2 Display Name
+
+External Data Connector
+
+#### 2.4.3.3 Type
+
+🔹 ExternalAPI
+
+#### 2.4.3.4 Technology
+
+REST/JSON
+
+#### 2.4.3.5 Order
+
+3
+
+#### 2.4.3.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | boundary |
+| Color | #FF9800 |
+| Stereotype | External |
+
+### 2.4.4.0 SharedLibrary
+
+#### 2.4.4.1 Repository Id
+
+REPO-LIB-JINT-002
+
+#### 2.4.4.2 Display Name
+
+Jint Engine Wrapper
+
+#### 2.4.4.3 Type
+
+🔹 SharedLibrary
+
+#### 2.4.4.4 Technology
+
+.NET 8, Jint
+
+#### 2.4.4.5 Order
+
+4
+
+#### 2.4.4.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | component |
+| Color | #9C27B0 |
+| Stereotype | Infrastructure |
+
+## 2.5.0.0 Interactions
+
+### 2.5.1.0 UI Event
+
+#### 2.5.1.1 Source Id
+
+REPO-APP-UI-005
+
+#### 2.5.1.2 Target Id
+
+REPO-APP-UI-005
+
+#### 2.5.1.3 Message
+
+User selects a connector and clicks 'Preview with Live Data'. UI enters 'loading' state, disables button.
+
+#### 2.5.1.4 Sequence Number
+
+1
+
+#### 2.5.1.5 Type
+
+🔹 UI Event
+
+#### 2.5.1.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.1.7 Return Message
+
+
+
+#### 2.5.1.8 Has Return
+
+❌ No
+
+#### 2.5.1.9 Is Activation
+
+✅ Yes
+
+#### 2.5.1.10 Technical Details
+
+##### 2.5.1.10.1 Protocol
+
+DOM Event
+
+##### 2.5.1.10.2 Method
+
+onClick
+
+##### 2.5.1.10.3 Parameters
+
+Event object
+
+##### 2.5.1.10.4 Authentication
+
+N/A
+
+##### 2.5.1.10.5 Error Handling
+
+N/A
+
+##### 2.5.1.10.6 Performance
+
+###### 2.5.1.10.6.1 Latency
+
+<50ms response to click
+
+### 2.5.2.0.0.0 API Request
+
+#### 2.5.2.1.0.0 Source Id
+
+REPO-APP-UI-005
+
+#### 2.5.2.2.0.0 Target Id
+
+REPO-APP-API-001
+
+#### 2.5.2.3.0.0 Message
+
+POST /api/v1/transformations/preview
+
+#### 2.5.2.4.0.0 Sequence Number
+
+2
+
+#### 2.5.2.5.0.0 Type
+
+🔹 API Request
+
+#### 2.5.2.6.0.0 Is Synchronous
+
+❌ No
+
+#### 2.5.2.7.0.0 Return Message
+
+Returns 200 OK with transformed JSON, 400/500/502 on error.
+
+#### 2.5.2.8.0.0 Has Return
+
+✅ Yes
+
+#### 2.5.2.9.0.0 Is Activation
+
+✅ Yes
+
+#### 2.5.2.10.0.0 Technical Details
+
+##### 2.5.2.10.1.0 Protocol
+
+HTTPS
+
+##### 2.5.2.10.2.0 Method
+
+POST
+
+##### 2.5.2.10.3.0 Parameters
+
+| Property | Value |
+|----------|-------|
+| Headers | {'Authorization': 'Bearer <JWT>', 'Content-Type': 'application/json'} |
+| Body | {'script': 'string', 'connectorId': 'string'} |
+
+##### 2.5.2.10.4.0 Authentication
+
+JWT Bearer Token Validation
+
+##### 2.5.2.10.5.0 Error Handling
+
+Handles HTTP status codes 4xx, 5xx.
+
+##### 2.5.2.10.6.0 Performance
+
+###### 2.5.2.10.6.1 Latency
+
+Overall request must complete within configurable timeout (default 30s).
+
+### 2.5.3.0.0.0 Internal Method Call
+
+#### 2.5.3.1.0.0 Source Id
+
+REPO-APP-API-001
+
+#### 2.5.3.2.0.0 Target Id
+
+REPO-APP-API-001
+
+#### 2.5.3.3.0.0 Message
+
+ScriptPreviewController.PreviewAsync(request, cancellationToken)
+
+#### 2.5.3.4.0.0 Sequence Number
+
+3
+
+#### 2.5.3.5.0.0 Type
+
+🔹 Internal Method Call
+
+#### 2.5.3.6.0.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.3.7.0.0 Return Message
+
+IActionResult
+
+#### 2.5.3.8.0.0 Has Return
+
+✅ Yes
+
+#### 2.5.3.9.0.0 Is Activation
+
+✅ Yes
+
+#### 2.5.3.10.0.0 Technical Details
+
+##### 2.5.3.10.1.0 Protocol
+
+In-process
+
+##### 2.5.3.10.2.0 Method
+
+Execute business logic via injected IScriptExecutionService
+
+##### 2.5.3.10.3.0 Parameters
+
+PreviewRequestDto, CancellationToken (from request timeout)
+
+##### 2.5.3.10.4.0 Authentication
+
+RBAC check via [Authorize] attribute
+
+##### 2.5.3.10.5.0 Error Handling
+
+Global exception handler middleware catches unhandled exceptions.
+
+##### 2.5.3.10.6.0 Performance
+
+###### 2.5.3.10.6.1 Latency
+
+CancellationToken configured with default 30s timeout (REQ-DTR-005).
+
+#### 2.5.3.11.0.0 Nested Interactions
+
+##### 2.5.3.11.1.0 External API Call
+
+###### 2.5.3.11.1.1 Source Id
+
+REPO-APP-API-001
+
+###### 2.5.3.11.1.2 Target Id
+
+EXT-DCS-001
+
+###### 2.5.3.11.1.3 Message
+
+GET /data?limit=100
+
+###### 2.5.3.11.1.4 Sequence Number
+
+4
+
+###### 2.5.3.11.1.5 Type
+
+🔹 External API Call
+
+###### 2.5.3.11.1.6 Is Synchronous
+
+✅ Yes
+
+###### 2.5.3.11.1.7 Return Message
+
+Returns 200 OK with JSON array of records.
+
+###### 2.5.3.11.1.8 Has Return
+
+✅ Yes
+
+###### 2.5.3.11.1.9 Is Activation
+
+✅ Yes
+
+###### 2.5.3.11.1.10 Technical Details
+
+####### 2.5.3.11.1.10.1 Protocol
+
+HTTPS
+
+####### 2.5.3.11.1.10.2 Method
+
+GET
+
+####### 2.5.3.11.1.10.3 Parameters
+
+| Property | Value |
+|----------|-------|
+| Headers | {'Authorization': 'Api-Key <SECRET_KEY>'} |
+| Query Params | {'limit': 'Configurable, default 100 (REQ-DTR-004)'} |
+
+####### 2.5.3.11.1.10.4 Authentication
+
+API Key or OAuth2 client credentials
+
+####### 2.5.3.11.1.10.5 Error Handling
+
+Handles HTTP errors, network timeouts. Wrapped in a Polly retry/circuit-breaker policy.
+
+####### 2.5.3.11.1.10.6 Performance
+
+######## 2.5.3.11.1.10.6.1 Latency
+
+Should be <5s. Contributes to overall API timeout.
+
+##### 2.5.3.11.2.0.0.0 API Response
+
+###### 2.5.3.11.2.1.0.0 Source Id
+
+EXT-DCS-001
+
+###### 2.5.3.11.2.2.0.0 Target Id
+
+REPO-APP-API-001
+
+###### 2.5.3.11.2.3.0.0 Message
+
+200 OK with JSON data sample
+
+###### 2.5.3.11.2.4.0.0 Sequence Number
+
+5
+
+###### 2.5.3.11.2.5.0.0 Type
+
+🔹 API Response
+
+###### 2.5.3.11.2.6.0.0 Is Synchronous
+
+✅ Yes
+
+###### 2.5.3.11.2.7.0.0 Return Message
+
+
+
+###### 2.5.3.11.2.8.0.0 Has Return
+
+❌ No
+
+###### 2.5.3.11.2.9.0.0 Is Activation
+
+❌ No
+
+###### 2.5.3.11.2.10.0.0 Technical Details
+
+####### 2.5.3.11.2.10.1.0 Protocol
+
+HTTPS
+
+####### 2.5.3.11.2.10.2.0 Method
+
+N/A
+
+####### 2.5.3.11.2.10.3.0 Parameters
+
+| Property | Value |
+|----------|-------|
+| Body | JSON array |
+
+####### 2.5.3.11.2.10.4.0 Authentication
+
+N/A
+
+####### 2.5.3.11.2.10.5.0 Error Handling
+
+N/A
+
+####### 2.5.3.11.2.10.6.0 Performance
+
+*No data available*
+
+##### 2.5.3.11.3.0.0.0 Data Transformation
+
+###### 2.5.3.11.3.1.0.0 Source Id
+
+REPO-APP-API-001
+
+###### 2.5.3.11.3.2.0.0 Target Id
+
+REPO-APP-API-001
+
+###### 2.5.3.11.3.3.0.0 Message
+
+Parse response body into System.Text.Json.JsonNode
+
+###### 2.5.3.11.3.4.0.0 Sequence Number
+
+6
+
+###### 2.5.3.11.3.5.0.0 Type
+
+🔹 Data Transformation
+
+###### 2.5.3.11.3.6.0.0 Is Synchronous
+
+✅ Yes
+
+###### 2.5.3.11.3.7.0.0 Return Message
+
+JsonNode object
+
+###### 2.5.3.11.3.8.0.0 Has Return
+
+✅ Yes
+
+###### 2.5.3.11.3.9.0.0 Is Activation
+
+❌ No
+
+###### 2.5.3.11.3.10.0.0 Technical Details
+
+####### 2.5.3.11.3.10.1.0 Protocol
+
+In-process
+
+####### 2.5.3.11.3.10.2.0 Method
+
+System.Text.Json.JsonNode.Parse()
+
+####### 2.5.3.11.3.10.3.0 Parameters
+
+JSON string from external API
+
+####### 2.5.3.11.3.10.4.0 Authentication
+
+N/A
+
+####### 2.5.3.11.3.10.5.0 Error Handling
+
+Catches JsonException for malformed data.
+
+####### 2.5.3.11.3.10.6.0 Performance
+
+######## 2.5.3.11.3.10.6.1 Latency
+
+Efficiently handles large JSON without full deserialization (REQ-DTR-002).
+
+##### 2.5.3.11.4.0.0.0 Library Method Call
+
+###### 2.5.3.11.4.1.0.0 Source Id
+
+REPO-APP-API-001
+
+###### 2.5.3.11.4.2.0.0 Target Id
+
+REPO-LIB-JINT-002
+
+###### 2.5.3.11.4.3.0.0 Message
+
+IScriptEngineWrapper.Execute(script, inputData, cancellationToken)
+
+###### 2.5.3.11.4.4.0.0 Sequence Number
+
+7
+
+###### 2.5.3.11.4.5.0.0 Type
+
+🔹 Library Method Call
+
+###### 2.5.3.11.4.6.0.0 Is Synchronous
+
+✅ Yes
+
+###### 2.5.3.11.4.7.0.0 Return Message
+
+Transformed JsonNode
+
+###### 2.5.3.11.4.8.0.0 Has Return
+
+✅ Yes
+
+###### 2.5.3.11.4.9.0.0 Is Activation
+
+✅ Yes
+
+###### 2.5.3.11.4.10.0.0 Technical Details
+
+####### 2.5.3.11.4.10.1.0 Protocol
+
+In-process
+
+####### 2.5.3.11.4.10.2.0 Method
+
+Execute
+
+####### 2.5.3.11.4.10.3.0 Parameters
+
+string script, JsonNode inputData, CancellationToken
+
+####### 2.5.3.11.4.10.4.0 Authentication
+
+N/A
+
+####### 2.5.3.11.4.10.5.0 Error Handling
+
+Catches Jint.Runtime exceptions (e.g., JavaScriptException, StatementsCountOverflowException) and logs constraint violations (REQ-DTR-001, REQ-DTR-006).
+
+####### 2.5.3.11.4.10.6.0 Performance
+
+######## 2.5.3.11.4.10.6.1 Latency
+
+Subject to configured execution timeout, memory, and statement limits.
+
+##### 2.5.3.11.5.0.0.0 Return Value
+
+###### 2.5.3.11.5.1.0.0 Source Id
+
+REPO-LIB-JINT-002
+
+###### 2.5.3.11.5.2.0.0 Target Id
+
+REPO-APP-API-001
+
+###### 2.5.3.11.5.3.0.0 Message
+
+Return transformed JsonNode
+
+###### 2.5.3.11.5.4.0.0 Sequence Number
+
+8
+
+###### 2.5.3.11.5.5.0.0 Type
+
+🔹 Return Value
+
+###### 2.5.3.11.5.6.0.0 Is Synchronous
+
+✅ Yes
+
+###### 2.5.3.11.5.7.0.0 Return Message
+
+
+
+###### 2.5.3.11.5.8.0.0 Has Return
+
+❌ No
+
+###### 2.5.3.11.5.9.0.0 Is Activation
+
+❌ No
+
+###### 2.5.3.11.5.10.0.0 Technical Details
+
+####### 2.5.3.11.5.10.1.0 Protocol
+
+In-process
+
+####### 2.5.3.11.5.10.2.0 Method
+
+N/A
+
+####### 2.5.3.11.5.10.3.0 Parameters
+
+JsonNode object
+
+####### 2.5.3.11.5.10.4.0 Authentication
+
+N/A
+
+####### 2.5.3.11.5.10.5.0 Error Handling
+
+N/A
+
+####### 2.5.3.11.5.10.6.0 Performance
+
+*No data available*
+
+### 2.5.4.0.0.0.0.0 API Response
+
+#### 2.5.4.1.0.0.0.0 Source Id
+
+REPO-APP-API-001
+
+#### 2.5.4.2.0.0.0.0 Target Id
+
+REPO-APP-UI-005
+
+#### 2.5.4.3.0.0.0.0 Message
+
+200 OK
+
+#### 2.5.4.4.0.0.0.0 Sequence Number
+
+9
+
+#### 2.5.4.5.0.0.0.0 Type
+
+🔹 API Response
+
+#### 2.5.4.6.0.0.0.0 Is Synchronous
+
+❌ No
+
+#### 2.5.4.7.0.0.0.0 Return Message
+
+
+
+#### 2.5.4.8.0.0.0.0 Has Return
+
+❌ No
+
+#### 2.5.4.9.0.0.0.0 Is Activation
+
+❌ No
+
+#### 2.5.4.10.0.0.0.0 Technical Details
+
+##### 2.5.4.10.1.0.0.0 Protocol
+
+HTTPS
+
+##### 2.5.4.10.2.0.0.0 Method
+
+N/A
+
+##### 2.5.4.10.3.0.0.0 Parameters
+
+| Property | Value |
+|----------|-------|
+| Status Code | 200 |
+| Body | Serialized transformed JSON |
+
+##### 2.5.4.10.4.0.0.0 Authentication
+
+N/A
+
+##### 2.5.4.10.5.0.0.0 Error Handling
+
+N/A
+
+##### 2.5.4.10.6.0.0.0 Performance
+
+*No data available*
+
+### 2.5.5.0.0.0.0.0 UI State Update
+
+#### 2.5.5.1.0.0.0.0 Source Id
+
+REPO-APP-UI-005
+
+#### 2.5.5.2.0.0.0.0 Target Id
+
+REPO-APP-UI-005
+
+#### 2.5.5.3.0.0.0.0 Message
+
+UI receives response, updates state to 'success'. Renders formatted JSON in output pane. Re-enables button.
+
+#### 2.5.5.4.0.0.0.0 Sequence Number
+
+10
+
+#### 2.5.5.5.0.0.0.0 Type
+
+🔹 UI State Update
+
+#### 2.5.5.6.0.0.0.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.5.7.0.0.0.0 Return Message
+
+
+
+#### 2.5.5.8.0.0.0.0 Has Return
+
+❌ No
+
+#### 2.5.5.9.0.0.0.0 Is Activation
+
+❌ No
+
+#### 2.5.5.10.0.0.0.0 Technical Details
+
+##### 2.5.5.10.1.0.0.0 Protocol
+
+N/A
+
+##### 2.5.5.10.2.0.0.0 Method
+
+React setState/dispatch
+
+##### 2.5.5.10.3.0.0.0 Parameters
+
+API response data
+
+##### 2.5.5.10.4.0.0.0 Authentication
+
+N/A
+
+##### 2.5.5.10.5.0.0.0 Error Handling
+
+Handles potential rendering errors.
+
+##### 2.5.5.10.6.0.0.0 Performance
+
+###### 2.5.5.10.6.1.0.0 Latency
+
+Virtual DOM diffing and rendering should be <100ms.
+
+## 2.6.0.0.0.0.0.0 Notes
+
+### 2.6.1.0.0.0.0.0 Content
+
+#### 2.6.1.1.0.0.0.0 Content
+
+
+
+```
+Error Scenario: Data Connector Failure
+If step #4 returns an error (e.g., 503 Service Unavailable), the API will catch the resulting exception and respond to the UI with a 502 Bad Gateway. The UI will then enter an 'error' state and display a message like 'The selected data connector is currently unavailable.'
+```
+
+#### 2.6.1.2.0.0.0.0 Position
+
+bottom-right
+
+#### 2.6.1.3.0.0.0.0 Participant Id
+
+EXT-DCS-001
+
+#### 2.6.1.4.0.0.0.0 Sequence Number
+
+4
+
+### 2.6.2.0.0.0.0.0 Content
+
+#### 2.6.2.1.0.0.0.0 Content
+
+
+
+```
+Error Scenario: Script Execution Failure
+If step #7 throws a JavaScriptException, the API will catch it, format a structured error object as per REQ-DTR-006, and respond with a 400 Bad Request. The UI will render this structured error (message, stack, line number) in the output pane.
+```
+
+#### 2.6.2.2.0.0.0.0 Position
+
+bottom-left
+
+#### 2.6.2.3.0.0.0.0 Participant Id
+
+REPO-LIB-JINT-002
+
+#### 2.6.2.4.0.0.0.0 Sequence Number
+
+7
+
+## 2.7.0.0.0.0.0.0 Implementation Guidance
+
+| Property | Value |
+|----------|-------|
+| Security Requirements | The API endpoint `/api/v1/transformations/preview`... |
+| Performance Targets | The entire end-to-end process from button click to... |
+| Error Handling Strategy | A clear distinction must be made between different... |
+| Testing Considerations | Integration tests should mock the External Data Co... |
+| Monitoring Requirements | The API should log the start and end of each previ... |
+| Deployment Considerations | The configuration for the sample record limit (def... |
+

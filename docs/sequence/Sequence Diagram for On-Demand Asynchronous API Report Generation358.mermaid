@@ -1,0 +1,31 @@
+sequenceDiagram
+    actor "External Client" as ExternalClient
+    participant "API/Web Layer" as APIWebLayer
+    participant "Application Layer" as ApplicationLayer
+    participant "Infrastructure Layer" as InfrastructureLayer
+
+    activate APIWebLayer
+    ExternalClient->>APIWebLayer: 1. 1. POST /api/v1/reports/{id}/generate
+    APIWebLayer-->>ExternalClient: 10. HTTP 202 Accepted
+    APIWebLayer->>APIWebLayer: 2. 2. Validate JWT and Request DTO
+    activate ApplicationLayer
+    APIWebLayer->>ApplicationLayer: 3. 3. Invoke InitiateAsynchronousReportJobAsync(reportId)
+    ApplicationLayer-->>APIWebLayer: 9. Return JobInitiationResult DTO { JobId, StatusUrl }
+    activate InfrastructureLayer
+    ApplicationLayer->>InfrastructureLayer: 4. 4. GetByIdAsync<ReportConfiguration>(reportId)
+    InfrastructureLayer-->>ApplicationLayer: 5. Return ReportConfiguration entity
+    ApplicationLayer->>ApplicationLayer: 6. 6. Verify Report Delivery is Async API
+    ApplicationLayer->>InfrastructureLayer: 7. 7. CreateJobExecutionLogAsync(newJob)
+    InfrastructureLayer-->>ApplicationLayer: Return created JobExecutionLog with new JobId
+    ApplicationLayer->>InfrastructureLayer: 8. 8. Enqueue background job
+    InfrastructureLayer-->>ApplicationLayer: Job successfully scheduled
+    ExternalClient->>APIWebLayer: 11. 11. GET /api/v1/jobs/{jobId}
+    APIWebLayer-->>ExternalClient: 12. HTTP 200 OK with Job Status DTO
+    ExternalClient->>APIWebLayer: 13. 13. GET /api/v1/jobs/{jobId}/result
+    APIWebLayer-->>ExternalClient: 14. HTTP 200 OK with report content
+
+    note over ApplicationLayer: The statusUrl and resultUrl returned in the response are constructed by the Application Layer bas...
+
+    deactivate InfrastructureLayer
+    deactivate ApplicationLayer
+    deactivate APIWebLayer

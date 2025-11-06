@@ -1,0 +1,30 @@
+sequenceDiagram
+    participant "Presentation: Control Panel" as PresentationControlPanel
+    participant "API: License Endpoint" as APILicenseEndpoint
+    participant "Application: License Service" as ApplicationLicenseService
+    actor "Infrastructure: Licensing Client & Persistence" as InfrastructureLicensingClientPersistence
+    actor "External: Cloud Licensing Service" as ExternalCloudLicensingService
+
+    activate APILicenseEndpoint
+    PresentationControlPanel->>APILicenseEndpoint: 1. POST /api/v1/license/activate
+    APILicenseEndpoint-->>PresentationControlPanel: HTTP 200 OK | 400 Bad Request | 503 Service Unavailable
+    activate ApplicationLicenseService
+    APILicenseEndpoint->>ApplicationLicenseService: 2. ActivateLicenseAsync(activationRequestDto)
+    ApplicationLicenseService-->>APILicenseEndpoint: ActivationResult { Success: bool, Message: string }
+    activate InfrastructureLicensingClientPersistence
+    ApplicationLicenseService->>InfrastructureLicensingClientPersistence: 3. ValidateKeyAsync(activationKey)
+    InfrastructureLicensingClientPersistence-->>ApplicationLicenseService: LicenseValidationResult { IsValid: bool, Details: object, Error: string }
+    activate ExternalCloudLicensingService
+    InfrastructureLicensingClientPersistence->>ExternalCloudLicensingService: 4. POST /v2/validate_key
+    ExternalCloudLicensingService-->>InfrastructureLicensingClientPersistence: HTTP 200 OK | 400 Bad Request | 401 Unauthorized
+    ApplicationLicenseService->>InfrastructureLicensingClientPersistence: 5. UpdateLicenseStateAsync(newLicense)
+    InfrastructureLicensingClientPersistence-->>ApplicationLicenseService: Task (void)
+    ApplicationLicenseService->>InfrastructureLicensingClientPersistence: 6. LogAuditEventAsync(auditEvent)
+
+    note over InfrastructureLicensingClientPersistence: Interaction 4 is critical. The HttpClient instance used here must be managed by HttpClientFactory...
+    note over ApplicationLicenseService: Upon successful validation, the license key must be encrypted (e.g., using .NET's DPAPI) by the a...
+
+    deactivate ExternalCloudLicensingService
+    deactivate InfrastructureLicensingClientPersistence
+    deactivate ApplicationLicenseService
+    deactivate APILicenseEndpoint

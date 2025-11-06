@@ -1,0 +1,116 @@
+-- Enable the pgcrypto extension to generate UUIDs
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+-- =============================================
+-- TABLE CREATION
+-- =============================================
+
+-- Represents a system user or administrator
+CREATE TABLE "User" (
+    "userId" UUID PRIMARY KEY,
+    "username" VARCHAR(100) NOT NULL,
+    "email" VARCHAR(255) NOT NULL,
+    "fullName" VARCHAR(200) NOT NULL,
+    "passwordHash" VARCHAR(255) NOT NULL,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "isDeleted" BOOLEAN NOT NULL DEFAULT false,
+    "createdAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uq_user_username UNIQUE ("username"),
+    CONSTRAINT uq_user_email UNIQUE ("email")
+);
+
+-- Represents a user-defined transformation script with a history of versions
+CREATE TABLE "TransformationScript" (
+    "transformationScriptId" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    "name" VARCHAR(255) NOT NULL,
+    "description" TEXT,
+    "activeScriptVersionId" UUID,
+    "activeVersionNumber" INT, -- Denormalized for performance
+    "createdByUserId" UUID NOT NULL,
+    "updatedByUserId" UUID NOT NULL,
+    "isDeleted" BOOLEAN NOT NULL DEFAULT false,
+    "createdAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uq_transformation_script_name UNIQUE ("name")
+);
+
+-- Stores an immutable version of a script's content
+CREATE TABLE "ScriptVersion" (
+    "scriptVersionId" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    "transformationScriptId" UUID NOT NULL,
+    "versionNumber" INT NOT NULL,
+    "scriptContentEncrypted" BYTEA NOT NULL,
+    "changeLog" TEXT,
+    "createdByUserId" UUID NOT NULL,
+    "createdAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uq_scriptversion_script_version UNIQUE ("transformationScriptId", "versionNumber")
+);
+
+-- Stores JSON Schema definitions for validation
+CREATE TABLE "JsonSchema" (
+    "jsonSchemaId" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    "name" VARCHAR(255) NOT NULL,
+    "schemaDefinition" JSONB NOT NULL,
+    "createdByUserId" UUID NOT NULL,
+    "createdAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uq_jsonschema_name UNIQUE ("name")
+);
+
+-- Represents a report definition
+CREATE TABLE "ReportConfiguration" (
+    "reportConfigurationId" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    "name" VARCHAR(255) NOT NULL,
+    "jsonSchemaId" UUID,
+    "createdByUserId" UUID NOT NULL,
+    "updatedByUserId" UUID NOT NULL,
+    "createdAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Junction table for the many-to-many relationship between reports and scripts
+CREATE TABLE "ReportTransformationScriptAssociation" (
+    "reportConfigurationId" UUID NOT NULL,
+    "transformationScriptId" UUID NOT NULL,
+    "associatedByUserId" UUID NOT NULL,
+    "associatedAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY ("reportConfigurationId", "transformationScriptId")
+);
+
+-- =============================================
+-- INDEX CREATION
+-- =============================================
+
+CREATE INDEX idx_user_active_not_deleted ON "User" ("isActive", "isDeleted");
+CREATE INDEX idx_transformationscript_activescriptversionid ON "TransformationScript" ("activeScriptVersionId");
+CREATE INDEX idx_transformationscript_isdeleted ON "TransformationScript" ("isDeleted");
+CREATE INDEX idx_scriptversion_scriptid_version_desc ON "ScriptVersion" ("transformationScriptId", "versionNumber" DESC);
+CREATE INDEX idx_reportconfiguration_name ON "ReportConfiguration" ("name");
+CREATE INDEX idx_rtsa_transformationscriptid ON "ReportTransformationScriptAssociation" ("transformationScriptId");
+
+-- =============================================
+-- FOREIGN KEY CONSTRAINTS
+-- =============================================
+
+-- Foreign keys for TransformationScript table
+ALTER TABLE "TransformationScript" ADD CONSTRAINT fk_transformationscript_createdby FOREIGN KEY ("createdByUserId") REFERENCES "User"("userId");
+ALTER TABLE "TransformationScript" ADD CONSTRAINT fk_transformationscript_updatedby FOREIGN KEY ("updatedByUserId") REFERENCES "User"("userId");
+ALTER TABLE "TransformationScript" ADD CONSTRAINT fk_transformationscript_activescriptversion FOREIGN KEY ("activeScriptVersionId") REFERENCES "ScriptVersion"("scriptVersionId") ON DELETE SET NULL;
+
+-- Foreign keys for ScriptVersion table
+ALTER TABLE "ScriptVersion" ADD CONSTRAINT fk_scriptversion_script FOREIGN KEY ("transformationScriptId") REFERENCES "TransformationScript"("transformationScriptId") ON DELETE CASCADE;
+ALTER TABLE "ScriptVersion" ADD CONSTRAINT fk_scriptversion_createdby FOREIGN KEY ("createdByUserId") REFERENCES "User"("userId");
+
+-- Foreign keys for ReportConfiguration table
+ALTER TABLE "ReportConfiguration" ADD CONSTRAINT fk_reportconfiguration_jsonschema FOREIGN KEY ("jsonSchemaId") REFERENCES "JsonSchema"("jsonSchemaId") ON DELETE SET NULL;
+ALTER TABLE "ReportConfiguration" ADD CONSTRAINT fk_reportconfiguration_createdby FOREIGN KEY ("createdByUserId") REFERENCES "User"("userId");
+ALTER TABLE "ReportConfiguration" ADD CONSTRAINT fk_reportconfiguration_updatedby FOREIGN KEY ("updatedByUserId") REFERENCES "User"("userId");
+
+-- Foreign keys for ReportTransformationScriptAssociation table
+ALTER TABLE "ReportTransformationScriptAssociation" ADD CONSTRAINT fk_rtsa_report FOREIGN KEY ("reportConfigurationId") REFERENCES "ReportConfiguration"("reportConfigurationId") ON DELETE CASCADE;
+ALTER TABLE "ReportTransformationScriptAssociation" ADD CONSTRAINT fk_rtsa_script FOREIGN KEY ("transformationScriptId") REFERENCES "TransformationScript"("transformationScriptId") ON DELETE CASCADE;
+ALTER TABLE "ReportTransformationScriptAssociation" ADD CONSTRAINT fk_rtsa_associatedby FOREIGN KEY ("associatedByUserId") REFERENCES "User"("userId");
+
+-- Foreign keys for JsonSchema table
+ALTER TABLE "JsonSchema" ADD CONSTRAINT fk_jsonschema_createdby FOREIGN KEY ("createdByUserId") REFERENCES "User"("userId");

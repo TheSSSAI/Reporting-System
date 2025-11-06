@@ -1,0 +1,34 @@
+sequenceDiagram
+    participant "React Control Panel" as ReactControlPanel
+    participant "TransformationEngine.Api" as TransformationEngineApi
+    participant "TransformationEngine.Data" as TransformationEngineData
+
+    ReactControlPanel->>ReactControlPanel: 1. 1. Admin clicks 'Revert to this version' for a selected historical version in the VersionHistoryComponent.
+    ReactControlPanel->>ReactControlPanel: 2. 2. Set UI state to 'loading'. Show confirmation modal: "This will create a new version... Are you sure?"
+    activate TransformationEngineApi
+    ReactControlPanel->>TransformationEngineApi: 3. 3. On confirmation, invoke apiClient.revertScript(scriptId, versionToRevertTo).
+    TransformationEngineApi-->>ReactControlPanel: Returns a Promise that resolves with the response or rejects with an error.
+    TransformationEngineApi->>TransformationEngineApi: 4. 4. TransformationScriptsController receives request. [Authorize] attribute validates user role (Admin).
+    TransformationEngineApi->>TransformationEngineApi: 5. 4.1. Invoke TransformationScriptService.RevertScriptAsync(scriptId, revertRequestDto, userId).
+    TransformationEngineApi-->>TransformationEngineApi: Returns the newly created ScriptVersion entity.
+    activate TransformationEngineData
+    TransformationEngineApi->>TransformationEngineData: 6. 5. TransformationScriptService begins a new database transaction via Unit of Work.
+    TransformationEngineApi->>TransformationEngineData: 7. 5.1. Call TransformationScriptRepository.GetByIdWithVersionsAsync(scriptId) to fetch the script and its version history.
+    TransformationEngineData-->>TransformationEngineApi: Returns TransformationScript entity with its ScriptVersion collection, or null if not found.
+    TransformationEngineApi->>TransformationEngineApi: 8. 5.2. Service validates that the versionToRevertTo exists in the script's history. If not, throws EntityNotFoundException.
+    TransformationEngineApi->>TransformationEngineApi: 9. 5.3. Create a new ScriptVersion entity, copying content from the old version and incrementing the latest version number.
+    TransformationEngineApi->>TransformationEngineData: 10. 5.4. Update parent TransformationScript to set the new version as active.
+    TransformationEngineApi->>TransformationEngineData: 11. 5.5. Create and add an AuditLog entity for the 'REVERT' action via AuditLogRepository.AddAsync().
+    TransformationEngineApi->>TransformationEngineData: 12. 5.6. Commit transaction via UnitOfWork.SaveChangesAsync().
+    TransformationEngineData-->>TransformationEngineApi: Returns number of state entries written to the database.
+    TransformationEngineApi->>ReactControlPanel: 13. 6. Map the new ScriptVersion entity to a DTO and return 200 OK response.
+    ReactControlPanel-->>TransformationEngineApi: HTTP/1.1 200 OK Content-Type: application/json  { "id": "...", "versionNumber": 6, ... }
+    ReactControlPanel->>ReactControlPanel: 14. 7. On promise resolution, update UI state: isLoading: false. Display success toast: "Script successfully reverted."
+    ReactControlPanel->>ReactControlPanel: 15. 8. Trigger a data refresh for the version history to display the new active version.
+
+    note over TransformationEngineApi: Transactional Integrity: The service layer must ensure that creating the new version, updating th...
+    note over ReactControlPanel: UI State Management: The UI must provide clear feedback to the user throughout the process: a con...
+    note over ReactControlPanel: Error Handling: If the API returns 404 (script or version not found), the UI should display a use...
+
+    deactivate TransformationEngineData
+    deactivate TransformationEngineApi

@@ -1,0 +1,123 @@
+# EditorConfig is awesome: https://EditorConfig.org
+
+# top-most EditorConfig file
+root = true
+
+[*]
+indent_style = space
+indent_size = 4
+end_of_line = lf
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+[*.cs]
+indent_size = 4
+# New line settings
+csharp_new_line_before_open_brace = all
+csharp_new_line_before_else = true
+csharp_new_line_before_catch = true
+csharp_new_line_before_finally = true
+csharp_new_line_before_members_in_object_initializers = true
+csharp_new_line_before_members_in_anonymous_types = true
+csharp_new_line_between_query_expression_clauses = true
+
+# Indentation settings
+csharp_indent_case_contents = true
+csharp_indent_switch_labels = true
+csharp_indent_labels = one_less_than_current
+
+# .NET naming conventions
+# Rules: https://docs.microsoft.com/en-us/visualstudio/ide/editorconfig-naming-conventions
+dotnet_naming_rule.public_members_must_be_pascal_case.severity = suggestion
+dotnet_naming_rule.public_members_must_be_pascal_case.symbols = public_symbols
+dotnet_naming_rule.public_members_must_be_pascal_case.style = pascal_case_style
+
+dotnet_naming_symbols.public_symbols.applicable_kinds = property, method, field, event, enum, struct, class, delegate, interface
+dotnet_naming_symbols.public_symbols.applicable_accessibilities = public, internal, protected, protected_internal
+dotnet_naming_symbols.public_symbols.required_modifiers = 
+
+dotnet_naming_rule.private_members_must_be_camel_case_with_underscore.severity = suggestion
+dotnet_naming_rule.private_members_must_be_camel_case_with_underscore.symbols = private_symbols
+dotnet_naming_rule.private_members_must_be_camel_case_with_underscore.style = camel_case_underscore_style
+
+dotnet_naming_symbols.private_symbols.applicable_kinds = field
+dotnet_naming_symbols.private_symbols.applicable_accessibilities = private
+dotnet_naming_symbols.private_symbols.required_modifiers = 
+
+dotnet_naming_style.pascal_case_style.capitalization = pascal_case
+dotnet_naming_style.camel_case_underscore_style.capitalization = camel_case
+dotnet_naming_style.camel_case_underscore_style.prefix = _
+
+# .NET code style settings
+# Use 'var' when possible
+csharp_style_var_for_built_in_types = true:suggestion
+csharp_style_var_when_type_is_apparent = true:suggestion
+csharp_style_var_elsewhere = true:suggestion
+
+# Organize using statements
+csharp_using_directive_placement = inside_namespace:suggestion
+
+# this./me. preferences
+dotnet_style_qualification_for_field = false:suggestion
+dotnet_style_qualification_for_property = false:suggestion
+dotnet_style_qualification_for_method = false:suggestion
+dotnet_style_qualification_for_event = false:suggestion
+
+# Code block preferences
+csharp_prefer_braces = true:suggestion
+
+# Expression-level preferences
+dotnet_style_prefer_is_null_check_over_reference_equality_method = true:suggestion
+dotnet_style_prefer_conditional_expression_over_assignment = true:suggestion
+dotnet_style_prefer_conditional_expression_over_return = true:suggestion
+dotnet_style_prefer_compound_assignment = true:suggestion
+dotnet_style_prefer_simplified_interpolation = true:suggestion
+dotnet_style_prefer_simplified_boolean_expressions = true:suggestion
+
+# Expression-bodied members
+csharp_style_expression_bodied_methods = false:suggestion
+csharp_style_expression_bodied_constructors = false:suggestion
+csharp_style_expression_bodied_operators = false:suggestion
+csharp_style_expression_bodied_properties = true:suggestion
+csharp_style_expression_bodied_indexers = true:suggestion
+csharp_style_expression_bodied_accessors = true:suggestion
+csharp_style_expression_bodied_lambdas = true:suggestion
+csharp_style_expression_bodied_local_functions = false:suggestion
+
+# Null checking preferences
+csharp_style_throw_expression = true:suggestion
+csharp_style_conditional_delegate_call = true:suggestion
+
+# Modifier preferences
+csharp_preferred_modifier_order = public,private,protected,internal,static,extern,new,virtual,abstract,sealed,override,readonly,unsafe,volatile,async:suggestion
+dotnet_style_require_accessibility_modifiers = for_non_interface_members:suggestion
+csharp_style_prefer_readonly_struct = true:suggestion
+
+# .NET code quality settings
+# General
+dotnet_analyzer_diagnostic.severity = warning
+
+# Design
+dotnet_diagnostic.CA1018.severity = warning # Mark attributes with AttributeUsageAttribute
+dotnet_diagnostic.CA1031.severity = warning # Do not catch general exception types
+dotnet_diagnostic.CA1050.severity = warning # Declare types in namespaces
+dotnet_diagnostic.CA1062.severity = error   # Validate arguments of public methods
+
+# Naming
+dotnet_diagnostic.CA1707.severity = warning # Identifiers should not contain underscores
+dotnet_diagnostic.CA1710.severity = warning # Identifiers should have correct suffix
+dotnet_diagnostic.CA1716.severity = warning # Identifiers should not match keywords
+dotnet_diagnostic.CA1720.severity = warning # Identifier contains type name
+
+# Performance
+dotnet_diagnostic.CA1822.severity = warning # Mark members as static
+
+# Security
+dotnet_diagnostic.CA3075.severity = warning # Insecure DTD processing in XML
+
+# Unnecessary code
+dotnet_diagnostic.IDE0051.severity = warning # Remove unused private members
+dotnet_diagnostic.IDE0052.severity = warning # Remove unread private members
+dotnet_diagnostic.IDE0059.severity = warning # Unnecessary assignment of a value
+dotnet_diagnostic.IDE0060.severity = warning # Remove unused parameter

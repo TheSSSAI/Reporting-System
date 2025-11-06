@@ -1,0 +1,623 @@
+# 1 Overview
+
+## 1.1 Diagram Id
+
+SEQ-OF-002
+
+## 1.2 Name
+
+QA Runs Automated Performance Benchmark Test
+
+## 1.3 Description
+
+As part of the CI/CD pipeline, an automated integration test is executed to validate the system's performance against the benchmark defined in the requirements. The test fails the build if performance degrades below the acceptable threshold.
+
+## 1.4 Type
+
+🔹 OperationalFlow
+
+## 1.5 Purpose
+
+To ensure the system consistently meets its non-functional performance requirements.
+
+## 1.6 Complexity
+
+High
+
+## 1.7 Priority
+
+🟡 Medium
+
+## 1.8 Frequency
+
+OnDemand
+
+## 1.9 Participants
+
+- External: CI/CD System
+- REPO-APP-API-001
+- REPO-LIB-JINT-002
+
+## 1.10 Key Interactions
+
+- CI/CD pipeline triggers the performance test suite.
+- The test generates a 10MB JSON dataset in memory.
+- The test client sends a request to a dedicated (or the preview) API endpoint with the benchmark script (200 statements) and the dataset.
+- The test measures the server-side execution time from the response.
+- The test asserts that the execution time is less than 10 seconds.
+- If the assertion fails, the test runner reports a failure to the CI/CD system, failing the build.
+
+## 1.11 Triggers
+
+- A code commit to the main branch or a scheduled nightly build.
+
+## 1.12 Outcomes
+
+- The build pipeline succeeds or fails based on the performance benchmark result.
+- Performance regressions are caught automatically before they reach production.
+
+## 1.13 Business Rules
+
+- The system must process a 10MB JSON dataset with a moderately complex script in under 10 seconds (REQ-DTR-009).
+- This performance benchmark must be included in the quality assurance test suite (REQ-DTR-009).
+
+## 1.14 Error Scenarios
+
+- Test fails due to exceeding the 10-second threshold.
+- Test fails due to an unexpected error during execution.
+
+## 1.15 Integration Points
+
+- CI/CD System (e.g., Jenkins, GitHub Actions)
+
+# 2.0 Details
+
+## 2.1 Diagram Id
+
+SEQ-OF-002-IMPL
+
+## 2.2 Name
+
+Implementation: QA Runs Automated Performance Benchmark Test
+
+## 2.3 Description
+
+Technical sequence for an automated integration test within a CI/CD pipeline to validate the Data Transformation Engine's performance against the benchmark defined in REQ-DTR-009. The test client sends a 10MB JSON payload and a 200-statement script to the preview API endpoint and asserts that the server-side execution completes in under 10 seconds.
+
+## 2.4 Participants
+
+### 2.4.1 ExternalSystem
+
+#### 2.4.1.1 Repository Id
+
+External: CI/CD System
+
+#### 2.4.1.2 Display Name
+
+CI/CD System / Test Runner
+
+#### 2.4.1.3 Type
+
+🔹 ExternalSystem
+
+#### 2.4.1.4 Technology
+
+GitHub Actions / xUnit Test Runner
+
+#### 2.4.1.5 Order
+
+1
+
+#### 2.4.1.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | actor |
+| Color | #90A4AE |
+| Stereotype | CI/CD |
+
+### 2.4.2.0 ApplicationService
+
+#### 2.4.2.1 Repository Id
+
+REPO-APP-API-001
+
+#### 2.4.2.2 Display Name
+
+TransformationEngine.Api
+
+#### 2.4.2.3 Type
+
+🔹 ApplicationService
+
+#### 2.4.2.4 Technology
+
+ASP.NET Core 8
+
+#### 2.4.2.5 Order
+
+2
+
+#### 2.4.2.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | component |
+| Color | #42A5F5 |
+| Stereotype | API |
+
+### 2.4.3.0 Library
+
+#### 2.4.3.1 Repository Id
+
+REPO-LIB-JINT-002
+
+#### 2.4.3.2 Display Name
+
+TransformationEngine.Execution
+
+#### 2.4.3.3 Type
+
+🔹 Library
+
+#### 2.4.3.4 Technology
+
+.NET 8 / Jint
+
+#### 2.4.3.5 Order
+
+3
+
+#### 2.4.3.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | component |
+| Color | #66BB6A |
+| Stereotype | Library |
+
+## 2.5.0.0 Interactions
+
+### 2.5.1.0 LocalExecution
+
+#### 2.5.1.1 Source Id
+
+External: CI/CD System
+
+#### 2.5.1.2 Target Id
+
+External: CI/CD System
+
+#### 2.5.1.3 Message
+
+1. Initialize Test & Generate Payload
+
+#### 2.5.1.4 Sequence Number
+
+1
+
+#### 2.5.1.5 Type
+
+🔹 LocalExecution
+
+#### 2.5.1.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.1.7 Return Message
+
+
+
+#### 2.5.1.8 Has Return
+
+❌ No
+
+#### 2.5.1.9 Is Activation
+
+✅ Yes
+
+#### 2.5.1.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-process |
+| Method | TestSetup() |
+| Parameters | Loads benchmark script (200 statements) from file.... |
+| Authentication | N/A |
+| Error Handling | Test fails if setup artifacts are not found or pay... |
+| Performance | Setup should complete in < 2 seconds. |
+
+### 2.5.2.0 ApiRequest
+
+#### 2.5.2.1 Source Id
+
+External: CI/CD System
+
+#### 2.5.2.2 Target Id
+
+REPO-APP-API-001
+
+#### 2.5.2.3 Message
+
+2. POST /api/v1/transformations/preview
+
+#### 2.5.2.4 Sequence Number
+
+2
+
+#### 2.5.2.5 Type
+
+🔹 ApiRequest
+
+#### 2.5.2.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.2.7 Return Message
+
+3. HTTP 200 OK with transformed JSON and custom performance header.
+
+#### 2.5.2.8 Has Return
+
+✅ Yes
+
+#### 2.5.2.9 Is Activation
+
+✅ Yes
+
+#### 2.5.2.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | HTTP/1.1 |
+| Method | POST |
+| Parameters | Body: { scriptText: '...', sampleData: { ...10MB J... |
+| Authentication | Requires a valid JWT or API Key for a service acco... |
+| Error Handling | Client-side timeout of 15 seconds. Fails test on n... |
+| Performance | Measures full round-trip time. Primarily relies on... |
+
+#### 2.5.2.11 Nested Interactions
+
+##### 2.5.2.11.1 MethodCall
+
+###### 2.5.2.11.1.1 Source Id
+
+REPO-APP-API-001
+
+###### 2.5.2.11.1.2 Target Id
+
+REPO-APP-API-001
+
+###### 2.5.2.11.1.3 Message
+
+2a. [ScriptPreviewController] Invoke ScriptExecutionService.ExecutePreviewAsync()
+
+###### 2.5.2.11.1.4 Sequence Number
+
+2.1
+
+###### 2.5.2.11.1.5 Type
+
+🔹 MethodCall
+
+###### 2.5.2.11.1.6 Is Synchronous
+
+✅ Yes
+
+###### 2.5.2.11.1.7 Return Message
+
+Transformed JsonNode and execution duration.
+
+###### 2.5.2.11.1.8 Has Return
+
+✅ Yes
+
+###### 2.5.2.11.1.9 Is Activation
+
+❌ No
+
+###### 2.5.2.11.1.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-process |
+| Method | ExecutePreviewAsync(PreviewRequestDto dto, Cancell... |
+| Parameters | Passes DTO containing script and data. |
+| Authentication | N/A (occurs in middleware before controller action... |
+| Error Handling | Catches exceptions from service layer, formats int... |
+| Performance | Instantiates a Stopwatch to measure service layer ... |
+
+##### 2.5.2.11.2.0 MethodCall
+
+###### 2.5.2.11.2.1 Source Id
+
+REPO-APP-API-001
+
+###### 2.5.2.11.2.2 Target Id
+
+REPO-LIB-JINT-002
+
+###### 2.5.2.11.2.3 Message
+
+2b. [Service] Invoke IScriptEngineWrapper.Execute()
+
+###### 2.5.2.11.2.4 Sequence Number
+
+2.2
+
+###### 2.5.2.11.2.5 Type
+
+🔹 MethodCall
+
+###### 2.5.2.11.2.6 Is Synchronous
+
+✅ Yes
+
+###### 2.5.2.11.2.7 Return Message
+
+Transformed JsonNode.
+
+###### 2.5.2.11.2.8 Has Return
+
+✅ Yes
+
+###### 2.5.2.11.2.9 Is Activation
+
+✅ Yes
+
+###### 2.5.2.11.2.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-process |
+| Method | Execute(string script, JsonNode input) |
+| Parameters | The benchmark script and the 10MB JsonNode payload... |
+| Authentication | N/A |
+| Error Handling | Wrapper catches Jint-specific exceptions (e.g., Ja... |
+| Performance | This is the primary performance-critical operation... |
+
+##### 2.5.2.11.3.0 LocalExecution
+
+###### 2.5.2.11.3.1 Source Id
+
+REPO-LIB-JINT-02
+
+###### 2.5.2.11.3.2 Target Id
+
+REPO-LIB-JINT-02
+
+###### 2.5.2.11.3.3 Message
+
+2c. Execute script in sandboxed Jint engine
+
+###### 2.5.2.11.3.4 Sequence Number
+
+2.3
+
+###### 2.5.2.11.3.5 Type
+
+🔹 LocalExecution
+
+###### 2.5.2.11.3.6 Is Synchronous
+
+✅ Yes
+
+###### 2.5.2.11.3.7 Return Message
+
+
+
+###### 2.5.2.11.3.8 Has Return
+
+❌ No
+
+###### 2.5.2.11.3.9 Is Activation
+
+❌ No
+
+###### 2.5.2.11.3.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-process |
+| Method | engine.Execute() |
+| Parameters | N/A |
+| Authentication | N/A |
+| Error Handling | Jint engine enforces memory, statement count, and ... |
+| Performance | Monitored via the service layer's Stopwatch. |
+
+##### 2.5.2.11.4.0 Monitoring
+
+###### 2.5.2.11.4.1 Source Id
+
+REPO-APP-API-001
+
+###### 2.5.2.11.4.2 Target Id
+
+REPO-APP-API-001
+
+###### 2.5.2.11.4.3 Message
+
+2d. [Service] Stop timer, record performance metric
+
+###### 2.5.2.11.4.4 Sequence Number
+
+2.4
+
+###### 2.5.2.11.4.5 Type
+
+🔹 Monitoring
+
+###### 2.5.2.11.4.6 Is Synchronous
+
+✅ Yes
+
+###### 2.5.2.11.4.7 Return Message
+
+
+
+###### 2.5.2.11.4.8 Has Return
+
+❌ No
+
+###### 2.5.2.11.4.9 Is Activation
+
+❌ No
+
+###### 2.5.2.11.4.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-process |
+| Method | metrics.RecordExecutionTime(duration, outcome: 'su... |
+| Parameters | The measured execution duration from the Stopwatch... |
+| Authentication | N/A |
+| Error Handling | N/A |
+| Performance | The recorded value is exposed via the /metrics end... |
+
+### 2.5.3.0.0.0 LocalExecution
+
+#### 2.5.3.1.0.0 Source Id
+
+External: CI/CD System
+
+#### 2.5.3.2.0.0 Target Id
+
+External: CI/CD System
+
+#### 2.5.3.3.0.0 Message
+
+4. Assert Performance Threshold
+
+#### 2.5.3.4.0.0 Sequence Number
+
+4
+
+#### 2.5.3.5.0.0 Type
+
+🔹 LocalExecution
+
+#### 2.5.3.6.0.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.3.7.0.0 Return Message
+
+Pass or Fail
+
+#### 2.5.3.8.0.0 Has Return
+
+✅ Yes
+
+#### 2.5.3.9.0.0 Is Activation
+
+❌ No
+
+#### 2.5.3.10.0.0 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-process |
+| Method | Assert.IsTrue(executionTime < 10000) |
+| Parameters | executionTime is read from the 'X-Execution-Time-m... |
+| Authentication | N/A |
+| Error Handling | If assertion fails, the xUnit test runner throws a... |
+| Performance | N/A |
+
+### 2.5.4.0.0.0 LocalExecution
+
+#### 2.5.4.1.0.0 Source Id
+
+External: CI/CD System
+
+#### 2.5.4.2.0.0 Target Id
+
+External: CI/CD System
+
+#### 2.5.4.3.0.0 Message
+
+5. Report Test Result to CI/CD Pipeline
+
+#### 2.5.4.4.0.0 Sequence Number
+
+5
+
+#### 2.5.4.5.0.0 Type
+
+🔹 LocalExecution
+
+#### 2.5.4.6.0.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.4.7.0.0 Return Message
+
+
+
+#### 2.5.4.8.0.0 Has Return
+
+❌ No
+
+#### 2.5.4.9.0.0 Is Activation
+
+❌ No
+
+#### 2.5.4.10.0.0 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | Process Exit Code |
+| Method | exit(0) or exit(1) |
+| Parameters | Exit code 0 for success, non-zero for failure. |
+| Authentication | N/A |
+| Error Handling | The CI/CD platform (e.g., GitHub Actions) interpre... |
+| Performance | N/A |
+
+## 2.6.0.0.0.0 Notes
+
+### 2.6.1.0.0.0 Content
+
+#### 2.6.1.1.0.0 Content
+
+For precise measurement, the API must return the server-side execution duration in a custom response header, e.g., 'X-Execution-Time-ms'. This decouples the test from network latency.
+
+#### 2.6.1.2.0.0 Position
+
+top-right
+
+#### 2.6.1.3.0.0 Participant Id
+
+REPO-APP-API-001
+
+#### 2.6.1.4.0.0 Sequence Number
+
+3
+
+### 2.6.2.0.0.0 Content
+
+#### 2.6.2.1.0.0 Content
+
+The primary failure condition for this test is not an error, but a successful response that took too long. A secondary failure is any non-200 response, indicating a regression or system failure.
+
+#### 2.6.2.2.0.0 Position
+
+bottom-left
+
+#### 2.6.2.3.0.0 Participant Id
+
+External: CI/CD System
+
+#### 2.6.2.4.0.0 Sequence Number
+
+4
+
+## 2.7.0.0.0.0 Implementation Guidance
+
+| Property | Value |
+|----------|-------|
+| Security Requirements | The CI/CD system must use a dedicated, non-privile... |
+| Performance Targets | The core Service Level Indicator (SLI) is the serv... |
+| Error Handling Strategy | If the script execution fails for any reason (e.g.... |
+| Testing Considerations | This sequence IS the testing consideration. The te... |
+| Monitoring Requirements | The `transformation_execution_time_seconds` Promet... |
+| Deployment Considerations | This test acts as a quality gate in the deployment... |
+

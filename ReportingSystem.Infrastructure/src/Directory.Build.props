@@ -1,0 +1,38 @@
+<Project>
+  <!-- This file applies common properties to all projects in the solution. -->
+  
+  <PropertyGroup>
+    <!-- Target Framework -->
+    <TargetFramework>net8.0</TargetFramework>
+
+    <!-- Language Features -->
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>12.0</LangVersion>
+
+    <!-- Assembly Metadata -->
+    <Company>YourCompanyName</Company>
+    <Product>ReportingSystem</Product>
+    <Authors>YourCompanyName</Authors>
+    <Copyright>Copyright © YourCompanyName 2024</Copyright>
+    <RepositoryUrl>https://your-repository-url.com</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+
+    <!-- Build and Code Quality Settings -->
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+    
+    <!-- Treat warnings as errors in Release configuration for higher code quality -->
+    <TreatWarningsAsErrors Condition="'$(Configuration)' == 'Release'">true</TreatWarningsAsErrors>
+
+    <!-- Deterministic builds for reproducibility -->
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+
+  <!-- SourceLink settings for improved debugging of NuGet packages -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
+  </ItemGroup>
+  
+</Project>

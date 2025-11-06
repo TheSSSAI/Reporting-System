@@ -1,0 +1,188 @@
+-- ====================================================================
+-- DATA TRANSFORMATION & REPORTING SYSTEM SCHEMA (PostgreSQL)
+-- ====================================================================
+
+-- This script is designed for PostgreSQL due to the use of UUID, JSONB, GIN indexes, and table partitioning.
+
+-- =============================================
+-- TABLE CREATION
+-- =============================================
+
+-- Represents a system user with credentials and role associations for RBAC.
+CREATE TABLE "User" (
+    "userId" UUID PRIMARY KEY,
+    "username" VARCHAR(100) NOT NULL,
+    "email" VARCHAR(255) NOT NULL,
+    "passwordHash" VARCHAR(255) NOT NULL,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "isDeleted" BOOLEAN NOT NULL DEFAULT false,
+    CONSTRAINT "UC_User_Username" UNIQUE ("username"),
+    CONSTRAINT "UC_User_Email" UNIQUE ("email")
+);
+CREATE INDEX "IX_User_Active" ON "User" ("isActive", "isDeleted");
+
+-- Defines a role for RBAC, such as 'Administrator' or 'ScriptManager'.
+CREATE TABLE "Role" (
+    "roleId" SERIAL PRIMARY KEY,
+    "roleName" VARCHAR(50) NOT NULL,
+    "description" TEXT,
+    CONSTRAINT "UC_Role_RoleName" UNIQUE ("roleName")
+);
+
+-- Junction table for the many-to-many relationship between Users and Roles.
+-- Note: High Priority - Cache user roles in a distributed cache (e.g., Redis) to optimize RBAC checks.
+CREATE TABLE "UserRole" (
+    "userId" UUID NOT NULL,
+    "roleId" INT NOT NULL,
+    PRIMARY KEY ("userId", "roleId")
+);
+CREATE INDEX "IX_UserRole_RoleId" ON "UserRole" ("roleId");
+
+-- Stores the master record for a transformation script. Fulfills REQ-FUNC-DTR-004.
+CREATE TABLE "TransformationScript" (
+    "transformationScriptId" UUID PRIMARY KEY,
+    "name" VARCHAR(255) NOT NULL,
+    "description" TEXT,
+    "activeVersionId" UUID,
+    "createdByUserId" UUID NOT NULL,
+    "updatedByUserId" UUID NOT NULL,
+    "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "isDeleted" BOOLEAN NOT NULL DEFAULT false,
+    CONSTRAINT "UC_TransformationScript_Name" UNIQUE ("name")
+);
+CREATE INDEX "IX_TransformationScript_ActiveVersion" ON "TransformationScript" ("activeVersionId");
+CREATE INDEX "IX_TransformationScript_CreatedBy" ON "TransformationScript" ("createdByUserId");
+CREATE INDEX "IX_TransformationScript_UpdatedBy" ON "TransformationScript" ("updatedByUserId");
+CREATE INDEX "IX_TransformationScript_Active" ON "TransformationScript" ("isDeleted", "name");
+
+-- Stores a specific, immutable version of a transformation script's content. Fulfills REQ-FUNC-DTR-005 and REQ-SEC-DTR-003.
+CREATE TABLE "TransformationScriptVersion" (
+    "transformationScriptVersionId" UUID PRIMARY KEY,
+    "transformationScriptId" UUID NOT NULL,
+    "versionNumber" INT NOT NULL,
+    "scriptContent" TEXT NOT NULL, -- Per REQ-SEC-DTR-003, this should be encrypted at rest by the database/storage layer.
+    "changeNotes" TEXT,
+    "createdByUserId" UUID NOT NULL,
+    "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "UC_Version_Script_Number" UNIQUE ("transformationScriptId", "versionNumber")
+);
+CREATE INDEX "IX_Version_ScriptId_CreatedAt" ON "TransformationScriptVersion" ("transformationScriptId", "createdAt");
+CREATE INDEX "IX_Version_CreatedBy" ON "TransformationScriptVersion" ("createdByUserId");
+
+-- Defines a report, including its association with a transformation script. Fulfills REQ-FUNC-DTR-006.
+CREATE TABLE "ReportConfiguration" (
+    "reportConfigurationId" UUID PRIMARY KEY,
+    "name" VARCHAR(255) NOT NULL,
+    "transformationScriptId" UUID,
+    "outputJsonSchema" TEXT, -- Constraint MUST_BE_VALID_JSON_SCHEMA is enforced at the application layer.
+    "createdByUserId" UUID NOT NULL,
+    "updatedByUserId" UUID NOT NULL,
+    "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "isDeleted" BOOLEAN NOT NULL DEFAULT false
+);
+CREATE INDEX "IX_ReportConfig_TransformationScript" ON "ReportConfiguration" ("transformationScriptId");
+CREATE INDEX "IX_ReportConfig_Active" ON "ReportConfiguration" ("isDeleted", "name");
+
+-- Represents a single execution of a report generation task. Fulfills REQ-REL-DTR-001.
+CREATE TABLE "ReportJob" (
+    "reportJobId" UUID PRIMARY KEY,
+    "reportConfigurationId" UUID NOT NULL,
+    "transformationScriptVersionId" UUID,
+    "reportConfigurationName" VARCHAR(255), -- Denormalized for historical reporting and UI performance.
+    "transformationScriptName" VARCHAR(255), -- Denormalized for historical reporting and UI performance.
+    "status" VARCHAR(50) NOT NULL DEFAULT 'Queued' CHECK ("status" IN ('Queued', 'Running', 'Completed', 'Failed', 'Cancelled')),
+    "statusMessage" TEXT,
+    "queuedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "startedAt" TIMESTAMP WITH TIME ZONE,
+    "completedAt" TIMESTAMP WITH TIME ZONE
+) PARTITION BY RANGE ("completedAt");
+CREATE INDEX "IX_ReportJob_Status_QueuedAt" ON "ReportJob" ("status", "queuedAt");
+CREATE INDEX "IX_ReportJob_ReportConfig_CompletedAt" ON "ReportJob" ("reportConfigurationId", "completedAt");
+CREATE INDEX "IX_ReportJob_Covering_Status_Completed_Config" ON "ReportJob" ("status", "completedAt", "reportConfigurationId");
+-- Note: This table is partitioned. Partitions must be created and managed separately (e.g., CREATE TABLE ReportJob_YYYY_MM PARTITION OF ReportJob...).
+
+-- Stores an immutable record of security-relevant events. Fulfills REQ-SEC-DTR-002, REQ-SEC-DTR-004, REQ-COMP-DTR-001.
+CREATE TABLE "AuditLog" (
+    "auditLogId" BIGSERIAL PRIMARY KEY,
+    "timestamp" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "userId" UUID,
+    "eventType" VARCHAR(100) NOT NULL,
+    "entityType" VARCHAR(100),
+    "entityId" VARCHAR(255),
+    "details" JSONB NOT NULL DEFAULT '{}'::jsonb
+) PARTITION BY RANGE ("timestamp");
+CREATE INDEX "IX_AuditLog_Timestamp" ON "AuditLog" ("timestamp");
+CREATE INDEX "IX_AuditLog_User" ON "AuditLog" ("userId");
+CREATE INDEX "IX_AuditLog_EventType" ON "AuditLog" ("eventType");
+CREATE INDEX "IX_AuditLog_Entity" ON "AuditLog" ("entityType", "entityId");
+CREATE INDEX "IX_AuditLog_Details_GIN" ON "AuditLog" USING GIN ("details");
+-- Note: This table is partitioned. Partitions must be created and managed separately.
+
+-- A key-value store for system-wide settings. Fulfills REQ-SEC-DTR-001, REQ-OPER-IMP-001.
+-- Note: High Priority - Implement a caching strategy for non-sensitive values to reduce database load.
+CREATE TABLE "ApplicationConfiguration" (
+    "configurationKey" VARCHAR(255) PRIMARY KEY,
+    "configurationValue" TEXT NOT NULL,
+    "description" TEXT,
+    "isSensitive" BOOLEAN NOT NULL DEFAULT false,
+    "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+
+-- =============================================
+-- FOREIGN KEY CONSTRAINTS
+-- =============================================
+
+-- Define relationships after all tables are created to avoid dependency issues.
+
+ALTER TABLE "UserRole" ADD CONSTRAINT "FK_UserRole_User" FOREIGN KEY ("userId") REFERENCES "User" ("userId") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "UserRole" ADD CONSTRAINT "FK_UserRole_Role" FOREIGN KEY ("roleId") REFERENCES "Role" ("roleId") ON DELETE CASCADE ON UPDATE CASCADE;
+
+ALTER TABLE "TransformationScript" ADD CONSTRAINT "FK_TransformationScript_ActiveVersion" FOREIGN KEY ("activeVersionId") REFERENCES "TransformationScriptVersion" ("transformationScriptVersionId") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "TransformationScript" ADD CONSTRAINT "FK_TransformationScript_CreatedByUser" FOREIGN KEY ("createdByUserId") REFERENCES "User" ("userId") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "TransformationScript" ADD CONSTRAINT "FK_TransformationScript_UpdatedByUser" FOREIGN KEY ("updatedByUserId") REFERENCES "User" ("userId") ON DELETE SET NULL ON UPDATE CASCADE;
+
+ALTER TABLE "TransformationScriptVersion" ADD CONSTRAINT "FK_Version_TransformationScript" FOREIGN KEY ("transformationScriptId") REFERENCES "TransformationScript" ("transformationScriptId") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "TransformationScriptVersion" ADD CONSTRAINT "FK_Version_CreatedByUser" FOREIGN KEY ("createdByUserId") REFERENCES "User" ("userId") ON DELETE SET NULL ON UPDATE CASCADE;
+
+ALTER TABLE "ReportConfiguration" ADD CONSTRAINT "FK_ReportConfig_TransformationScript" FOREIGN KEY ("transformationScriptId") REFERENCES "TransformationScript" ("transformationScriptId") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "ReportConfiguration" ADD CONSTRAINT "FK_ReportConfig_CreatedByUser" FOREIGN KEY ("createdByUserId") REFERENCES "User" ("userId") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "ReportConfiguration" ADD CONSTRAINT "FK_ReportConfig_UpdatedByUser" FOREIGN KEY ("updatedByUserId") REFERENCES "User" ("userId") ON DELETE SET NULL ON UPDATE CASCADE;
+
+ALTER TABLE "ReportJob" ADD CONSTRAINT "FK_ReportJob_ReportConfiguration" FOREIGN KEY ("reportConfigurationId") REFERENCES "ReportConfiguration" ("reportConfigurationId") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "ReportJob" ADD CONSTRAINT "FK_ReportJob_ScriptVersion" FOREIGN KEY ("transformationScriptVersionId") REFERENCES "TransformationScriptVersion" ("transformationScriptVersionId") ON DELETE SET NULL ON UPDATE CASCADE;
+
+ALTER TABLE "AuditLog" ADD CONSTRAINT "FK_AuditLog_User" FOREIGN KEY ("userId") REFERENCES "User" ("userId") ON DELETE SET NULL ON UPDATE CASCADE;
+
+
+-- =============================================
+-- MATERIALIZED VIEW
+-- =============================================
+
+-- Pre-aggregates key metrics for reporting dashboards to ensure fast load times.
+-- Note: This Materialized View must be refreshed on a schedule (e.g., REFRESH MATERIALIZED VIEW CONCURRENTLY "ReportingDashboardMV").
+
+CREATE MATERIALIZED VIEW "ReportingDashboardMV" AS
+SELECT
+    DATE_TRUNC('day', rj."completedAt")::DATE AS "aggregationDate",
+    rj."reportConfigurationId",
+    rc."name" AS "reportConfigurationName",
+    COUNT(*) FILTER (WHERE rj."status" = 'Completed') AS "completedJobsCount",
+    COUNT(*) FILTER (WHERE rj."status" = 'Failed') AS "failedJobsCount",
+    CAST(AVG(EXTRACT(EPOCH FROM (rj."completedAt" - rj."startedAt"))) AS DECIMAL(10, 2)) AS "averageExecutionTimeSeconds"
+FROM
+    "ReportJob" rj
+JOIN
+    "ReportConfiguration" rc ON rj."reportConfigurationId" = rc."reportConfigurationId"
+WHERE
+    rj."completedAt" IS NOT NULL AND rj."startedAt" IS NOT NULL
+GROUP BY
+    1, 2, 3
+WITH DATA;
+
+CREATE UNIQUE INDEX "PK_ReportingDashboardMV" ON "ReportingDashboardMV" ("aggregationDate", "reportConfigurationId");
+CREATE INDEX "IX_ReportingDashboardMV_Name" ON "ReportingDashboardMV" ("reportConfigurationName");

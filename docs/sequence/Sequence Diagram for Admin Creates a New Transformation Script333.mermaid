@@ -1,0 +1,22 @@
+sequenceDiagram
+    participant "Control Panel UI" as ControlPanelUI
+    participant "Transformation API" as TransformationAPI
+    participant "Data Access Layer" as DataAccessLayer
+
+    ControlPanelUI->>ControlPanelUI: 1. 1. Admin fills script details (name, description, content) in the form and clicks 'Save'.
+    ControlPanelUI->>ControlPanelUI: 2. 2. Set UI state to 'loading' and perform client-side validation (e.g., check for empty fields).
+    activate TransformationAPI
+    ControlPanelUI->>TransformationAPI: 3. 3. POST /api/v1/transformations
+    TransformationAPI-->>ControlPanelUI: HTTP 201 Created | 400 Bad Request | 403 Forbidden | 500 Internal Server Error
+    TransformationAPI->>TransformationAPI: 4. 4. [Middleware] Authenticate and Authorize user based on JWT. Check for 'Administrator' role.
+    TransformationAPI->>TransformationAPI: 5. 5. [Controller] Validate CreateScriptRequest DTO using DataAnnotations/FluentValidation.
+    TransformationAPI->>TransformationAPI: 6. 6. [Service] Invoke TransformationScriptService.CreateScriptAsync(dto, userId).
+    TransformationAPI-->>TransformationAPI: TransformationScriptDto
+    TransformationAPI->>TransformationAPI: 16. 16. [Controller] Map resulting domain entity to a response DTO and return HTTP 201 Created.
+    ControlPanelUI->>ControlPanelUI: 17. 17. On success (201), set UI state to 'success', clear 'loading', display a confirmation toast, and navigate to the edit page for the new script.
+
+    note over TransformationAPI: Transactional Integrity: The entire operation, including script creation and audit logging, is wr...
+    note over TransformationAPI: In-Process Mediator: A lightweight in-process pub/sub mechanism (like MediatR) is used to decoupl...
+    note over ControlPanelUI: Client-Side State: The UI maintains a state machine (e.g., idle, loading, success, error) to prov...
+
+    deactivate TransformationAPI

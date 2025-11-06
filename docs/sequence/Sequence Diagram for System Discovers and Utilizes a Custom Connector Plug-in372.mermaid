@@ -1,0 +1,38 @@
+sequenceDiagram
+    participant "Service Host" as ServiceHost
+    participant "Report Execution Engine" as ReportExecutionEngine
+    participant "File System" as FileSystem
+    participant "Report Execution Engine" as ReportExecutionEngine
+    participant "Report Execution Engine" as ReportExecutionEngine
+    participant "CustomConnector.dll" as CustomConnectordll
+
+    activate ReportExecutionEngine
+    ServiceHost->>ReportExecutionEngine: 1. Phase 1: Plugin Discovery on Startup -- HostBuilder.ConfigureServices(...)
+    ReportExecutionEngine->>FileSystem: 2. Directory.EnumerateFiles(pluginPath, "*.dll")
+    FileSystem-->>ReportExecutionEngine: IEnumerable<string> dllPaths
+    ReportExecutionEngine->>ReportExecutionEngine: 3. Loop foreach dllPath in dllPaths
+    ReportExecutionEngine->>ReportExecutionEngine: 3.1. var context = new AssemblyLoadContext(name: dllPath, isCollectible: true)
+    ReportExecutionEngine-->>ReportExecutionEngine: AssemblyLoadContext instance
+    ReportExecutionEngine->>ReportExecutionEngine: 3.2. Assembly assembly = context.LoadFromAssemblyPath(dllPath)
+    ReportExecutionEngine-->>ReportExecutionEngine: Assembly instance
+    ReportExecutionEngine->>ReportExecutionEngine: 3.3. Find types implementing IConnector via reflection
+    ReportExecutionEngine-->>ReportExecutionEngine: IEnumerable<Type> connectorTypes
+    activate CustomConnectordll
+    ReportExecutionEngine->>CustomConnectordll: 3.4. Activator.CreateInstance(type) as IConnector
+    CustomConnectordll-->>ReportExecutionEngine: IConnector connectorInstance
+    ReportExecutionEngine->>ReportExecutionEngine: 3.5. RegisterConnector(connectorInstance)
+    ServiceHost->>ReportExecutionEngine: 4. Phase 2: Report Job Execution with Custom Connector -- Scheduler triggers ReportExecutionEngine.Execute(jobContext)
+    ReportExecutionEngine->>ReportExecutionEngine: 5. GetConnectorByName(jobContext.ReportConfig.ConnectorName)
+    ReportExecutionEngine-->>ReportExecutionEngine: IConnector connectorInstance
+    ReportExecutionEngine->>CustomConnectordll: 6. connectorInstance.FetchDataAsync(jobContext.ReportConfig.ConnectorConfigJson)
+    CustomConnectordll-->>ReportExecutionEngine: Task<JsonNode> data
+    CustomConnectordll->>ReportExecutionEngine: 7. Return ingested data
+    ReportExecutionEngine-->>CustomConnectordll: JsonNode ingestedData
+    ReportExecutionEngine->>ReportExecutionEngine: 8. Continue with data transformation and report generation pipeline...
+
+    note over ReportExecutionEngine: Security: Each plugin is loaded into a separate, collectible AssemblyLoadContext. This prevents D...
+    note over CustomConnectordll: Data Contract: The FetchDataAsync method's return type of 'JsonNode' is critical. It standardizes...
+    note over CustomConnectordll: Resilience: The custom connector implementation is responsible for its own internal resilience lo...
+
+    deactivate CustomConnectordll
+    deactivate ReportExecutionEngine

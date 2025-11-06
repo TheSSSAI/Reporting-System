@@ -1,0 +1,28 @@
+sequenceDiagram
+    participant "Operator" as Operator
+    participant "Migration Service (CLI)" as MigrationServiceCLI
+    participant "Legacy Database" as LegacyDatabase
+    participant "Data Access Layer" as DataAccessLayer
+
+    activate MigrationServiceCLI
+    Operator->>MigrationServiceCLI: 1. Executes migration command with credentials.
+    MigrationServiceCLI-->>Operator: Returns migration summary report to standard output.
+    MigrationServiceCLI->>MigrationServiceCLI: 2. Logs start of migration process and validates credentials.
+    MigrationServiceCLI->>LegacyDatabase: 3. Establishes read-only database connection.
+    LegacyDatabase-->>MigrationServiceCLI: Connection object or throws exception.
+    MigrationServiceCLI->>LegacyDatabase: 4. Executes query to fetch all transformation scripts and their report associations.
+    LegacyDatabase-->>MigrationServiceCLI: Returns a stream or collection of data rows.
+    MigrationServiceCLI->>MigrationServiceCLI: 5. Begin iterating over each legacy script record.
+    MigrationServiceCLI->>MigrationServiceCLI: 5.1. Maps legacy data and encrypts script content.
+    MigrationServiceCLI-->>MigrationServiceCLI: New TransformationScript & ScriptVersion domain entities.
+    activate DataAccessLayer
+    MigrationServiceCLI->>DataAccessLayer: 5.2. Saves new script, version, and associations within a transaction.
+    DataAccessLayer-->>MigrationServiceCLI: Success or throws exception.
+    MigrationServiceCLI->>MigrationServiceCLI: 5.3. Logs successful migration of individual item.
+    MigrationServiceCLI->>MigrationServiceCLI: 6. End loop.
+    MigrationServiceCLI->>MigrationServiceCLI: 7. Logs final summary of the migration.
+
+    note over MigrationServiceCLI: The script must be idempotent. If re-run, it should check for the existence of a migrated script ...
+
+    deactivate DataAccessLayer
+    deactivate MigrationServiceCLI

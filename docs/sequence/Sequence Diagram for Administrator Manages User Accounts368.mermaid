@@ -1,0 +1,37 @@
+sequenceDiagram
+    participant "Presentation Layer (React UI)" as PresentationLayerReactUI
+    participant "API/Web Layer" as APIWebLayer
+    participant "Application Layer" as ApplicationLayer
+    participant "Infrastructure Layer" as InfrastructureLayer
+
+    activate PresentationLayerReactUI
+    PresentationLayerReactUI->>PresentationLayerReactUI: 1. Admin clicks 'Add User', UserForm modal is displayed with input fields.
+    PresentationLayerReactUI->>PresentationLayerReactUI: 1.1. Perform client-side validation as Admin enters user details (username, password, role). Provide real-time feedback on errors.
+    activate APIWebLayer
+    PresentationLayerReactUI->>APIWebLayer: 2. Admin submits form. UI shows loading state and sends request to create user.
+    APIWebLayer-->>PresentationLayerReactUI: HTTP 201 Created with new User object or HTTP 4xx/5xx with error details.
+    APIWebLayer->>APIWebLayer: 3. Middleware validates JWT and checks for 'Administrator' role.
+    APIWebLayer-->>APIWebLayer: Proceeds or returns HTTP 401/403.
+    activate ApplicationLayer
+    APIWebLayer->>ApplicationLayer: 4. UsersController invokes UserManagementService to create the user.
+    ApplicationLayer-->>APIWebLayer: Returns created User object or throws exception.
+    activate InfrastructureLayer
+    ApplicationLayer->>InfrastructureLayer: 5. Maps DTO to ApplicationUser entity and calls UserManager to create account.
+    InfrastructureLayer-->>ApplicationLayer: IdentityResult indicating success or failure.
+    InfrastructureLayer->>InfrastructureLayer: 6. Persists new user record to 'Users' table in SQLite database.
+    InfrastructureLayer-->>InfrastructureLayer: Success confirmation.
+    ApplicationLayer->>InfrastructureLayer: 7. If user creation succeeded, assigns selected roles to the new user.
+    InfrastructureLayer-->>ApplicationLayer: IdentityResult indicating success or failure.
+    ApplicationLayer->>InfrastructureLayer: 8. Triggers an audit event for the security-sensitive user creation action.
+    ApplicationLayer->>APIWebLayer: 9. Returns the newly created User DTO.
+    APIWebLayer->>PresentationLayerReactUI: 10. Responds with HTTP 201 Created and the new user's data.
+    PresentationLayerReactUI->>PresentationLayerReactUI: 11. On success, hides loading state, closes modal, updates Zustand store, and shows success toast.
+
+    note over PresentationLayerReactUI: Client-Side Validation: The React UI performs initial validation to provide immediate feedback, b...
+    note over APIWebLayer: Global Exception Handling: A middleware in the API Layer catches unhandled exceptions from the Ap...
+    note over InfrastructureLayer: Audit Logging: Security-sensitive operations like user creation, role changes, and password reset...
+
+    deactivate InfrastructureLayer
+    deactivate ApplicationLayer
+    deactivate APIWebLayer
+    deactivate PresentationLayerReactUI

@@ -1,0 +1,171 @@
+-- =============================================
+-- Create Tables
+-- =============================================
+
+-- Represents a system user or administrator
+CREATE TABLE [User] (
+    [userId] UNIQUEIDENTIFIER NOT NULL PRIMARY KEY,
+    [username] NVARCHAR(100) NOT NULL,
+    [email] NVARCHAR(255) NOT NULL,
+    [fullName] NVARCHAR(200) NOT NULL,
+    [passwordHash] NVARCHAR(255) NOT NULL,
+    [isActive] BIT NOT NULL DEFAULT 1,
+    [isDeleted] BIT NOT NULL DEFAULT 0,
+    [createdAt] DATETIMEOFFSET NOT NULL DEFAULT SYSDATETIMEOFFSET(),
+    [updatedAt] DATETIMEOFFSET NOT NULL DEFAULT SYSDATETIMEOFFSET(),
+    CONSTRAINT UC_User_Username UNIQUE ([username]),
+    CONSTRAINT UC_User_Email UNIQUE ([email])
+);
+
+-- Stores a JSON Schema definition for validation
+CREATE TABLE [JsonSchema] (
+    [jsonSchemaId] UNIQUEIDENTIFIER NOT NULL PRIMARY KEY,
+    [name] NVARCHAR(255) NOT NULL,
+    [schemaDefinition] NVARCHAR(MAX) NOT NULL,
+    [createdByUserId] UNIQUEIDENTIFIER NOT NULL,
+    [createdAt] DATETIMEOFFSET NOT NULL DEFAULT SYSDATETIMEOFFSET(),
+    [updatedAt] DATETIMEOFFSET NOT NULL DEFAULT SYSDATETIMEOFFSET(),
+    CONSTRAINT UC_JsonSchema_Name UNIQUE ([name]),
+    CONSTRAINT CK_JsonSchema_schemaDefinition CHECK (ISJSON([schemaDefinition]) > 0)
+);
+
+-- Represents a report definition in the system
+CREATE TABLE [ReportConfiguration] (
+    [reportConfigurationId] UNIQUEIDENTIFIER NOT NULL PRIMARY KEY,
+    [name] NVARCHAR(255) NOT NULL,
+    [jsonSchemaId] UNIQUEIDENTIFIER NULL,
+    [createdByUserId] UNIQUEIDENTIFIER NOT NULL,
+    [updatedByUserId] UNIQUEIDENTIFIER NOT NULL,
+    [createdAt] DATETIMEOFFSET NOT NULL DEFAULT SYSDATETIMEOFFSET(),
+    [updatedAt] DATETIMEOFFSET NOT NULL DEFAULT SYSDATETIMEOFFSET()
+);
+
+-- Represents a user-defined transformation script
+CREATE TABLE [TransformationScript] (
+    [transformationScriptId] UNIQUEIDENTIFIER NOT NULL PRIMARY KEY,
+    [name] NVARCHAR(255) NOT NULL,
+    [description] NVARCHAR(MAX) NULL,
+    [activeScriptVersionId] UNIQUEIDENTIFIER NULL,
+    [activeVersionNumber] INT NULL,
+    [createdByUserId] UNIQUEIDENTIFIER NOT NULL,
+    [updatedByUserId] UNIQUEIDENTIFIER NOT NULL,
+    [isDeleted] BIT NOT NULL DEFAULT 0,
+    [createdAt] DATETIMEOFFSET NOT NULL DEFAULT SYSDATETIMEOFFSET(),
+    [updatedAt] DATETIMEOFFSET NOT NULL DEFAULT SYSDATETIMEOFFSET(),
+    CONSTRAINT UC_TransformationScript_Name UNIQUE ([name])
+);
+
+-- Stores an immutable version of a transformation script's content
+-- NOTE: Partitioning strategy should be implemented based on specific RDBMS capabilities.
+-- For SQL Server, this would involve creating a PARTITION FUNCTION and SCHEME.
+CREATE TABLE [ScriptVersion] (
+    [scriptVersionId] UNIQUEIDENTIFIER NOT NULL PRIMARY KEY,
+    [transformationScriptId] UNIQUEIDENTIFIER NOT NULL,
+    [versionNumber] INT NOT NULL,
+    [scriptContentEncrypted] VARBINARY(MAX) NOT NULL,
+    [changeLog] NVARCHAR(MAX) NULL,
+    [createdByUserId] UNIQUEIDENTIFIER NOT NULL,
+    [createdAt] DATETIMEOFFSET NOT NULL DEFAULT SYSDATETIMEOFFSET(),
+    CONSTRAINT UC_ScriptVersion_Script_Version UNIQUE ([transformationScriptId], [versionNumber])
+);
+
+-- Junction table for the many-to-many relationship between reports and scripts
+CREATE TABLE [ReportTransformationScriptAssociation] (
+    [reportConfigurationId] UNIQUEIDENTIFIER NOT NULL,
+    [transformationScriptId] UNIQUEIDENTIFIER NOT NULL,
+    [associatedByUserId] UNIQUEIDENTIFIER NOT NULL,
+    [associatedAt] DATETIMEOFFSET NOT NULL DEFAULT SYSDATETIMEOFFSET(),
+    PRIMARY KEY ([reportConfigurationId], [transformationScriptId])
+);
+
+-- Records all script management activities for compliance and tracking
+-- NOTE: Partitioning strategy should be implemented based on specific RDBMS capabilities.
+-- For SQL Server, this would involve creating a PARTITION FUNCTION and SCHEME on the 'timestamp' column.
+CREATE TABLE [AuditLog] (
+    [auditLogId] BIGINT IDENTITY(1,1) NOT NULL,
+    [timestamp] DATETIMEOFFSET NOT NULL DEFAULT SYSDATETIMEOFFSET(),
+    [userId] UNIQUEIDENTIFIER NOT NULL,
+    [actionType] NVARCHAR(100) NOT NULL,
+    [entityType] NVARCHAR(100) NOT NULL,
+    [entityId] UNIQUEIDENTIFIER NOT NULL,
+    [changeDetails] NVARCHAR(MAX) NULL,
+    [sourceIpAddress] NVARCHAR(45) NULL,
+    PRIMARY KEY ([auditLogId], [timestamp]),
+    CONSTRAINT CK_AuditLog_changeDetails CHECK (ISJSON([changeDetails]) > 0)
+);
+
+-- Dedicated log for script executions that violate a configured sandbox constraint
+-- NOTE: Partitioning strategy should be implemented based on specific RDBMS capabilities.
+-- For SQL Server, this would involve creating a PARTITION FUNCTION and SCHEME on the 'timestamp' column.
+CREATE TABLE [SecurityViolationLog] (
+    [securityViolationLogId] BIGINT IDENTITY(1,1) NOT NULL,
+    [timestamp] DATETIMEOFFSET NOT NULL DEFAULT SYSDATETIMEOFFSET(),
+    [transformationScriptId] UNIQUEIDENTIFIER NOT NULL,
+    [scriptVersionId] UNIQUEIDENTIFIER NOT NULL,
+    [violationType] NVARCHAR(50) NOT NULL,
+    [violationValue] NVARCHAR(255) NOT NULL,
+    [executionId] UNIQUEIDENTIFIER NULL,
+    PRIMARY KEY ([securityViolationLogId], [timestamp]),
+    CONSTRAINT CK_SecurityViolationLog_violationType CHECK ([violationType] IN ('TIMEOUT', 'MEMORY_LIMIT', 'STATEMENT_COUNT'))
+);
+
+-- =============================================
+-- Create Foreign Key Constraints
+-- =============================================
+
+-- User and Auditing Foreign Keys
+ALTER TABLE [JsonSchema] ADD CONSTRAINT FK_JsonSchema_CreatedByUser FOREIGN KEY ([createdByUserId]) REFERENCES [User]([userId]) ON DELETE NO ACTION ON UPDATE NO ACTION;
+ALTER TABLE [ReportConfiguration] ADD CONSTRAINT FK_ReportConfiguration_CreatedByUser FOREIGN KEY ([createdByUserId]) REFERENCES [User]([userId]) ON DELETE NO ACTION ON UPDATE NO ACTION;
+ALTER TABLE [ReportConfiguration] ADD CONSTRAINT FK_ReportConfiguration_UpdatedByUser FOREIGN KEY ([updatedByUserId]) REFERENCES [User]([userId]) ON DELETE NO ACTION ON UPDATE NO ACTION;
+ALTER TABLE [TransformationScript] ADD CONSTRAINT FK_TransformationScript_CreatedByUser FOREIGN KEY ([createdByUserId]) REFERENCES [User]([userId]) ON DELETE NO ACTION ON UPDATE NO ACTION;
+ALTER TABLE [TransformationScript] ADD CONSTRAINT FK_TransformationScript_UpdatedByUser FOREIGN KEY ([updatedByUserId]) REFERENCES [User]([userId]) ON DELETE NO ACTION ON UPDATE NO ACTION;
+ALTER TABLE [ScriptVersion] ADD CONSTRAINT FK_ScriptVersion_CreatedByUser FOREIGN KEY ([createdByUserId]) REFERENCES [User]([userId]) ON DELETE NO ACTION ON UPDATE NO ACTION;
+ALTER TABLE [ReportTransformationScriptAssociation] ADD CONSTRAINT FK_RTSA_AssociatedByUser FOREIGN KEY ([associatedByUserId]) REFERENCES [User]([userId]) ON DELETE NO ACTION ON UPDATE NO ACTION;
+ALTER TABLE [AuditLog] ADD CONSTRAINT FK_AuditLog_User FOREIGN KEY ([userId]) REFERENCES [User]([userId]) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- Script and Version Relationships
+ALTER TABLE [ScriptVersion] ADD CONSTRAINT FK_ScriptVersion_TransformationScript FOREIGN KEY ([transformationScriptId]) REFERENCES [TransformationScript]([transformationScriptId]) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE [TransformationScript] ADD CONSTRAINT FK_TransformationScript_ActiveScriptVersion FOREIGN KEY ([activeScriptVersionId]) REFERENCES [ScriptVersion]([scriptVersionId]) ON DELETE SET NULL ON UPDATE NO ACTION;
+
+-- Report and Schema/Script Relationships
+ALTER TABLE [ReportConfiguration] ADD CONSTRAINT FK_ReportConfiguration_JsonSchema FOREIGN KEY ([jsonSchemaId]) REFERENCES [JsonSchema]([jsonSchemaId]) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE [ReportTransformationScriptAssociation] ADD CONSTRAINT FK_RTSA_ReportConfiguration FOREIGN KEY ([reportConfigurationId]) REFERENCES [ReportConfiguration]([reportConfigurationId]) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE [ReportTransformationScriptAssociation] ADD CONSTRAINT FK_RTSA_TransformationScript FOREIGN KEY ([transformationScriptId]) REFERENCES [TransformationScript]([transformationScriptId]) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- Security Violation Log Relationships
+ALTER TABLE [SecurityViolationLog] ADD CONSTRAINT FK_SecurityViolationLog_TransformationScript FOREIGN KEY ([transformationScriptId]) REFERENCES [TransformationScript]([transformationScriptId]) ON DELETE NO ACTION ON UPDATE NO ACTION;
+ALTER TABLE [SecurityViolationLog] ADD CONSTRAINT FK_SecurityViolationLog_ScriptVersion FOREIGN KEY ([scriptVersionId]) REFERENCES [ScriptVersion]([scriptVersionId]) ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- =============================================
+-- Create Indexes
+-- =============================================
+
+-- User Indexes
+CREATE INDEX IX_User_Active_NotDeleted ON [User]([isActive], [isDeleted]);
+
+-- ReportConfiguration Indexes
+CREATE INDEX IX_ReportConfiguration_Name ON [ReportConfiguration]([name]);
+CREATE INDEX IX_ReportConfiguration_JsonSchemaId ON [ReportConfiguration]([jsonSchemaId]);
+
+-- TransformationScript Indexes
+CREATE INDEX IX_TransformationScript_ActiveScriptVersionId ON [TransformationScript]([activeScriptVersionId]);
+CREATE INDEX IX_TransformationScript_IsDeleted ON [TransformationScript]([isDeleted]);
+CREATE INDEX IX_TransformationScript_ActiveVersionNumber ON [TransformationScript]([activeVersionNumber]);
+
+-- ScriptVersion Indexes
+CREATE INDEX IX_ScriptVersion_CreatedAt ON [ScriptVersion]([createdAt]);
+CREATE INDEX IX_ScriptVersion_ScriptId_VersionDesc ON [ScriptVersion]([transformationScriptId], [versionNumber] DESC);
+
+-- ReportTransformationScriptAssociation Indexes
+CREATE INDEX IX_RTSA_TransformationScriptId ON [ReportTransformationScriptAssociation]([transformationScriptId]);
+
+-- AuditLog Indexes
+CREATE INDEX IX_AuditLog_EntityType_EntityId ON [AuditLog]([entityType], [entityId]);
+CREATE INDEX IX_AuditLog_UserId_Timestamp ON [AuditLog]([userId], [timestamp]);
+CREATE INDEX IX_AuditLog_TimestampDesc_EntityType_ActionType ON [AuditLog]([timestamp] DESC, [entityType], [actionType]);
+-- NOTE: Indexing NVARCHAR(MAX) JSON columns in SQL Server for deep queries often requires computed columns or Full-Text Search.
+
+-- SecurityViolationLog Indexes
+CREATE INDEX IX_SecurityViolationLog_ScriptId_Timestamp ON [SecurityViolationLog]([transformationScriptId], [timestamp]);
+CREATE INDEX IX_SecurityViolationLog_ViolationType_TimestampDesc ON [SecurityViolationLog]([violationType], [timestamp] DESC);
+CREATE INDEX IX_SecurityViolationLog_ExecutionId ON [SecurityViolationLog]([executionId]);

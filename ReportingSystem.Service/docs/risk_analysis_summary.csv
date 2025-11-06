@@ -1,0 +1,2 @@
+"total_risks_identified","critical_risks","high_priority_risks","average_risk_score","key_risk_themes","immediate_actions_required"
+"7","0","2","12.4","[""Technical Security & Compliance"",""Complex Third-Party Integrations (Jint, Monaco)"",""Operational Readiness & Data Integrity""]","[""Prioritize and conduct a security architecture review for the Jint sandbox and audit trail."",""Formalize and track critical path dependencies to mitigate cascading timeline delays."",""Initiate a technical spike for the Monaco Editor integration to de-risk frontend development.""]"

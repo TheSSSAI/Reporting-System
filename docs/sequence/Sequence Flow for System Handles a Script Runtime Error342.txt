@@ -1,0 +1,819 @@
+# 1 Overview
+
+## 1.1 Diagram Id
+
+SEQ-EH-001
+
+## 1.2 Name
+
+System Handles a Script Runtime Error
+
+## 1.3 Description
+
+During script execution, the user's JavaScript throws a runtime error. The Jint engine catches this, wrapping it in a `JavaScriptException`. The backend application code catches this specific exception, extracts detailed information (message, line number, stack), logs it, and formats it into the standard error structure for the API response.
+
+## 1.4 Type
+
+🔹 ErrorHandling
+
+## 1.5 Purpose
+
+To provide clear, actionable feedback to administrators when their scripts fail, facilitating easier debugging.
+
+## 1.6 Complexity
+
+Medium
+
+## 1.7 Priority
+
+🔴 High
+
+## 1.8 Frequency
+
+OnDemand
+
+## 1.9 Participants
+
+- REPO-LIB-JINT-002
+- REPO-APP-API-001
+
+## 1.10 Key Interactions
+
+- A JavaScript script throws an error (e.g., `ReferenceError`).
+- The Jint engine catches the error and throws a `Jint.Runtime.JavaScriptException`.
+- The `JintEngineWrapper` catches this specific exception.
+- The wrapper extracts `ex.Message`, `ex.StackTrace`, `ex.LineNumber`, and `ex.Column`.
+- The calling `ScriptExecutionService` receives these details.
+- The service logs the detailed error to the centralized logging system.
+- The service formats the details into the standard structured error format: `{"error": {"message": "...", "stackTrace": "...", "lineNumber": ...}}`.
+- The API controller returns an HTTP 400 Bad Request (for previews) or 500 (for report jobs) containing this JSON payload.
+
+## 1.11 Triggers
+
+- A user script contains a logical or runtime error that manifests during execution.
+
+## 1.12 Outcomes
+
+- The script execution is terminated.
+- The administrator sees a clear, formatted error message in the UI, including the line number.
+- The error is logged with full context on the backend for analysis.
+
+## 1.13 Business Rules
+
+- Exceptions must be caught by the transformation engine (REQ-DTR-006).
+- The error, including message, stack trace, and line/column number, must be logged (REQ-DTR-006).
+- The error must be returned in the standard structured error format in the API response (REQ-DTR-006).
+
+## 1.14 Error Scenarios
+
+- This is itself an error handling scenario.
+
+## 1.15 Integration Points
+
+- Centralized Logging System
+
+# 2.0 Details
+
+## 2.1 Diagram Id
+
+SEQ-EH-001
+
+## 2.2 Name
+
+Script Runtime Exception Handling and Structured Error Response
+
+## 2.3 Description
+
+Technical sequence for catching a runtime exception from a user-provided script within the Jint engine. The sequence details how the exception is caught, its details are extracted, it is logged with correlation context, and a structured, standardized error DTO is formatted and returned to the client via a deterministic HTTP status code, fulfilling REQ-DTR-006.
+
+## 2.4 Participants
+
+### 2.4.1 UI/Client
+
+#### 2.4.1.1 Repository Id
+
+CLIENT-UI
+
+#### 2.4.1.2 Display Name
+
+React Control Panel
+
+#### 2.4.1.3 Type
+
+🔹 UI/Client
+
+#### 2.4.1.4 Technology
+
+React 18 / Axios
+
+#### 2.4.1.5 Order
+
+1
+
+#### 2.4.1.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | actor |
+| Color | #E6F5FF |
+| Stereotype | User Interface |
+
+### 2.4.2.0 API Controller
+
+#### 2.4.2.1 Repository Id
+
+REPO-APP-API-001#Controller
+
+#### 2.4.2.2 Display Name
+
+ScriptPreviewController
+
+#### 2.4.2.3 Type
+
+🔹 API Controller
+
+#### 2.4.2.4 Technology
+
+ASP.NET Core 8
+
+#### 2.4.2.5 Order
+
+2
+
+#### 2.4.2.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | component |
+| Color | #D4EDDA |
+| Stereotype | REPO-APP-API-001 |
+
+### 2.4.3.0 Application Service
+
+#### 2.4.3.1 Repository Id
+
+REPO-APP-API-001#Service
+
+#### 2.4.3.2 Display Name
+
+ScriptExecutionService
+
+#### 2.4.3.3 Type
+
+🔹 Application Service
+
+#### 2.4.3.4 Technology
+
+.NET 8
+
+#### 2.4.3.5 Order
+
+3
+
+#### 2.4.3.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | component |
+| Color | #D4EDDA |
+| Stereotype | REPO-APP-API-001 |
+
+### 2.4.4.0 Infrastructure Wrapper
+
+#### 2.4.4.1 Repository Id
+
+REPO-LIB-JINT-002
+
+#### 2.4.4.2 Display Name
+
+JintEngineWrapper
+
+#### 2.4.4.3 Type
+
+🔹 Infrastructure Wrapper
+
+#### 2.4.4.4 Technology
+
+Jint / .NET 8
+
+#### 2.4.4.5 Order
+
+4
+
+#### 2.4.4.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | component |
+| Color | #FFF3CD |
+| Stereotype | REPO-LIB-JINT-002 |
+
+### 2.4.5.0 JavaScript VM
+
+#### 2.4.5.1 Repository Id
+
+JINT-ENGINE
+
+#### 2.4.5.2 Display Name
+
+Jint Engine
+
+#### 2.4.5.3 Type
+
+🔹 JavaScript VM
+
+#### 2.4.5.4 Technology
+
+Jint Library
+
+#### 2.4.5.5 Order
+
+5
+
+#### 2.4.5.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | component |
+| Color | #F8D7DA |
+| Stereotype | Third-Party |
+
+## 2.5.0.0 Interactions
+
+### 2.5.1.0 Request
+
+#### 2.5.1.1 Source Id
+
+CLIENT-UI
+
+#### 2.5.1.2 Target Id
+
+REPO-APP-API-001#Controller
+
+#### 2.5.1.3 Message
+
+Sends script preview request with faulty script content.
+
+#### 2.5.1.4 Sequence Number
+
+1
+
+#### 2.5.1.5 Type
+
+🔹 Request
+
+#### 2.5.1.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.1.7 Return Message
+
+
+
+#### 2.5.1.8 Has Return
+
+❌ No
+
+#### 2.5.1.9 Is Activation
+
+✅ Yes
+
+#### 2.5.1.10 Technical Details
+
+##### 2.5.1.10.1 Protocol
+
+HTTP/1.1
+
+##### 2.5.1.10.2 Method
+
+POST /api/v1/transformations/preview
+
+##### 2.5.1.10.3 Parameters
+
+RequestBody: { script: 'let a = b;', sampleData: {} }
+
+##### 2.5.1.10.4 Authentication
+
+JWT Bearer Token
+
+##### 2.5.1.10.5 Error Handling
+
+Client expects 200, 400, 403, or 500 response codes.
+
+##### 2.5.1.10.6 Performance
+
+###### 2.5.1.10.6.1 Latency
+
+Configurable client-side timeout (e.g., 60s)
+
+### 2.5.2.0.0.0 MethodCall
+
+#### 2.5.2.1.0.0 Source Id
+
+REPO-APP-API-001#Controller
+
+#### 2.5.2.2.0.0 Target Id
+
+REPO-APP-API-001#Service
+
+#### 2.5.2.3.0.0 Message
+
+Invokes service to execute the script preview.
+
+#### 2.5.2.4.0.0 Sequence Number
+
+2
+
+#### 2.5.2.5.0.0 Type
+
+🔹 MethodCall
+
+#### 2.5.2.6.0.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.2.7.0.0 Return Message
+
+
+
+#### 2.5.2.8.0.0 Has Return
+
+❌ No
+
+#### 2.5.2.9.0.0 Is Activation
+
+✅ Yes
+
+#### 2.5.2.10.0.0 Technical Details
+
+##### 2.5.2.10.1.0 Protocol
+
+In-process
+
+##### 2.5.2.10.2.0 Method
+
+ExecutePreviewAsync(script, inputJson, cancellationToken)
+
+##### 2.5.2.10.3.0 Parameters
+
+script (string), inputJson (JsonNode), cancellationToken (CancellationToken)
+
+##### 2.5.2.10.4.0 Authentication
+
+N/A
+
+##### 2.5.2.10.5.0 Error Handling
+
+Propagates exceptions to the global exception handler middleware.
+
+##### 2.5.2.10.6.0 Performance
+
+###### 2.5.2.10.6.1 Latency
+
+Passes controller's timeout CancellationToken.
+
+### 2.5.3.0.0.0 MethodCall
+
+#### 2.5.3.1.0.0 Source Id
+
+REPO-APP-API-001#Service
+
+#### 2.5.3.2.0.0 Target Id
+
+REPO-LIB-JINT-002
+
+#### 2.5.3.3.0.0 Message
+
+Requests script execution from the sandboxed engine wrapper.
+
+#### 2.5.3.4.0.0 Sequence Number
+
+3
+
+#### 2.5.3.5.0.0 Type
+
+🔹 MethodCall
+
+#### 2.5.3.6.0.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.3.7.0.0 Return Message
+
+
+
+#### 2.5.3.8.0.0 Has Return
+
+❌ No
+
+#### 2.5.3.9.0.0 Is Activation
+
+✅ Yes
+
+#### 2.5.3.10.0.0 Technical Details
+
+##### 2.5.3.10.1.0 Protocol
+
+In-process
+
+##### 2.5.3.10.2.0 Method
+
+Execute(script, inputJson)
+
+##### 2.5.3.10.3.0 Parameters
+
+script (string), inputJson (JsonNode)
+
+##### 2.5.3.10.4.0 Authentication
+
+N/A
+
+##### 2.5.3.10.5.0 Error Handling
+
+Service is responsible for catching a specific 'ScriptRuntimeException' thrown by the wrapper.
+
+##### 2.5.3.10.6.0 Performance
+
+###### 2.5.3.10.6.1 Latency
+
+N/A
+
+### 2.5.4.0.0.0 MethodCall
+
+#### 2.5.4.1.0.0 Source Id
+
+REPO-LIB-JINT-002
+
+#### 2.5.4.2.0.0 Target Id
+
+JINT-ENGINE
+
+#### 2.5.4.3.0.0 Message
+
+Calls `engine.Execute()` with user script inside a try...catch block.
+
+#### 2.5.4.4.0.0 Sequence Number
+
+4
+
+#### 2.5.4.5.0.0 Type
+
+🔹 MethodCall
+
+#### 2.5.4.6.0.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.4.7.0.0 Return Message
+
+
+
+#### 2.5.4.8.0.0 Has Return
+
+❌ No
+
+#### 2.5.4.9.0.0 Is Activation
+
+✅ Yes
+
+#### 2.5.4.10.0.0 Technical Details
+
+##### 2.5.4.10.1.0 Protocol
+
+In-process
+
+##### 2.5.4.10.2.0 Method
+
+engine.Execute()
+
+##### 2.5.4.10.3.0 Parameters
+
+User-provided script string.
+
+##### 2.5.4.10.4.0 Authentication
+
+N/A
+
+##### 2.5.4.10.5.0 Error Handling
+
+Catches `Jint.Runtime.JavaScriptException` for runtime errors.
+
+##### 2.5.4.10.6.0 Performance
+
+###### 2.5.4.10.6.1 Latency
+
+Constrained by configured execution timeout.
+
+### 2.5.5.0.0.0 Exception
+
+#### 2.5.5.1.0.0 Source Id
+
+JINT-ENGINE
+
+#### 2.5.5.2.0.0 Target Id
+
+REPO-LIB-JINT-002
+
+#### 2.5.5.3.0.0 Message
+
+Throws `Jint.Runtime.JavaScriptException` (e.g., ReferenceError: 'b' is not defined).
+
+#### 2.5.5.4.0.0 Sequence Number
+
+5
+
+#### 2.5.5.5.0.0 Type
+
+🔹 Exception
+
+#### 2.5.5.6.0.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.5.7.0.0 Return Message
+
+
+
+#### 2.5.5.8.0.0 Has Return
+
+❌ No
+
+#### 2.5.5.9.0.0 Is Activation
+
+❌ No
+
+#### 2.5.5.10.0.0 Technical Details
+
+##### 2.5.5.10.1.0 Protocol
+
+In-process
+
+##### 2.5.5.10.2.0 Method
+
+Exception throw
+
+##### 2.5.5.10.3.0 Parameters
+
+Exception object containing Message, StackTrace, LineNumber, Column.
+
+##### 2.5.5.10.4.0 Authentication
+
+N/A
+
+##### 2.5.5.10.5.0 Error Handling
+
+This is the error event.
+
+##### 2.5.5.10.6.0 Performance
+
+###### 2.5.5.10.6.1 Latency
+
+N/A
+
+### 2.5.6.0.0.0 Exception
+
+#### 2.5.6.1.0.0 Source Id
+
+REPO-LIB-JINT-002
+
+#### 2.5.6.2.0.0 Target Id
+
+REPO-APP-API-001#Service
+
+#### 2.5.6.3.0.0 Message
+
+Catches exception, extracts details, and throws a new domain-specific `ScriptRuntimeException`.
+
+#### 2.5.6.4.0.0 Sequence Number
+
+6
+
+#### 2.5.6.5.0.0 Type
+
+🔹 Exception
+
+#### 2.5.6.6.0.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.6.7.0.0 Return Message
+
+
+
+#### 2.5.6.8.0.0 Has Return
+
+❌ No
+
+#### 2.5.6.9.0.0 Is Activation
+
+❌ No
+
+#### 2.5.6.10.0.0 Technical Details
+
+##### 2.5.6.10.1.0 Protocol
+
+In-process
+
+##### 2.5.6.10.2.0 Method
+
+Exception throw
+
+##### 2.5.6.10.3.0 Parameters
+
+ScriptRuntimeException(message, stackTrace, lineNumber, column)
+
+##### 2.5.6.10.4.0 Authentication
+
+N/A
+
+##### 2.5.6.10.5.0 Error Handling
+
+Wraps the Jint-specific exception to prevent leaking infrastructure details to the application layer.
+
+##### 2.5.6.10.6.0 Performance
+
+###### 2.5.6.10.6.1 Latency
+
+Minimal overhead.
+
+### 2.5.7.0.0.0 Return
+
+#### 2.5.7.1.0.0 Source Id
+
+REPO-APP-API-001#Service
+
+#### 2.5.7.2.0.0 Target Id
+
+REPO-APP-API-001#Controller
+
+#### 2.5.7.3.0.0 Message
+
+Catches `ScriptRuntimeException`, logs it, formats a `ScriptErrorDto`, and returns a failure result.
+
+#### 2.5.7.4.0.0 Sequence Number
+
+7
+
+#### 2.5.7.5.0.0 Type
+
+🔹 Return
+
+#### 2.5.7.6.0.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.7.7.0.0 Return Message
+
+Returns `ExecutionResult.Failure(ScriptErrorDto)`
+
+#### 2.5.7.8.0.0 Has Return
+
+✅ Yes
+
+#### 2.5.7.9.0.0 Is Activation
+
+❌ No
+
+#### 2.5.7.10.0.0 Technical Details
+
+##### 2.5.7.10.1.0 Protocol
+
+In-process
+
+##### 2.5.7.10.2.0 Method
+
+Return from ExecutePreviewAsync
+
+##### 2.5.7.10.3.0 Parameters
+
+ScriptErrorDto: { message: '...', stackTrace: '...', lineNumber: 1, column: 9 }
+
+##### 2.5.7.10.4.0 Authentication
+
+N/A
+
+##### 2.5.7.10.5.0 Error Handling
+
+The service handles the exception gracefully, preventing it from crashing the application.
+
+##### 2.5.7.10.6.0 Performance
+
+###### 2.5.7.10.6.1 Latency
+
+N/A
+
+### 2.5.8.0.0.0 Response
+
+#### 2.5.8.1.0.0 Source Id
+
+REPO-APP-API-001#Controller
+
+#### 2.5.8.2.0.0 Target Id
+
+CLIENT-UI
+
+#### 2.5.8.3.0.0 Message
+
+Receives failure result and returns a structured error payload.
+
+#### 2.5.8.4.0.0 Sequence Number
+
+8
+
+#### 2.5.8.5.0.0 Type
+
+🔹 Response
+
+#### 2.5.8.6.0.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.8.7.0.0 Return Message
+
+HTTP 400 Bad Request with JSON body
+
+#### 2.5.8.8.0.0 Has Return
+
+✅ Yes
+
+#### 2.5.8.9.0.0 Is Activation
+
+❌ No
+
+#### 2.5.8.10.0.0 Technical Details
+
+##### 2.5.8.10.1.0 Protocol
+
+HTTP/1.1
+
+##### 2.5.8.10.2.0 Method
+
+HTTP Response
+
+##### 2.5.8.10.3.0 Parameters
+
+ResponseBody: {"error": {"message": "'b' is not defined", "stackTrace": "...", "lineNumber": 1, "column": 9}}
+
+##### 2.5.8.10.4.0 Authentication
+
+N/A
+
+##### 2.5.8.10.5.0 Error Handling
+
+Uses HTTP 400 for user-correctable errors (like script bugs) and 500 for unexpected engine failures.
+
+##### 2.5.8.10.6.0 Performance
+
+###### 2.5.8.10.6.1 Latency
+
+N/A
+
+## 2.6.0.0.0.0 Notes
+
+### 2.6.1.0.0.0 Content
+
+#### 2.6.1.1.0.0 Content
+
+The ScriptExecutionService logs the detailed error to a centralized logging system (e.g., Serilog to ELK/Splunk) inside its catch block. The log entry is enriched with a CorrelationId to trace the entire request.
+
+#### 2.6.1.2.0.0 Position
+
+bottom
+
+#### 2.6.1.3.0.0 Participant Id
+
+REPO-APP-API-001#Service
+
+#### 2.6.1.4.0.0 Sequence Number
+
+7
+
+### 2.6.2.0.0.0 Content
+
+#### 2.6.2.1.0.0 Content
+
+For a full report generation job (not a preview), the controller would return an HTTP 500 Internal Server Error, and the job status would be marked as 'Failed' in the database.
+
+#### 2.6.2.2.0.0 Position
+
+bottom
+
+#### 2.6.2.3.0.0 Participant Id
+
+REPO-APP-API-001#Controller
+
+#### 2.6.2.4.0.0 Sequence Number
+
+8
+
+## 2.7.0.0.0.0 Implementation Guidance
+
+| Property | Value |
+|----------|-------|
+| Security Requirements | Error messages returned to the client must be sani... |
+| Performance Targets | The error handling path should be highly performan... |
+| Error Handling Strategy | This sequence implements a 'Catch, Log, Format, Re... |
+| Testing Considerations | A suite of unit tests must validate the `JintEngin... |
+| Monitoring Requirements | Upon catching the `ScriptRuntimeException`, the `S... |
+| Deployment Considerations | Ensure the centralized logging system is configure... |
+

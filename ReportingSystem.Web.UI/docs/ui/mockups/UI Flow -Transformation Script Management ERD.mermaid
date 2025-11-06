@@ -1,0 +1,46 @@
+erDiagram
+    TransformationScript {
+        Guid transformationScriptId PK
+    }
+    ScriptVersion {
+        Guid scriptVersionId PK
+    }
+    ReportConfiguration {
+        Guid reportConfigurationId PK
+    }
+    ReportTransformationScriptAssociation {
+        Guid reportConfigurationId PK,FK
+        Guid transformationScriptId PK,FK
+    }
+    JsonSchema {
+        Guid jsonSchemaId PK
+    }
+    AuditLog {
+        BIGINT auditLogId PK
+        DateTimeOffset timestamp PK
+    }
+    SecurityViolationLog {
+        BIGINT securityViolationLogId PK
+        DateTimeOffset timestamp PK
+    }
+    User {
+        Guid userId PK
+    }
+
+    User ||--|{ TransformationScript : "manages"
+    User ||--|{ ScriptVersion : "creates"
+    User ||--|{ ReportConfiguration : "manages"
+    User ||--|{ JsonSchema : "manages"
+    User ||--|{ AuditLog : "performs action for"
+    User ||--|{ ReportTransformationScriptAssociation : "associates"
+
+    TransformationScript ||--|{ ScriptVersion : "has versions"
+    TransformationScript ||--o| ScriptVersion : "has active version"
+    TransformationScript ||--|{ ReportTransformationScriptAssociation : "is associated via"
+    TransformationScript ||--|{ SecurityViolationLog : "can trigger"
+
+    ReportConfiguration ||--|{ ReportTransformationScriptAssociation : "is associated via"
+
+    JsonSchema ||--|{ ReportConfiguration : "validates"
+
+    ScriptVersion ||--|{ SecurityViolationLog : "can trigger"

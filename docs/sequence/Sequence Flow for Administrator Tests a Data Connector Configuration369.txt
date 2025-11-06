@@ -1,0 +1,474 @@
+# 1 Overview
+
+## 1.1 Diagram Id
+
+SEQ-FF-002
+
+## 1.2 Name
+
+Administrator Tests a Data Connector Configuration
+
+## 1.3 Description
+
+While creating or editing a data connector in the Control Panel, the Administrator clicks the 'Test Connection' button. The system uses the provided configuration details to attempt a connection to the external data source, validating credentials, network access, and permissions before the configuration is saved.
+
+## 1.4 Type
+
+🔹 FeatureFlow
+
+## 1.5 Purpose
+
+To validate that the system can successfully communicate with a data source using the provided settings, preventing the creation of invalid configurations.
+
+## 1.6 Complexity
+
+Medium
+
+## 1.7 Priority
+
+🔴 High
+
+## 1.8 Frequency
+
+OnDemand
+
+## 1.9 Participants
+
+- presentationlayerreact
+- apiweblayer
+- application_layer
+- infrastructure_layer
+
+## 1.10 Key Interactions
+
+- Admin fills in connector details (e.g., connection string, credentials) in the UI.
+- Admin clicks 'Test Connection'.
+- React UI sends the configuration JSON to a specific API endpoint (e.g., POST /api/v1/connectors/test).
+- Application Layer receives the request.
+- The appropriate connector plug-in's `TestConnection` method is invoked.
+- Infrastructure Layer attempts to connect to the external data source.
+- A success or failure response (with diagnostic info) is returned to the UI.
+- The UI displays a clear success/failure message.
+
+## 1.11 Triggers
+
+- Administrator clicks the 'Test Connection' button.
+
+## 1.12 Outcomes
+
+- The administrator receives immediate feedback on whether the connector configuration is valid.
+- The 'Save' button is enabled only after a successful test.
+
+## 1.13 Business Rules
+
+- A connector configuration cannot be saved unless a 'Test Connection' has succeeded at least once in the current session.
+
+## 1.14 Error Scenarios
+
+- Incorrect server address or credentials.
+- Firewall blocking the connection.
+- Database driver is not installed on the host machine.
+
+## 1.15 Integration Points
+
+- External Data Sources (DBs, OPC UA, Filesystems)
+
+# 2.0 Details
+
+## 2.1 Diagram Id
+
+SEQ-FF-002
+
+## 2.2 Name
+
+Implementation: Administrator Tests Data Connector Configuration via Control Panel
+
+## 2.3 Description
+
+Detailed sequence for validating a data connector's configuration. The flow starts with an Administrator's click in the React UI, triggering an authenticated API call. The backend dynamically dispatches the request to the appropriate connector plug-in within the infrastructure layer to perform the connection test. A structured success or failure response with diagnostics is returned to the UI.
+
+## 2.4 Participants
+
+### 2.4.1 Frontend SPA
+
+#### 2.4.1.1 Repository Id
+
+presentation_layer_react
+
+#### 2.4.1.2 Display Name
+
+Presentation: Control Panel UI
+
+#### 2.4.1.3 Type
+
+🔹 Frontend SPA
+
+#### 2.4.1.4 Technology
+
+React 18, TypeScript, Axios
+
+#### 2.4.1.5 Order
+
+1
+
+#### 2.4.1.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | actor |
+| Color | #4287f5 |
+| Stereotype | UI |
+
+### 2.4.2.0 API Gateway
+
+#### 2.4.2.1 Repository Id
+
+api_web_layer
+
+#### 2.4.2.2 Display Name
+
+API/Web Layer
+
+#### 2.4.2.3 Type
+
+🔹 API Gateway
+
+#### 2.4.2.4 Technology
+
+ASP.NET Core 8
+
+#### 2.4.2.5 Order
+
+2
+
+#### 2.4.2.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | component |
+| Color | #42f5ad |
+| Stereotype | Controller |
+
+### 2.4.3.0 Application Service
+
+#### 2.4.3.1 Repository Id
+
+application_layer
+
+#### 2.4.3.2 Display Name
+
+Application Layer
+
+#### 2.4.3.3 Type
+
+🔹 Application Service
+
+#### 2.4.3.4 Technology
+
+.NET 8
+
+#### 2.4.3.5 Order
+
+3
+
+#### 2.4.3.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | component |
+| Color | #f5d142 |
+| Stereotype | Service |
+
+### 2.4.4.0 Infrastructure Service
+
+#### 2.4.4.1 Repository Id
+
+infrastructure_layer
+
+#### 2.4.4.2 Display Name
+
+Infrastructure Layer
+
+#### 2.4.4.3 Type
+
+🔹 Infrastructure Service
+
+#### 2.4.4.4 Technology
+
+.NET 8, EF Core 8, Data Providers
+
+#### 2.4.4.5 Order
+
+4
+
+#### 2.4.4.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | component |
+| Color | #f56e42 |
+| Stereotype | Repository/Connector |
+
+## 2.5.0.0 Interactions
+
+### 2.5.1.0 Request
+
+#### 2.5.1.1 Source Id
+
+presentation_layer_react
+
+#### 2.5.1.2 Target Id
+
+api_web_layer
+
+#### 2.5.1.3 Message
+
+Sends connection test request with configuration details.
+
+#### 2.5.1.4 Sequence Number
+
+1
+
+#### 2.5.1.5 Type
+
+🔹 Request
+
+#### 2.5.1.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.1.7 Return Message
+
+Returns structured result: `{ isSuccess: boolean, message: string, details: string }`.
+
+#### 2.5.1.8 Has Return
+
+✅ Yes
+
+#### 2.5.1.9 Is Activation
+
+✅ Yes
+
+#### 2.5.1.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | HTTPS |
+| Method | POST /api/v1/connectors/test |
+| Parameters | Body: `TestConnectorRequestDto { string ConnectorT... |
+| Authentication | Requires `Authorization: Bearer <JWT>` header. JWT... |
+| Error Handling | Handles HTTP 400 (Bad Request), 401 (Unauthorized)... |
+| Performance | Client-side timeout of 30 seconds. |
+
+#### 2.5.1.11 Nested Interactions
+
+*No items available*
+
+### 2.5.2.0 Method Call
+
+#### 2.5.2.1 Source Id
+
+api_web_layer
+
+#### 2.5.2.2 Target Id
+
+application_layer
+
+#### 2.5.2.3 Message
+
+Invokes connection testing service with validated DTO.
+
+#### 2.5.2.4 Sequence Number
+
+2
+
+#### 2.5.2.5 Type
+
+🔹 Method Call
+
+#### 2.5.2.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.2.7 Return Message
+
+Returns `TestConnectionResult` object.
+
+#### 2.5.2.8 Has Return
+
+✅ Yes
+
+#### 2.5.2.9 Is Activation
+
+✅ Yes
+
+#### 2.5.2.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-process |
+| Method | `Task<TestConnectionResult> TestConnectionAsync(Te... |
+| Parameters | `request`: DTO containing connector type and its J... |
+| Authentication | Authorization policy `[Authorize(Roles = "Administ... |
+| Error Handling | Catches exceptions from the application layer and ... |
+| Performance | N/A (pass-through) |
+
+#### 2.5.2.11 Nested Interactions
+
+*No items available*
+
+### 2.5.3.0 Method Call
+
+#### 2.5.3.1 Source Id
+
+application_layer
+
+#### 2.5.3.2 Target Id
+
+infrastructure_layer
+
+#### 2.5.3.3 Message
+
+Resolves and invokes the specific connector's `TestConnection` method.
+
+#### 2.5.3.4 Sequence Number
+
+3
+
+#### 2.5.3.5 Type
+
+🔹 Method Call
+
+#### 2.5.3.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.3.7 Return Message
+
+Returns `TestConnectionResult` indicating success or failure with diagnostics.
+
+#### 2.5.3.8 Has Return
+
+✅ Yes
+
+#### 2.5.3.9 Is Activation
+
+✅ Yes
+
+#### 2.5.3.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-process |
+| Method | `Task<TestConnectionResult> IConnector.TestConnect... |
+| Parameters | `configJson`: The JSON string containing all neces... |
+| Authentication | N/A (occurs within secured application context) |
+| Error Handling | Wraps the call in a try-catch block to handle exce... |
+| Performance | Applies a `CancellationToken` with a 15-second tim... |
+
+#### 2.5.3.11 Nested Interactions
+
+*No items available*
+
+### 2.5.4.0 Self Call / External I/O
+
+#### 2.5.4.1 Source Id
+
+infrastructure_layer
+
+#### 2.5.4.2 Target Id
+
+infrastructure_layer
+
+#### 2.5.4.3 Message
+
+Attempts to establish connection with the external data source.
+
+#### 2.5.4.4 Sequence Number
+
+4
+
+#### 2.5.4.5 Type
+
+🔹 Self Call / External I/O
+
+#### 2.5.4.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.4.7 Return Message
+
+Connection succeeds or fails with a specific exception.
+
+#### 2.5.4.8 Has Return
+
+✅ Yes
+
+#### 2.5.4.9 Is Activation
+
+❌ No
+
+#### 2.5.4.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | Varies (e.g., TDS for SQL Server, TCP for OPC UA, ... |
+| Method | e.g., `SqlConnection.OpenAsync()`, `OpcUaClient.Co... |
+| Parameters | Connection details are deserialized from the `conf... |
+| Authentication | Credentials from `configJson` are used to authenti... |
+| Error Handling | Catches specific exceptions (e.g., `System.Data.Sq... |
+| Performance | The underlying data provider's connection timeout ... |
+
+#### 2.5.4.11 Nested Interactions
+
+*No items available*
+
+## 2.6.0.0 Notes
+
+### 2.6.1.0 Content
+
+#### 2.6.1.1 Content
+
+The 'Save' button in the UI remains disabled until a successful response (`isSuccess: true`) for this sequence is received within the current editing session. This enforces the business rule REQ-4.3.
+
+#### 2.6.1.2 Position
+
+top-left
+
+#### 2.6.1.3 Participant Id
+
+presentation_layer_react
+
+#### 2.6.1.4 Sequence Number
+
+1
+
+### 2.6.2.0 Content
+
+#### 2.6.2.1 Content
+
+The actual I/O call to the external data source (Database, OPC UA Server, etc.). This is the point of integration with systems outside the application's control.
+
+#### 2.6.2.2 Position
+
+bottom-right
+
+#### 2.6.2.3 Participant Id
+
+infrastructure_layer
+
+#### 2.6.2.4 Sequence Number
+
+4
+
+## 2.7.0.0 Implementation Guidance
+
+| Property | Value |
+|----------|-------|
+| Security Requirements | The API endpoint `/api/v1/connectors/test` must be... |
+| Performance Targets | The end-to-end P95 latency for the API call should... |
+| Error Handling Strategy | Implement a detailed mapping from specific data pr... |
+| Testing Considerations | Unit tests for the application layer should mock t... |
+| Monitoring Requirements | Log every test connection attempt at an 'Informati... |
+| Deployment Considerations | The host machine for the Windows service must have... |
+

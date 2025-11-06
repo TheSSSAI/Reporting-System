@@ -1,0 +1,111 @@
+# This .gitignore file is for Visual Studio and .NET projects.
+# It's a comprehensive file that should cover most use cases.
+
+## General
+*.swp
+*~
+*.bak
+*.orig
+
+## Visual Studio
+*.vs/
+.vs/
+*.sln.DotSettings.user
+*.suo
+*.user
+*.vcxproj.filters
+*.vcxproj.user
+
+## Rider
+.idea/
+*.sln.iml
+
+## Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+build/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+artifacts/
+
+## .NET Core
+project.lock.json
+project.fragment.lock.json
+project.assets.json
+*.nuget.props
+*.nuget.targets
+
+## NuGet
+*.nupkg
+*.snupkg
+.nuget/
+
+## User Secrets
+# Exclude the user secrets directory and files created by 'dotnet user-secrets'
+**/secrets.json
+**/appsettings.Development.json
+!**/appsettings.template.json
+
+## Environment files
+.env
+.env.*
+!.env.example
+
+## Local Tools
+.store/
+
+## Test results
+TestResult/
+*.trx
+*.coverlet.json
+*.coverlet.xml
+
+## Caches
+*.pyc
+*.pyo
+__pycache__/
+
+## OS generated files
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+.Trashes
+.Spotlight-V100
+.fseventsd
+
+# Linux
+.Trash-*
+
+## Archives
+*.zip
+*.rar
+*.7z
+*.tar
+*.gz
+
+## Other
+# For publishing folders
+publish/
+
+# Local settings
+appsettings.Local.json
+
+# Tooling
+.vscode/
+*.DotSettings
+
+# Paket dependency manager
+.paket/paket.exe
+paket-files/

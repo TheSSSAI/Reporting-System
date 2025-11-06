@@ -1,0 +1,63 @@
+// Switch to or create the database
+use transformation_service_logs_db;
+
+// --------------------------------------------------
+// Collection: AuditLog
+// --------------------------------------------------
+
+// Create the AuditLog collection with schema validation to enforce data structure and constraints.
+db.createCollection("AuditLog", {
+   validator: {
+      $jsonSchema: {
+         bsonType: "object",
+         required: ["timestamp", "userId", "actionType", "outcome"],
+         properties: {
+            timestamp: { bsonType: "date", description: "Must be a valid ISODate" },
+            userId: { bsonType: "string", description: "UUID of the user performing the action" },
+            sourceIpAddress: { bsonType: "string", maxLength: 45, description: "Source IP address of the request" },
+            actionType: { bsonType: "string", maxLength: 100, description: "Type of action performed" },
+            entityType: { bsonType: "string", maxLength: 100, description: "Type of entity affected" },
+            entityId: { bsonType: "string", description: "ID of the entity affected" },
+            outcome: {
+               enum: ["Success", "Failure"],
+               description: "Must be either 'Success' or 'Failure'"
+            },
+            changeDetails: { bsonType: "object", description: "Nested object detailing the change" }
+         }
+      }
+   }
+});
+
+// Create indexes to optimize query performance
+db.AuditLog.createIndex({ "timestamp": -1 }, { name: "idx_auditlog_timestamp_desc" });
+db.AuditLog.createIndex({ "entityType": 1, "entityId": 1 }, { name: "idx_auditlog_entity" });
+db.AuditLog.createIndex({ "userId": 1, "actionType": 1, "timestamp": -1 }, { name: "idx_auditlog_user_action_time" });
+
+// --------------------------------------------------
+// Collection: SecurityViolationLog
+// --------------------------------------------------
+
+// Create the SecurityViolationLog collection with schema validation.
+db.createCollection("SecurityViolationLog", {
+   validator: {
+      $jsonSchema: {
+         bsonType: "object",
+         required: ["timestamp", "jobExecutionLogId", "transformationScriptVersionId", "violationType", "violationDetails"],
+         properties: {
+            timestamp: { bsonType: "date", description: "Must be a valid ISODate" },
+            jobExecutionLogId: { bsonType: "string", description: "UUID of the job execution log" },
+            transformationScriptVersionId: { bsonType: "string", description: "UUID of the script version that caused the violation" },
+            violationType: {
+               enum: ["TIMEOUT", "MEMORY_LIMIT", "STATEMENT_COUNT", "CLR_ACCESS_DENIED"],
+               description: "Must be one of the predefined violation types"
+            },
+            violationDetails: { bsonType: "string", maxLength: 255, description: "Details of the violation" }
+         }
+      }
+   }
+});
+
+// Create indexes to optimize query performance
+db.SecurityViolationLog.createIndex({ "timestamp": -1 }, { name: "idx_secviolation_timestamp_desc" });
+db.SecurityViolationLog.createIndex({ "transformationScriptVersionId": 1, "timestamp": -1 }, { name: "idx_secviolation_script_time" });
+db.SecurityViolationLog.createIndex({ "violationType": 1, "timestamp": -1 }, { name: "idx_secviolation_type_time" });

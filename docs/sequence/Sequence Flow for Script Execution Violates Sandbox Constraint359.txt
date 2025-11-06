@@ -1,0 +1,263 @@
+# 1 Overview
+
+## 1.1 Diagram Id
+
+SEQ-SF-001
+
+## 1.2 Name
+
+Script Execution Violates Sandbox Constraint
+
+## 1.3 Description
+
+During a report generation or preview, a user-provided JavaScript transformation script attempts to perform a disallowed action, such as exceeding the execution timeout, allocating too much memory, or running too many statements. The Jint engine's configured sandbox detects the violation, terminates the script execution, and a security event is logged to the audit trail.
+
+## 1.4 Type
+
+🔹 SecurityFlow
+
+## 1.5 Purpose
+
+To protect the system from malicious or poorly written user scripts, ensuring stability and preventing denial-of-service attacks.
+
+## 1.6 Complexity
+
+High
+
+## 1.7 Priority
+
+🚨 Critical
+
+## 1.8 Frequency
+
+OnDemand
+
+## 1.9 Participants
+
+- infrastructure_layer
+- application_layer
+
+## 1.10 Key Interactions
+
+- Application Layer invokes the JintTransformationEngine with a script and data.
+- The Jint engine is configured with constraints (timeout, memory limit, statement count) before execution.
+- The script's execution exceeds a configured constraint.
+- The Jint engine throws a specific exception (e.g., `TimeoutException`, `MemoryLimitExceededException`).
+- The JintTransformationEngine component in the Infrastructure Layer catches this specific exception.
+- The handler for the exception calls the SecurityAuditService to log the violation.
+- The security event, including violation type and script ID, is written to the tamper-evident AuditLog.
+- The report job or preview is marked as 'Failed' with a descriptive error message.
+
+## 1.11 Triggers
+
+- A JavaScript script's execution breaches a predefined security constraint.
+
+## 1.12 Outcomes
+
+- The malicious or faulty script is terminated safely without impacting the main service.
+- The application service remains stable and does not crash.
+- The violation is recorded in the immutable audit log for security analysis.
+- The report job fails gracefully, and the user is notified of the reason.
+
+## 1.13 Business Rules
+
+- All user-provided JavaScript must be executed within the secure sandbox.
+- CLR access must be disabled for the Jint engine to prevent access to the underlying .NET framework.
+
+## 1.14 Error Scenarios
+
+*No items available*
+
+## 1.15 Integration Points
+
+*No items available*
+
+# 2.0 Details
+
+## 2.1 Diagram Id
+
+SEQ-SF-001-IMPLEMENTATION
+
+## 2.2 Name
+
+Implementation: Script Execution Sandbox Constraint Violation and Audit
+
+## 2.3 Description
+
+Provides a detailed technical blueprint for handling security violations within the Jint JavaScript sandbox. This sequence is triggered when a user-provided script exceeds predefined resource limits (CPU time, memory, statement count). The Jint engine terminates the script, an exception is caught, the violation is logged to an immutable audit trail for compliance and threat analysis, and the parent job is gracefully failed. This implements a critical Defense-in-Depth control.
+
+## 2.4 Participants
+
+### 2.4.1 Application Service
+
+#### 2.4.1.1 Repository Id
+
+REPO-08-SERVICE-HOST
+
+#### 2.4.1.2 Display Name
+
+Application Service (TransformationService)
+
+#### 2.4.1.3 Type
+
+🔹 Application Service
+
+#### 2.4.1.4 Technology
+
+.NET 8, ASP.NET Core 8
+
+#### 2.4.1.5 Order
+
+1
+
+#### 2.4.1.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | actor |
+| Color | #1168BD |
+| Stereotype | Application Layer |
+
+### 2.4.2.0 Infrastructure Service
+
+#### 2.4.2.1 Repository Id
+
+REPO-05-INFRASTRUCTURE
+
+#### 2.4.2.2 Display Name
+
+Jint Transformation Engine
+
+#### 2.4.2.3 Type
+
+🔹 Infrastructure Service
+
+#### 2.4.2.4 Technology
+
+Jint 3.1.2+, .NET 8
+
+#### 2.4.2.5 Order
+
+2
+
+#### 2.4.2.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | participant |
+| Color | #6C3483 |
+| Stereotype | Infrastructure Layer |
+
+### 2.4.3.0 Infrastructure Service
+
+#### 2.4.3.1 Repository Id
+
+REPO-05-INFRASTRUCTURE_AUDIT
+
+#### 2.4.3.2 Display Name
+
+Security Audit Service
+
+#### 2.4.3.3 Type
+
+🔹 Infrastructure Service
+
+#### 2.4.3.4 Technology
+
+EF Core 8, Serilog
+
+#### 2.4.3.5 Order
+
+3
+
+#### 2.4.3.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | participant |
+| Color | #6C3483 |
+| Stereotype | Infrastructure Layer |
+
+### 2.4.4.0 Database
+
+#### 2.4.4.1 Repository Id
+
+DETABASE DESIGN
+
+#### 2.4.4.2 Display Name
+
+Audit Log Database
+
+#### 2.4.4.3 Type
+
+🔹 Database
+
+#### 2.4.4.4 Technology
+
+MongoDB
+
+#### 2.4.4.5 Order
+
+4
+
+#### 2.4.4.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | database |
+| Color | #148F77 |
+| Stereotype | Persistence |
+
+## 2.5.0.0 Interactions
+
+- {'sourceId': 'REPO-08-SERVICE-HOST', 'targetId': 'REPO-05-INFRASTRUCTURE', 'message': '1.1: ITransformationEngine.ExecuteAsync(script, jsonData, constraints)', 'sequenceNumber': 1, 'type': 'Method Invocation', 'isSynchronous': False, 'returnMessage': '1.10: Returns faulted Task, propagating wrapped TransformationEngineException', 'hasReturn': True, 'isActivation': True, 'technicalDetails': {'protocol': 'In-process (DI)', 'method': 'ExecuteAsync', 'parameters': 'string scriptContent, JsonNode jsonData, ScriptExecutionConstraints constraints', 'authentication': 'Internal trust boundary', 'errorHandling': 'Catches TransformationEngineException to fail the report job.', 'performance': "Subject to parent job's overall timeout."}, 'nestedInteractions': [{'sourceId': 'REPO-05-INFRASTRUCTURE', 'targetId': 'REPO-05-INFRASTRUCTURE', 'message': '1.2: Configure Jint Engine instance with security constraints', 'sequenceNumber': 2, 'type': 'Self-Invocation', 'isSynchronous': True, 'returnMessage': '', 'hasReturn': False, 'isActivation': False, 'technicalDetails': {'protocol': 'Internal Logic', 'method': 'new Engine(options => { ... })', 'parameters': 'options.Timeout(constraints.Timeout), options.MaxStatements(constraints.MaxStatements), options.MemoryLimit(constraints.MemoryLimit), options.Strict()', 'authentication': 'N/A', 'errorHandling': 'N/A', 'performance': 'Low overhead, sub-millisecond.'}}, {'sourceId': 'REPO-05-INFRASTRUCTURE', 'targetId': 'REPO-05-INFRASTRUCTURE', 'message': '1.3: [try] engine.Execute(script). A constraint is violated during execution.', 'sequenceNumber': 3, 'type': 'Self-Invocation', 'isSynchronous': True, 'returnMessage': '1.4: [catch] Throws TimeoutException, MemoryLimitExceededException, or StatementsCountOverflowException', 'hasReturn': True, 'isActivation': False, 'technicalDetails': {'protocol': 'Jint Library Call', 'method': 'Execute', 'parameters': 'string scriptContent', 'authentication': 'N/A', 'errorHandling': 'Execution is wrapped in a try-catch block specifically for Jint constraint exceptions.', 'performance': 'Execution time is limited by the configured timeout constraint.'}}, {'sourceId': 'REPO-05-INFRASTRUCTURE', 'targetId': 'REPO-05-INFRASTRUCTURE_AUDIT', 'message': '1.5: IAuditLogger.LogSecurityEventAsync(violationEvent)', 'sequenceNumber': 4, 'type': 'Method Invocation', 'isSynchronous': False, 'returnMessage': '1.8: Returns completed Task', 'hasReturn': True, 'isActivation': True, 'technicalDetails': {'protocol': 'In-process (DI)', 'method': 'LogSecurityEventAsync', 'parameters': 'SandboxViolationEvent { ViolationType, ScriptId, UserId, LimitValue }', 'authentication': 'Internal trust boundary', 'errorHandling': 'Uses Polly retry policy for transient database failures.', 'performance': 'P99 latency < 50ms.'}, 'nestedInteractions': [{'sourceId': 'REPO-05-INFRASTRUCTURE_AUDIT', 'targetId': 'DETABASE DESIGN', 'message': '1.6: INSERT INTO SecurityViolationLog', 'sequenceNumber': 5, 'type': 'Database Operation', 'isSynchronous': False, 'returnMessage': '1.7: (Success/Confirmation)', 'hasReturn': True, 'isActivation': False, 'technicalDetails': {'protocol': 'MongoDB Driver', 'method': 'Collection.InsertOneAsync', 'parameters': 'BsonDocument representing the security violation log entry.', 'authentication': 'Database connection string credentials', 'errorHandling': 'Handled by EF Core exception types; triggers retry logic in the service.', 'performance': 'P99 latency < 20ms.'}}]}, {'sourceId': 'REPO-05-INFRASTRUCTURE', 'targetId': 'REPO-05-INFRASTRUCTURE', 'message': '1.9: Wraps Jint exception and re-throws new TransformationEngineException', 'sequenceNumber': 6, 'type': 'Self-Invocation', 'isSynchronous': True, 'returnMessage': '', 'hasReturn': False, 'isActivation': False, 'technicalDetails': {'protocol': 'Internal Logic', 'method': 'throw new TransformationEngineException(...)', 'parameters': 'string message, Exception innerException', 'authentication': 'N/A', 'errorHandling': 'This is the core of the exception shielding pattern, abstracting the specific Jint failure from the application layer.', 'performance': 'Minimal overhead.'}}]}
+
+## 2.6.0.0 Notes
+
+### 2.6.1.0 Content
+
+#### 2.6.1.1 Content
+
+Defense-in-Depth: The Jint sandbox is a critical layer of defense, isolating untrusted user code from the core application service, directly supporting a Zero Trust posture for execution.
+
+#### 2.6.1.2 Position
+
+top-right
+
+#### 2.6.1.3 Participant Id
+
+REPO-05-INFRASTRUCTURE
+
+#### 2.6.1.4 Sequence Number
+
+2
+
+### 2.6.2.0 Content
+
+#### 2.6.2.1 Content
+
+Compliance & Audit: This flow is essential for REQ-COMP-DTR-001. The immutable audit log provides a tamper-evident trail of security incidents, which is a requirement for compliance frameworks like SOC 2.
+
+#### 2.6.2.2 Position
+
+bottom-right
+
+#### 2.6.2.3 Participant Id
+
+REPO-05-INFRASTRUCTURE_AUDIT
+
+#### 2.6.2.4 Sequence Number
+
+4
+
+## 2.7.0.0 Implementation Guidance
+
+| Property | Value |
+|----------|-------|
+| Security Requirements | The Jint engine MUST be configured to disable CLR ... |
+| Performance Targets | The overhead of sandbox constraint checking should... |
+| Error Handling Strategy | The `JintTransformationEngine` must only catch spe... |
+| Testing Considerations | Unit tests must be created to validate that each s... |
+| Monitoring Requirements | A Prometheus counter metric `transformation_script... |
+| Deployment Considerations | The values for the sandbox constraints (timeout, m... |
+

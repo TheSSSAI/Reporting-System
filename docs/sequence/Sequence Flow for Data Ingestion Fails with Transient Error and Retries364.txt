@@ -1,0 +1,799 @@
+# 1 Overview
+
+## 1.1 Diagram Id
+
+SEQ-EH-001
+
+## 1.2 Name
+
+Data Ingestion Fails with Transient Error and Retries
+
+## 1.3 Description
+
+During a scheduled report job, the system attempts to connect to a configured SQL database. The initial connection fails due to a transient network issue. The Polly resiliency library, configured with an exponential backoff policy, automatically catches the specific exception and retries the connection after a short delay. The second attempt succeeds, and the job continues without failing.
+
+## 1.4 Type
+
+🔹 ErrorHandling
+
+## 1.5 Purpose
+
+To improve the reliability of report generation by automatically handling temporary, recoverable failures when communicating with external data sources.
+
+## 1.6 Complexity
+
+Medium
+
+## 1.7 Priority
+
+🔴 High
+
+## 1.8 Frequency
+
+OnDemand
+
+## 1.9 Participants
+
+- infrastructure_layer
+
+## 1.10 Key Interactions
+
+- The data connector component in the Infrastructure Layer attempts to open a connection to the target database.
+- The connection fails, throwing a transient exception (e.g., SqlException for a network-related error).
+- The entire data fetching operation is wrapped in a Polly Retry Policy.
+- The policy catches the specific transient exception, logs the attempt, and waits for a calculated delay (e.g., 1 second).
+- The policy re-executes the data fetching operation.
+- The connection succeeds on the second attempt.
+- The data ingestion proceeds as normal, and the job continues.
+
+## 1.11 Triggers
+
+- A transient, network-related error occurs during communication with an external data source or delivery destination.
+
+## 1.12 Outcomes
+
+- The job succeeds despite a temporary network or service issue, enhancing system reliability.
+- Job execution time is slightly increased due to the retry delay.
+- All retry attempts are logged for operational visibility and troubleshooting.
+
+## 1.13 Business Rules
+
+- The default retry policy is 3 retries with exponential backoff to avoid overwhelming a struggling service.
+- The policy is configured to only retry on specific, known transient exception types.
+
+## 1.14 Error Scenarios
+
+- The external service is down, not just temporarily unavailable. All retry attempts are exhausted, and the job ultimately fails and logs a detailed error.
+
+## 1.15 Integration Points
+
+- External Data Sources (DBs, OPC UA)
+- External Delivery Destinations (SMTP, S3)
+
+# 2.0 Details
+
+## 2.1 Diagram Id
+
+SEQ-EH-001
+
+## 2.2 Name
+
+Data Ingestion with Polly Retry on Transient SQL Error
+
+## 2.3 Description
+
+This sequence details the automated error handling process during a report job's data ingestion phase. An Application Service, responsible for executing the job, attempts to fetch data via a SQL Data Connector. The initial connection to the external database fails with a transient network error. A pre-configured Polly Retry Policy in the Application Service intercepts the specific transient exception, logs the event, waits for a calculated backoff period, and automatically re-initiates the data fetch operation. The subsequent attempt succeeds, allowing the job to complete successfully, thereby enhancing system reliability.
+
+## 2.4 Participants
+
+### 2.4.1 ApplicationServices
+
+#### 2.4.1.1 Repository Id
+
+application_layer
+
+#### 2.4.1.2 Display Name
+
+Application Service (Job Executor)
+
+#### 2.4.1.3 Type
+
+🔹 ApplicationServices
+
+#### 2.4.1.4 Technology
+
+.NET 8, Polly
+
+#### 2.4.1.5 Order
+
+1
+
+#### 2.4.1.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | component |
+| Color | #D1E8FF |
+| Stereotype | Service |
+
+### 2.4.2.0 Infrastructure
+
+#### 2.4.2.1 Repository Id
+
+infrastructure_layer_sql_connector
+
+#### 2.4.2.2 Display Name
+
+SQL Data Connector
+
+#### 2.4.2.3 Type
+
+🔹 Infrastructure
+
+#### 2.4.2.4 Technology
+
+EF Core 8, Microsoft.Data.SqlClient
+
+#### 2.4.2.5 Order
+
+2
+
+#### 2.4.2.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | component |
+| Color | #FFF2CC |
+| Stereotype | Component |
+
+### 2.4.3.0 Infrastructure
+
+#### 2.4.3.1 Repository Id
+
+infrastructure_layer_logger
+
+#### 2.4.3.2 Display Name
+
+Logging Provider (Serilog)
+
+#### 2.4.3.3 Type
+
+🔹 Infrastructure
+
+#### 2.4.3.4 Technology
+
+Serilog
+
+#### 2.4.3.5 Order
+
+3
+
+#### 2.4.3.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | component |
+| Color | #DAE8FC |
+| Stereotype | Component |
+
+### 2.4.4.0 Actor
+
+#### 2.4.4.1 Repository Id
+
+external_sql_database
+
+#### 2.4.4.2 Display Name
+
+External SQL Database
+
+#### 2.4.4.3 Type
+
+🔹 Actor
+
+#### 2.4.4.4 Technology
+
+SQL Server / PostgreSQL
+
+#### 2.4.4.5 Order
+
+4
+
+#### 2.4.4.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | database |
+| Color | #E5E5E5 |
+| Stereotype | External |
+
+## 2.5.0.0 Interactions
+
+### 2.5.1.0 MethodCall
+
+#### 2.5.1.1 Source Id
+
+application_layer
+
+#### 2.5.1.2 Target Id
+
+infrastructure_layer_sql_connector
+
+#### 2.5.1.3 Message
+
+[Attempt 1] Execute Polly Policy: FetchDataAsync(config)
+
+#### 2.5.1.4 Sequence Number
+
+1
+
+#### 2.5.1.5 Type
+
+🔹 MethodCall
+
+#### 2.5.1.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.1.7 Has Return
+
+✅ Yes
+
+#### 2.5.1.8 Is Activation
+
+✅ Yes
+
+#### 2.5.1.9 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-Process |
+| Method | IConnector.FetchDataAsync |
+| Parameters | ConnectorConfiguration config |
+| Authentication | N/A (Internal) |
+| Error Handling | Call is wrapped in a Polly Retry Policy configured... |
+| Performance | Timeout defined by report job settings. |
+
+### 2.5.2.0 DatabaseRequest
+
+#### 2.5.2.1 Source Id
+
+infrastructure_layer_sql_connector
+
+#### 2.5.2.2 Target Id
+
+external_sql_database
+
+#### 2.5.2.3 Message
+
+OpenConnection()
+
+#### 2.5.2.4 Sequence Number
+
+2
+
+#### 2.5.2.5 Type
+
+🔹 DatabaseRequest
+
+#### 2.5.2.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.2.7 Has Return
+
+✅ Yes
+
+#### 2.5.2.8 Is Activation
+
+✅ Yes
+
+#### 2.5.2.9 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | TDS / PGWire |
+| Method | DB Connection Request |
+| Parameters | Connection String Credentials |
+| Authentication | Database Credentials |
+| Error Handling | Standard database driver exception handling. |
+| Performance | Network latency dependent; typical connection time... |
+
+### 2.5.3.0 ErrorResponse
+
+#### 2.5.3.1 Source Id
+
+external_sql_database
+
+#### 2.5.3.2 Target Id
+
+infrastructure_layer_sql_connector
+
+#### 2.5.3.3 Message
+
+Return: Transient Network Error
+
+#### 2.5.3.4 Return Message
+
+Throws SqlException (e.g., network path not found)
+
+#### 2.5.3.5 Sequence Number
+
+3
+
+#### 2.5.3.6 Type
+
+🔹 ErrorResponse
+
+#### 2.5.3.7 Is Synchronous
+
+✅ Yes
+
+#### 2.5.3.8 Has Return
+
+✅ Yes
+
+#### 2.5.3.9 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | TDS / PGWire |
+| Method | N/A |
+| Parameters | SqlException object with transient error details. |
+| Authentication | N/A |
+| Error Handling | The specific error code is critical for the Polly ... |
+| Performance | N/A |
+
+### 2.5.4.0 Exception
+
+#### 2.5.4.1 Source Id
+
+infrastructure_layer_sql_connector
+
+#### 2.5.4.2 Target Id
+
+application_layer
+
+#### 2.5.4.3 Message
+
+Return: Throws SqlException
+
+#### 2.5.4.4 Return Message
+
+Propagates the caught SqlException.
+
+#### 2.5.4.5 Sequence Number
+
+4
+
+#### 2.5.4.6 Type
+
+🔹 Exception
+
+#### 2.5.4.7 Is Synchronous
+
+✅ Yes
+
+#### 2.5.4.8 Has Return
+
+✅ Yes
+
+#### 2.5.4.9 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-Process |
+| Method | N/A |
+| Parameters | SqlException |
+| Authentication | N/A |
+| Error Handling | The Polly policy's 'Handle<TException>()' predicat... |
+| Performance | N/A |
+
+### 2.5.5.0 MethodCall
+
+#### 2.5.5.1 Source Id
+
+application_layer
+
+#### 2.5.5.2 Target Id
+
+infrastructure_layer_logger
+
+#### 2.5.5.3 Message
+
+Log(Warning, 'Data fetch failed. Retrying...')
+
+#### 2.5.5.4 Sequence Number
+
+5
+
+#### 2.5.5.5 Type
+
+🔹 MethodCall
+
+#### 2.5.5.6 Is Synchronous
+
+❌ No
+
+#### 2.5.5.7 Has Return
+
+❌ No
+
+#### 2.5.5.8 Is Activation
+
+❌ No
+
+#### 2.5.5.9 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-Process |
+| Method | ILogger.LogWarning |
+| Parameters | Structured log message with template: 'Data fetch ... |
+| Authentication | N/A |
+| Error Handling | N/A |
+| Performance | Asynchronous logging to avoid blocking the executi... |
+
+### 2.5.6.0 SelfCall
+
+#### 2.5.6.1 Source Id
+
+application_layer
+
+#### 2.5.6.2 Target Id
+
+application_layer
+
+#### 2.5.6.3 Message
+
+Wait for exponential backoff delay (e.g., 1s + jitter)
+
+#### 2.5.6.4 Sequence Number
+
+6
+
+#### 2.5.6.5 Type
+
+🔹 SelfCall
+
+#### 2.5.6.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.6.7 Has Return
+
+❌ No
+
+#### 2.5.6.8 Is Activation
+
+❌ No
+
+#### 2.5.6.9 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | Internal |
+| Method | Task.Delay() |
+| Parameters | Calculated timespan from Polly policy. |
+| Authentication | N/A |
+| Error Handling | N/A |
+| Performance | The delay directly impacts the job's total executi... |
+
+### 2.5.7.0 MethodCall
+
+#### 2.5.7.1 Source Id
+
+application_layer
+
+#### 2.5.7.2 Target Id
+
+infrastructure_layer_sql_connector
+
+#### 2.5.7.3 Message
+
+[Attempt 2] Execute Polly Policy: FetchDataAsync(config)
+
+#### 2.5.7.4 Sequence Number
+
+7
+
+#### 2.5.7.5 Type
+
+🔹 MethodCall
+
+#### 2.5.7.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.7.7 Has Return
+
+✅ Yes
+
+#### 2.5.7.8 Is Activation
+
+✅ Yes
+
+#### 2.5.7.9 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-Process |
+| Method | IConnector.FetchDataAsync |
+| Parameters | ConnectorConfiguration config |
+| Authentication | N/A (Internal) |
+| Error Handling | This is the second execution attempt by the same P... |
+| Performance | N/A |
+
+### 2.5.8.0 DatabaseRequest
+
+#### 2.5.8.1 Source Id
+
+infrastructure_layer_sql_connector
+
+#### 2.5.8.2 Target Id
+
+external_sql_database
+
+#### 2.5.8.3 Message
+
+OpenConnection()
+
+#### 2.5.8.4 Sequence Number
+
+8
+
+#### 2.5.8.5 Type
+
+🔹 DatabaseRequest
+
+#### 2.5.8.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.8.7 Has Return
+
+✅ Yes
+
+#### 2.5.8.8 Is Activation
+
+✅ Yes
+
+#### 2.5.8.9 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | TDS / PGWire |
+| Method | DB Connection Request |
+| Parameters | Connection String Credentials |
+| Authentication | Database Credentials |
+| Error Handling | N/A |
+| Performance | N/A |
+
+### 2.5.9.0 SuccessResponse
+
+#### 2.5.9.1 Source Id
+
+external_sql_database
+
+#### 2.5.9.2 Target Id
+
+infrastructure_layer_sql_connector
+
+#### 2.5.9.3 Message
+
+Return: Connection Acknowledged
+
+#### 2.5.9.4 Return Message
+
+Successful connection handle.
+
+#### 2.5.9.5 Sequence Number
+
+9
+
+#### 2.5.9.6 Type
+
+🔹 SuccessResponse
+
+#### 2.5.9.7 Is Synchronous
+
+✅ Yes
+
+#### 2.5.9.8 Has Return
+
+✅ Yes
+
+#### 2.5.9.9 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | TDS / PGWire |
+| Method | N/A |
+| Parameters | N/A |
+| Authentication | N/A |
+| Error Handling | N/A |
+| Performance | N/A |
+
+### 2.5.10.0 DatabaseRequest
+
+#### 2.5.10.1 Source Id
+
+infrastructure_layer_sql_connector
+
+#### 2.5.10.2 Target Id
+
+external_sql_database
+
+#### 2.5.10.3 Message
+
+ExecuteQuery(sql, params)
+
+#### 2.5.10.4 Sequence Number
+
+10
+
+#### 2.5.10.5 Type
+
+🔹 DatabaseRequest
+
+#### 2.5.10.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.10.7 Has Return
+
+✅ Yes
+
+#### 2.5.10.8 Is Activation
+
+❌ No
+
+#### 2.5.10.9 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | TDS / PGWire |
+| Method | DB Query Execution |
+| Parameters | SQL query text and parameters. |
+| Authentication | N/A (uses existing connection) |
+| Error Handling | Standard query timeout handling. |
+| Performance | Depends on query complexity and database performan... |
+
+### 2.5.11.0 DataResponse
+
+#### 2.5.11.1 Source Id
+
+external_sql_database
+
+#### 2.5.11.2 Target Id
+
+infrastructure_layer_sql_connector
+
+#### 2.5.11.3 Message
+
+Return: Query Results
+
+#### 2.5.11.4 Return Message
+
+Data stream or result set.
+
+#### 2.5.11.5 Sequence Number
+
+11
+
+#### 2.5.11.6 Type
+
+🔹 DataResponse
+
+#### 2.5.11.7 Is Synchronous
+
+✅ Yes
+
+#### 2.5.11.8 Has Return
+
+✅ Yes
+
+#### 2.5.11.9 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | TDS / PGWire |
+| Method | N/A |
+| Parameters | Dataset payload |
+| Authentication | N/A |
+| Error Handling | N/A |
+| Performance | N/A |
+
+### 2.5.12.0 SuccessResponse
+
+#### 2.5.12.1 Source Id
+
+infrastructure_layer_sql_connector
+
+#### 2.5.12.2 Target Id
+
+application_layer
+
+#### 2.5.12.3 Message
+
+Return: [DataSet]
+
+#### 2.5.12.4 Return Message
+
+Returns the successfully fetched dataset as a standardized JSON object.
+
+#### 2.5.12.5 Sequence Number
+
+12
+
+#### 2.5.12.6 Type
+
+🔹 SuccessResponse
+
+#### 2.5.12.7 Is Synchronous
+
+✅ Yes
+
+#### 2.5.12.8 Has Return
+
+✅ Yes
+
+#### 2.5.12.9 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-Process |
+| Method | N/A |
+| Parameters | JSON object representing the data. |
+| Authentication | N/A |
+| Error Handling | The Polly policy considers this a successful execu... |
+| Performance | N/A |
+
+## 2.6.0.0 Notes
+
+### 2.6.1.0 Content
+
+#### 2.6.1.1 Content
+
+The Polly Retry Policy is configured at application startup and injected via DI. It's defined to handle only specific, known transient SQL exception codes to avoid retrying on permanent errors like 'Invalid Login'.
+
+#### 2.6.1.2 Position
+
+top-left
+
+#### 2.6.1.3 Participant Id
+
+application_layer
+
+#### 2.6.1.4 Sequence Number
+
+1
+
+### 2.6.2.0 Content
+
+#### 2.6.2.1 Content
+
+If all 3 retry attempts were to fail, the policy would re-throw the last caught exception, which would then be caught by the job's global error handler, mark the job as 'Failed', and log a 'Critical' error.
+
+#### 2.6.2.2 Position
+
+bottom-right
+
+#### 2.6.2.3 Participant Id
+
+application_layer
+
+#### 2.6.2.4 Sequence Number
+
+12
+
+## 2.7.0.0 Implementation Guidance
+
+| Property | Value |
+|----------|-------|
+| Security Requirements | Connection strings containing credentials must be ... |
+| Performance Targets | The Recovery Time Objective (RTO) for this specifi... |
+| Error Handling Strategy | Implement a `IAsyncPolicy<T>` from the Polly libra... |
+| Testing Considerations | Unit tests should verify that the correct policy i... |
+| Monitoring Requirements | A Prometheus counter metric (`reporting_system_dat... |
+| Deployment Considerations | The retry policy (number of retries, backoff strat... |
+

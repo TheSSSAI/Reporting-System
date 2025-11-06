@@ -1,0 +1,24 @@
+sequenceDiagram
+    participant "React Control Panel" as ReactControlPanel
+    participant "TransformationEngine.Api" as TransformationEngineApi
+    participant "Data Access Library" as DataAccessLibrary
+
+    ReactControlPanel->>ReactControlPanel: 1. 1. Admin selects two script versions (e.g., v3 and v5) in the VersionHistoryComponent and clicks the 'Compare' button.
+    activate ReactControlPanel
+    ReactControlPanel->>ReactControlPanel: 2. 2. handleCompareClick() is invoked. UI enters loading state and initiates parallel data fetching.
+    activate TransformationEngineApi
+    ReactControlPanel->>TransformationEngineApi: 3. 2.1. [SUCCESS PATH] Fetch content for Version A (v3).
+    TransformationEngineApi-->>ReactControlPanel: 2.1.8. [200 OK] Responds with { "content": "(decrypted script content for v3)" }.
+    ReactControlPanel->>TransformationEngineApi: 9. 2.2. [ERROR PATH] Fetch content for Version B (v5 - invalid).
+    TransformationEngineApi-->>ReactControlPanel: 2.2.4. [404 Not Found] Responds with standard error object.
+    ReactControlPanel->>ReactControlPanel: 12. 3. Promise.all rejects due to the 404 response. UI enters error handling flow.
+    ReactControlPanel->>ReactControlPanel: 13. 4. Update state to exit loading and display the error.
+    ReactControlPanel->>ReactControlPanel: 14. 5. A user-friendly error message is rendered in the UI instead of the diff view.
+    ReactControlPanel->>ReactControlPanel: 15. 6. [ALT: Success Path] If both API calls succeed, UI state is updated with content, and ScriptDiffComponent is rendered.
+
+    note over ReactControlPanel: API calls for version content should be executed in parallel (e.g., using Promise.all) to optimiz...
+    note over ReactControlPanel: The ScriptDiffComponent should wrap a library like Monaco Diff Editor to provide a rich, performa...
+    note over TransformationEngineApi: Authorization is enforced at the API gateway layer via middleware, ensuring that only authenticat...
+
+    deactivate TransformationEngineApi
+    deactivate ReactControlPanel

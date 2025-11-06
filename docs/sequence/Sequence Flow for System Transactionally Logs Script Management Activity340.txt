@@ -1,0 +1,698 @@
+# 1 Overview
+
+## 1.1 Diagram Id
+
+SEQ-CF-001
+
+## 1.2 Name
+
+System Transactionally Logs Script Management Activity
+
+## 1.3 Description
+
+Following any successful CRUD operation on a script or its association, the system generates a detailed audit log entry. The creation of the business entity and the audit log entry are committed in the same atomic database transaction to ensure consistency.
+
+## 1.4 Type
+
+🔹 ComplianceFlow
+
+## 1.5 Purpose
+
+To meet SOC 2 and ISO 27001 compliance objectives by maintaining a consistent and immutable audit trail.
+
+## 1.6 Complexity
+
+Medium
+
+## 1.7 Priority
+
+🔴 High
+
+## 1.8 Frequency
+
+OnDemand
+
+## 1.9 Participants
+
+- REPO-APP-API-001
+- REPO-LIB-DATA-003
+
+## 1.10 Key Interactions
+
+- An application service (e.g., `TransformationScriptService`) successfully validates a CRUD operation.
+- The service adds the business entity (e.g., new `ScriptVersion`) to the Entity Framework `DbContext`.
+- The service publishes a domain event (e.g., `TransformationScriptModified`).
+- A synchronous event handler (`CreateAuditLogEntryHandler`) receives the event.
+- The handler constructs an `AuditLog` entity with details from the event.
+- The handler adds the `AuditLog` entity to the same `DbContext` instance.
+- The service calls `DbContext.SaveChangesAsync()`, committing both the business change and the audit log in a single transaction.
+
+## 1.11 Triggers
+
+- A script is created, updated, deleted, reverted, or associated with a report.
+
+## 1.12 Outcomes
+
+- An immutable log record is created in the `AuditLog` table for the specific action, providing a complete history of changes.
+
+## 1.13 Business Rules
+
+- All CRUD operations and association changes must be logged (REQ-DTR-010).
+- The log must capture the user, timestamp, and nature of the change (REQ-DTR-010).
+- The audit trail must be immutable and retained for at least one year (REQ-DTR-020).
+
+## 1.14 Error Scenarios
+
+- If the audit log write fails (e.g., constraint violation), the entire database transaction is rolled back, preventing the business change from being committed without being audited.
+
+## 1.15 Integration Points
+
+- Application Database (AuditLog table)
+
+# 2.0 Details
+
+## 2.1 Diagram Id
+
+SEQ-CF-001
+
+## 2.2 Name
+
+Transactional Audit Logging for Script Management
+
+## 2.3 Description
+
+This sequence details the technical implementation of generating an immutable audit log entry atomically with a business entity change, as required by REQ-DTR-010 and REQ-DTR-020. The process leverages the Unit of Work pattern via Entity Framework Core's DbContext and an in-process, synchronous domain event to ensure that both the business change (e.g., creating a ScriptVersion) and its corresponding AuditLog entry are committed within a single database transaction. This guarantees data consistency and prevents unaudited changes, which is critical for SOC 2 and ISO 27001 compliance.
+
+## 2.4 Participants
+
+### 2.4.1 API Controller
+
+#### 2.4.1.1 Repository Id
+
+REPO-APP-API-001
+
+#### 2.4.1.2 Display Name
+
+TransformationScriptsController
+
+#### 2.4.1.3 Type
+
+🔹 API Controller
+
+#### 2.4.1.4 Technology
+
+ASP.NET Core 8
+
+#### 2.4.1.5 Order
+
+1
+
+#### 2.4.1.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | actor |
+| Color | #1168bd |
+| Stereotype | API Entrypoint |
+
+### 2.4.2.0 Application Service
+
+#### 2.4.2.1 Repository Id
+
+REPO-APP-API-001
+
+#### 2.4.2.2 Display Name
+
+TransformationScriptService
+
+#### 2.4.2.3 Type
+
+🔹 Application Service
+
+#### 2.4.2.4 Technology
+
+.NET 8
+
+#### 2.4.2.5 Order
+
+2
+
+#### 2.4.2.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | component |
+| Color | #1a9622 |
+| Stereotype | Business Logic / Unit of Work Coordinator |
+
+### 2.4.3.0 Mediator
+
+#### 2.4.3.1 Repository Id
+
+REPO-APP-API-001
+
+#### 2.4.3.2 Display Name
+
+In-Process Mediator
+
+#### 2.4.3.3 Type
+
+🔹 Mediator
+
+#### 2.4.3.4 Technology
+
+MediatR library
+
+#### 2.4.3.5 Order
+
+3
+
+#### 2.4.3.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | component |
+| Color | #d98f00 |
+| Stereotype | Event Dispatcher |
+
+### 2.4.4.0 Event Handler
+
+#### 2.4.4.1 Repository Id
+
+REPO-APP-API-001
+
+#### 2.4.4.2 Display Name
+
+CreateAuditLogEntryHandler
+
+#### 2.4.4.3 Type
+
+🔹 Event Handler
+
+#### 2.4.4.4 Technology
+
+.NET 8
+
+#### 2.4.4.5 Order
+
+4
+
+#### 2.4.4.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | component |
+| Color | #a832a4 |
+| Stereotype | Synchronous Consumer |
+
+### 2.4.5.0 Data Context
+
+#### 2.4.5.1 Repository Id
+
+REPO-LIB-DATA-003
+
+#### 2.4.5.2 Display Name
+
+AppDbContext
+
+#### 2.4.5.3 Type
+
+🔹 Data Context
+
+#### 2.4.5.4 Technology
+
+Entity Framework Core 8
+
+#### 2.4.5.5 Order
+
+5
+
+#### 2.4.5.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | database |
+| Color | #b0443f |
+| Stereotype | Unit of Work / Transaction Boundary |
+
+## 2.5.0.0 Interactions
+
+### 2.5.1.0 Method Call
+
+#### 2.5.1.1 Source Id
+
+REPO-APP-API-001
+
+#### 2.5.1.2 Target Id
+
+REPO-APP-API-001
+
+#### 2.5.1.3 Message
+
+UpdateScriptAsync(scriptId, updateDto)
+
+#### 2.5.1.4 Sequence Number
+
+1
+
+#### 2.5.1.5 Type
+
+🔹 Method Call
+
+#### 2.5.1.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.1.7 Return Message
+
+Updated Script DTO
+
+#### 2.5.1.8 Has Return
+
+✅ Yes
+
+#### 2.5.1.9 Is Activation
+
+✅ Yes
+
+#### 2.5.1.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | HTTP/1.1 |
+| Method | PUT /api/v1/transformations/{id} |
+| Parameters | scriptId: Guid, updateDto: UpdateScriptRequestDto |
+| Authentication | JWT Bearer Token with Role-Based Access Control (R... |
+| Error Handling | Handles validation errors (400), auth errors (401/... |
+| Performance | Standard API latency < 200ms. |
+
+### 2.5.2.0 Data Operation
+
+#### 2.5.2.1 Source Id
+
+REPO-APP-API-001
+
+#### 2.5.2.2 Target Id
+
+REPO-LIB-DATA-003
+
+#### 2.5.2.3 Message
+
+Adds new ScriptVersion entity to change tracker.
+
+#### 2.5.2.4 Sequence Number
+
+2
+
+#### 2.5.2.5 Type
+
+🔹 Data Operation
+
+#### 2.5.2.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.2.7 Return Message
+
+
+
+#### 2.5.2.8 Has Return
+
+❌ No
+
+#### 2.5.2.9 Is Activation
+
+❌ No
+
+#### 2.5.2.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-process method call |
+| Method | DbContext.Set<ScriptVersion>().Add(newVersion) |
+| Parameters | newVersion: ScriptVersion (entity) |
+| Authentication | N/A (internal) |
+| Error Handling | N/A (in-memory operation). |
+| Performance | High-performance in-memory operation. |
+
+### 2.5.3.0 Event Publication
+
+#### 2.5.3.1 Source Id
+
+REPO-APP-API-001
+
+#### 2.5.3.2 Target Id
+
+REPO-APP-API-001
+
+#### 2.5.3.3 Message
+
+Publish(TransformationScriptModifiedEvent)
+
+#### 2.5.3.4 Sequence Number
+
+3
+
+#### 2.5.3.5 Type
+
+🔹 Event Publication
+
+#### 2.5.3.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.3.7 Return Message
+
+
+
+#### 2.5.3.8 Has Return
+
+❌ No
+
+#### 2.5.3.9 Is Activation
+
+✅ Yes
+
+#### 2.5.3.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-process method call |
+| Method | IMediator.Publish(event) |
+| Parameters | event: Contains UserId, ActionType, EntityId, Chan... |
+| Authentication | N/A (internal) |
+| Error Handling | Propagates exceptions from synchronous handlers. |
+| Performance | Minimal overhead, dispatches to handler(s) on the ... |
+
+### 2.5.4.0 Method Call
+
+#### 2.5.4.1 Source Id
+
+REPO-APP-API-001
+
+#### 2.5.4.2 Target Id
+
+REPO-APP-API-001
+
+#### 2.5.4.3 Message
+
+Handle(TransformationScriptModifiedEvent)
+
+#### 2.5.4.4 Sequence Number
+
+4
+
+#### 2.5.4.5 Type
+
+🔹 Method Call
+
+#### 2.5.4.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.4.7 Return Message
+
+
+
+#### 2.5.4.8 Has Return
+
+❌ No
+
+#### 2.5.4.9 Is Activation
+
+✅ Yes
+
+#### 2.5.4.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-process method call |
+| Method | IRequestHandler.Handle(event) |
+| Parameters | event: The domain event object. |
+| Authentication | N/A (internal) |
+| Error Handling | Any exception thrown here will propagate up and ca... |
+| Performance | Must be very fast (<10ms) to avoid impacting overa... |
+
+### 2.5.5.0 Data Operation
+
+#### 2.5.5.1 Source Id
+
+REPO-APP-API-001
+
+#### 2.5.5.2 Target Id
+
+REPO-LIB-DATA-003
+
+#### 2.5.5.3 Message
+
+Constructs and adds AuditLog entity to change tracker.
+
+#### 2.5.5.4 Sequence Number
+
+5
+
+#### 2.5.5.5 Type
+
+🔹 Data Operation
+
+#### 2.5.5.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.5.7 Return Message
+
+
+
+#### 2.5.5.8 Has Return
+
+❌ No
+
+#### 2.5.5.9 Is Activation
+
+❌ No
+
+#### 2.5.5.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-process method call |
+| Method | DbContext.Set<AuditLog>().Add(auditLog) |
+| Parameters | auditLog: AuditLog (entity) |
+| Authentication | N/A (internal) |
+| Error Handling | If this fails due to a model validation error, it ... |
+| Performance | High-performance in-memory operation. |
+
+### 2.5.6.0 Return
+
+#### 2.5.6.1 Source Id
+
+REPO-APP-API-001
+
+#### 2.5.6.2 Target Id
+
+REPO-APP-API-001
+
+#### 2.5.6.3 Message
+
+Return from handler
+
+#### 2.5.6.4 Sequence Number
+
+6
+
+#### 2.5.6.5 Type
+
+🔹 Return
+
+#### 2.5.6.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.6.7 Return Message
+
+
+
+#### 2.5.6.8 Has Return
+
+❌ No
+
+#### 2.5.6.9 Is Activation
+
+❌ No
+
+#### 2.5.6.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-process |
+| Method | Return |
+| Parameters | void |
+| Authentication | N/A |
+| Error Handling | N/A |
+| Performance | N/A |
+
+### 2.5.7.0 Return
+
+#### 2.5.7.1 Source Id
+
+REPO-APP-API-001
+
+#### 2.5.7.2 Target Id
+
+REPO-APP-API-001
+
+#### 2.5.7.3 Message
+
+Return from mediator
+
+#### 2.5.7.4 Sequence Number
+
+7
+
+#### 2.5.7.5 Type
+
+🔹 Return
+
+#### 2.5.7.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.7.7 Return Message
+
+
+
+#### 2.5.7.8 Has Return
+
+❌ No
+
+#### 2.5.7.9 Is Activation
+
+❌ No
+
+#### 2.5.7.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-process |
+| Method | Return |
+| Parameters | void |
+| Authentication | N/A |
+| Error Handling | N/A |
+| Performance | N/A |
+
+### 2.5.8.0 Data Operation
+
+#### 2.5.8.1 Source Id
+
+REPO-APP-API-001
+
+#### 2.5.8.2 Target Id
+
+REPO-LIB-DATA-003
+
+#### 2.5.8.3 Message
+
+SaveChangesAsync()
+
+#### 2.5.8.4 Sequence Number
+
+8
+
+#### 2.5.8.5 Type
+
+🔹 Data Operation
+
+#### 2.5.8.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.8.7 Return Message
+
+Number of entities saved.
+
+#### 2.5.8.8 Has Return
+
+✅ Yes
+
+#### 2.5.8.9 Is Activation
+
+❌ No
+
+#### 2.5.8.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | Database Connection (e.g., TCP) |
+| Method | DbContext.SaveChangesAsync() |
+| Parameters | CancellationToken |
+| Authentication | N/A (uses connection string credentials) |
+| Error Handling | Crucial error handling point. A DbUpdateException ... |
+| Performance | Variable latency, dependent on database load and t... |
+
+## 2.6.0.0 Notes
+
+### 2.6.1.0 Content
+
+#### 2.6.1.1 Content
+
+The TransformationScriptService and CreateAuditLogEntryHandler MUST share the same scoped DbContext instance, which is guaranteed by the .NET Dependency Injection container.
+
+#### 2.6.1.2 Position
+
+top
+
+#### 2.6.1.3 Participant Id
+
+*Not specified*
+
+#### 2.6.1.4 Sequence Number
+
+0
+
+### 2.6.2.0 Content
+
+#### 2.6.2.1 Content
+
+This is the atomic commit point. EF Core wraps all tracked changes (the ScriptVersion and the AuditLog) into a single database transaction. If any part of the database write fails, the entire transaction is rolled back.
+
+#### 2.6.2.2 Position
+
+right
+
+#### 2.6.2.3 Participant Id
+
+REPO-LIB-DATA-003
+
+#### 2.6.2.4 Sequence Number
+
+8
+
+### 2.6.3.0 Content
+
+#### 2.6.3.1 Content
+
+Error Scenario: If the handler throws any exception (e.g., fails to construct the audit log), the exception propagates back to the service. The call to SaveChangesAsync() is never made, the DbContext is disposed, and the transaction is never committed, thus rolling back the business change. This ensures no unaudited data modifications occur.
+
+#### 2.6.3.2 Position
+
+bottom
+
+#### 2.6.3.3 Participant Id
+
+*Not specified*
+
+#### 2.6.3.4 Sequence Number
+
+9
+
+## 2.7.0.0 Implementation Guidance
+
+| Property | Value |
+|----------|-------|
+| Security Requirements | Role-Based Access Control must be enforced at the ... |
+| Performance Targets | The synchronous event handler must be highly optim... |
+| Error Handling Strategy | The primary error handling strategy is transaction... |
+| Testing Considerations | Integration tests are critical. A key test case mu... |
+| Monitoring Requirements | Log successful audit events at an INFO level. Any ... |
+| Deployment Considerations | Database migrations must be managed carefully. Any... |
+

@@ -1,0 +1,34 @@
+sequenceDiagram
+    actor "User's Browser (React SPA)" as UsersBrowserReactSPA
+    participant "TransformationEngine.Api" as TransformationEngineApi
+    participant "Data Access Library" as DataAccessLibrary
+
+    activate UsersBrowserReactSPA
+    UsersBrowserReactSPA->>UsersBrowserReactSPA: 1. 1. Admin edits script in Monaco Editor and clicks 'Save'
+    UsersBrowserReactSPA->>UsersBrowserReactSPA: 2. 2. Set loading state to true and disable save button
+    activate TransformationEngineApi
+    UsersBrowserReactSPA->>TransformationEngineApi: 3. 3. PUT /api/v1/transformations/{id}
+    TransformationEngineApi-->>UsersBrowserReactSPA: HTTP 200 OK | 400 | 404 | 409 | 500
+    TransformationEngineApi->>TransformationEngineApi: 4. 4. [TransformationScriptsController] Authorize request and validate DTO
+    TransformationEngineApi-->>TransformationEngineApi: Proceed or return HTTP 401/403/400
+    activate DataAccessLibrary
+    TransformationEngineApi->>DataAccessLibrary: 5. 5. [TransformationScriptService] Request script: repository.GetWithVersionsAsync(id)
+    DataAccessLibrary-->>TransformationEngineApi: TransformationScript entity or null
+    TransformationEngineApi->>TransformationEngineApi: 6. 6. In-memory: Encrypt content, create new ScriptVersion entity, update parent TransformationScript
+    TransformationEngineApi->>DataAccessLibrary: 7. 7. [TransformationScriptService] Request transactional update: repository.UpdateAsync(script)
+    DataAccessLibrary-->>TransformationEngineApi: Task completes or throws exception
+    DataAccessLibrary->>DataAccessLibrary: 8. 7a. [EF Core] Begin transaction
+    DataAccessLibrary->>DataAccessLibrary: 9. 7b. Add new ScriptVersion and AuditLog to DbContext
+    DataAccessLibrary->>DataAccessLibrary: 10. 7c. Mark TransformationScript as Modified in DbContext
+    DataAccessLibrary->>DataAccessLibrary: 11. 7d. Execute DbContext.SaveChangesAsync()
+    DataAccessLibrary-->>DataAccessLibrary: Number of rows affected
+    DataAccessLibrary->>DataAccessLibrary: 12. 7e. Commit transaction
+    TransformationEngineApi->>UsersBrowserReactSPA: 13. 8. Return HTTP 200 OK with updated script DTO
+    UsersBrowserReactSPA->>UsersBrowserReactSPA: 14. 9. Update UI state, show success notification, set loading to false
+
+    note over TransformationEngineApi: Error Handling: If the script ID is not found (Step 5), the API immediately returns HTTP 404. If ...
+    note over DataAccessLibrary: Transactional Integrity: The new ScriptVersion, the update to the parent TransformationScript, an...
+
+    deactivate DataAccessLibrary
+    deactivate TransformationEngineApi
+    deactivate UsersBrowserReactSPA

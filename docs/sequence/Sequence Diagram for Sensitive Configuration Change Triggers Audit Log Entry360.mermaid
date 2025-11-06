@@ -1,0 +1,34 @@
+sequenceDiagram
+    participant "ApplicationService" as ApplicationService
+    participant "EFCoreDbContext" as EFCoreDbContext
+    participant "InProcessMediator" as InProcessMediator
+    participant "AuditLogEventHandler" as AuditLogEventHandler
+    participant "AuditLogRepository" as AuditLogRepository
+
+    activate ApplicationService
+    ApplicationService->>ApplicationService: 1. 1. UpdateSensitiveConfig(configDto)
+    ApplicationService->>EFCoreDbContext: 2. 2. Load, Validate, and Update Entity
+    EFCoreDbContext-->>ApplicationService: Updated Entity
+    activate EFCoreDbContext
+    ApplicationService->>EFCoreDbContext: 3. 3. Commit Primary Transaction
+    EFCoreDbContext-->>ApplicationService: Success (int rowsAffected)
+    activate InProcessMediator
+    ApplicationService->>InProcessMediator: 4. 4. Publish Domain Event (Post-Commit)
+    InProcessMediator-->>ApplicationService: Task
+    activate AuditLogEventHandler
+    InProcessMediator->>AuditLogEventHandler: 5. 5. Dispatch Event to Handler
+    activate AuditLogRepository
+    AuditLogEventHandler->>AuditLogRepository: 6. 6. Create AuditLog Entry
+    AuditLogRepository-->>AuditLogEventHandler: Task
+    AuditLogRepository->>EFCoreDbContext: 7. 7. Commit Audit Transaction
+    EFCoreDbContext-->>AuditLogRepository: Success
+
+    note over EFCoreDbContext: Transactional Boundary 1: The primary business operation (e.g., updating a user's role) is commit...
+    note over AuditLogEventHandler: AuditLog Entity Payload: Must contain timestamp, userId, sourceIpAddress, actionType (e.g., 'User...
+    note over AuditLogRepository: Transactional Boundary 2: The audit log entry is persisted in its own separate transaction. This ...
+
+    deactivate AuditLogRepository
+    deactivate AuditLogEventHandler
+    deactivate InProcessMediator
+    deactivate EFCoreDbContext
+    deactivate ApplicationService

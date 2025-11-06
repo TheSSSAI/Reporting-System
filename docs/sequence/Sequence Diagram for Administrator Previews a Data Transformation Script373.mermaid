@@ -1,0 +1,26 @@
+sequenceDiagram
+    participant "React Control Panel" as ReactControlPanel
+    participant "API/Web Layer" as APIWebLayer
+    participant "Application Layer" as ApplicationLayer
+    participant "Infrastructure Layer" as InfrastructureLayer
+
+    activate APIWebLayer
+    ReactControlPanel->>APIWebLayer: 1. 1. POST /api/v1/transformations/preview
+    APIWebLayer-->>ReactControlPanel: 10. Returns 200 OK with transformed JSON or 400 Bad Request with structured error.
+    APIWebLayer->>APIWebLayer: 2. 2. Middleware validates JWT and authorizes user role ('Administrator').
+    activate ApplicationLayer
+    APIWebLayer->>ApplicationLayer: 3. 3. transformationService.ExecutePreviewAsync(requestDto, cancellationToken)
+    ApplicationLayer-->>APIWebLayer: 9. Returns TransformationPreviewResult object.
+    ApplicationLayer->>InfrastructureLayer: 4. 4. auditLogger.LogAuditEventAsync(auditEvent)
+    activate InfrastructureLayer
+    ApplicationLayer->>InfrastructureLayer: 5. 5. transformationEngine.ExecuteAsync(script, data, constraints, token)
+    InfrastructureLayer-->>ApplicationLayer: 8. Returns TransformationResult with output or error details.
+    InfrastructureLayer->>InfrastructureLayer: 6. 6. Executes script in secure Jint sandbox.
+    InfrastructureLayer-->>InfrastructureLayer: 7. Captures result or exception.
+
+    note over InfrastructureLayer: Jint Sandbox Configuration: - new Engine(options => {   options.TimeoutInterval(constraints.Timeo...
+    note over APIWebLayer: A CancellationTokenSource with a 15-second delay is created here and its token is passed down thr...
+
+    deactivate InfrastructureLayer
+    deactivate ApplicationLayer
+    deactivate APIWebLayer

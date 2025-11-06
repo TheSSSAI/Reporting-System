@@ -1,0 +1,460 @@
+
+{
+  "component_inventory": {
+    "atomic_components": [
+      {
+        "component_name": "Button",
+        "category": "form_controls",
+        "variants": ["primary", "secondary", "danger", "icon_only"],
+        "states": ["default", "hover", "active", "focus", "disabled", "loading"],
+        "responsive_needs": "Ensure touch target size is adequate on smaller viewports.",
+        "dependencies": ["Icon", "Spinner"],
+        "complexity_level": "low",
+        "implementation_priority": 1,
+        "estimated_effort": "4 hours"
+      },
+      {
+        "component_name": "TextInput",
+        "category": "form_controls",
+        "variants": ["default", "password", "search", "multiline_textarea"],
+        "states": ["default", "focus", "error", "disabled", "with_adornment"],
+        "responsive_needs": "Full width on smaller containers.",
+        "dependencies": ["Icon"],
+        "complexity_level": "low",
+        "implementation_priority": 1,
+        "estimated_effort": "6 hours"
+      },
+      {
+        "component_name": "SelectDropdown",
+        "category": "form_controls",
+        "variants": ["single_select", "multi_select", "autocomplete"],
+        "states": ["default", "open", "error", "disabled", "loading_options"],
+        "responsive_needs": "Use native select on mobile or full-screen modal for options.",
+        "dependencies": [],
+        "complexity_level": "medium",
+        "implementation_priority": 2,
+        "estimated_effort": "8 hours"
+      },
+      {
+        "component_name": "Checkbox",
+        "category": "form_controls",
+        "variants": ["default", "indeterminate"],
+        "states": ["checked", "unchecked", "disabled", "focus"],
+        "responsive_needs": "Adequate touch target.",
+        "dependencies": [],
+        "complexity_level": "low",
+        "implementation_priority": 1,
+        "estimated_effort": "2 hours"
+      },
+      {
+        "component_name": "ToggleSwitch",
+        "category": "form_controls",
+        "variants": ["default"],
+        "states": ["on", "off", "disabled", "focus"],
+        "responsive_needs": "Adequate touch target.",
+        "dependencies": [],
+        "complexity_level": "low",
+        "implementation_priority": 2,
+        "estimated_effort": "3 hours"
+      },
+      {
+        "component_name": "Alert",
+        "category": "feedback",
+        "variants": ["success", "error", "warning", "info"],
+        "states": ["visible", "hidden"],
+        "responsive_needs": "Text wrapping and responsive layout.",
+        "dependencies": ["Icon", "Button"],
+        "complexity_level": "low",
+        "implementation_priority": 1,
+        "estimated_effort": "4 hours"
+      },
+      {
+        "component_name": "StatusBadge",
+        "category": "data_display",
+        "variants": ["succeeded", "failed", "running", "queued", "cancelled", "locked"],
+        "states": ["default"],
+        "responsive_needs": "No special needs.",
+        "dependencies": ["Icon"],
+        "complexity_level": "low",
+        "implementation_priority": 2,
+        "estimated_effort": "3 hours"
+      },
+      {
+        "component_name": "Spinner",
+        "category": "feedback",
+        "variants": ["small", "medium", "large", "inline"],
+        "states": ["spinning"],
+        "responsive_needs": "N/A",
+        "dependencies": [],
+        "complexity_level": "low",
+        "implementation_priority": 1,
+        "estimated_effort": "1 hour"
+      },
+      {
+        "component_name": "Tooltip",
+        "category": "feedback",
+        "variants": ["default", "error"],
+        "states": ["visible", "hidden"],
+        "responsive_needs": "Positioning logic should adapt to viewport boundaries.",
+        "dependencies": [],
+        "complexity_level": "low",
+        "implementation_priority": 2,
+        "estimated_effort": "3 hours"
+      },
+      {
+        "component_name": "SkeletonLoader",
+        "category": "feedback",
+        "variants": ["text", "circle", "rectangle"],
+        "states": ["loading"],
+        "responsive_needs": "N/A",
+        "dependencies": [],
+        "complexity_level": "low",
+        "implementation_priority": 2,
+        "estimated_effort": "2 hours"
+      }
+    ],
+    "molecular_components": [
+      {
+        "component_name": "FormGroup",
+        "category": "form_controls",
+        "variants": ["default"],
+        "states": ["default", "error"],
+        "responsive_needs": "Stack label and input vertically on smaller viewports.",
+        "dependencies": ["TextInput", "SelectDropdown", "Checkbox"],
+        "complexity_level": "low",
+        "implementation_priority": 2,
+        "estimated_effort": "4 hours"
+      },
+      {
+        "component_name": "PageHeader",
+        "category": "layout",
+        "variants": ["with_actions", "simple"],
+        "states": ["default"],
+        "responsive_needs": "Action buttons may wrap or collapse into a menu on smaller screens.",
+        "dependencies": ["Button"],
+        "complexity_level": "medium",
+        "implementation_priority": 3,
+        "estimated_effort": "6 hours"
+      },
+      {
+        "component_name": "DataTable",
+        "category": "data_display",
+        "variants": ["with_pagination", "with_sorting", "with_selection"],
+        "states": ["loading", "loaded", "error", "empty"],
+        "responsive_needs": "Horizontal scrolling for wide tables on viewports < 1280px.",
+        "dependencies": ["Checkbox", "Spinner", "SkeletonLoader", "PaginationControls"],
+        "complexity_level": "high",
+        "implementation_priority": 4,
+        "estimated_effort": "24 hours"
+      },
+      {
+        "component_name": "ModalDialog",
+        "category": "overlays",
+        "variants": ["confirmation", "form_dialog", "informational"],
+        "states": ["open", "closed"],
+        "responsive_needs": "Full-screen on mobile, centered dialog on desktop.",
+        "dependencies": ["Button", "Icon"],
+        "complexity_level": "medium",
+        "implementation_priority": 3,
+        "estimated_effort": "8 hours"
+      },
+      {
+        "component_name": "DatePicker",
+        "category": "form_controls",
+        "variants": ["single_date", "date_range"],
+        "states": ["default", "open"],
+        "responsive_needs": "Use native date pickers or a mobile-friendly component on small screens.",
+        "dependencies": ["TextInput", "Icon"],
+        "complexity_level": "medium",
+        "implementation_priority": 5,
+        "estimated_effort": "8 hours"
+      },
+      {
+        "component_name": "FileUpload",
+        "category": "form_controls",
+        "variants": ["drag_and_drop", "button_select"],
+        "states": ["default", "uploading", "error", "success"],
+        "responsive_needs": "Full width on smaller containers.",
+        "dependencies": ["Button", "Icon", "Spinner"],
+        "complexity_level": "medium",
+        "implementation_priority": 6,
+        "estimated_effort": "10 hours"
+      }
+    ],
+    "organism_components": [
+      {
+        "component_name": "AppHeader",
+        "category": "layout",
+        "variants": ["default"],
+        "states": ["default"],
+        "responsive_needs": "Hides certain elements or uses smaller variants on narrow screens.",
+        "dependencies": ["Icon", "Button"],
+        "complexity_level": "medium",
+        "implementation_priority": 2,
+        "estimated_effort": "8 hours"
+      },
+      {
+        "component_name": "SideNav",
+        "category": "navigation",
+        "variants": ["default"],
+        "states": ["expanded", "collapsed"],
+        "responsive_needs": "Collapses below 1280px breakpoint.",
+        "dependencies": ["Icon"],
+        "complexity_level": "medium",
+        "implementation_priority": 2,
+        "estimated_effort": "10 hours"
+      },
+      {
+        "component_name": "DataTableWithToolbar",
+        "category": "data_display",
+        "variants": ["default"],
+        "states": ["default", "filtering", "bulk_actions_active"],
+        "responsive_needs": "Toolbar items may wrap or collapse.",
+        "dependencies": ["DataTable", "SearchBar", "Button", "SelectDropdown"],
+        "complexity_level": "high",
+        "implementation_priority": 5,
+        "estimated_effort": "16 hours"
+      },
+      {
+        "component_name": "ReportConfigWizard",
+        "category": "forms",
+        "variants": ["default"],
+        "states": ["step_1", "step_2", "step_3", "step_4", "review_step"],
+        "responsive_needs": "Stepper may switch to a vertical layout on smaller screens.",
+        "dependencies": ["FormGroup", "SelectDropdown", "Button", "Alert"],
+        "complexity_level": "high",
+        "implementation_priority": 6,
+        "estimated_effort": "32 hours"
+      },
+      {
+        "component_name": "TransformationScriptEditor",
+        "category": "specialized",
+        "variants": ["default"],
+        "states": ["default", "loading", "preview_success", "preview_error"],
+        "responsive_needs": "Resizable panes must have minimum sizes.",
+        "dependencies": ["MonacoEditor", "Button", "Alert", "SelectDropdown"],
+        "complexity_level": "high",
+        "implementation_priority": 7,
+        "estimated_effort": "40 hours"
+      },
+      {
+        "component_name": "VersionHistoryViewer",
+        "category": "data_display",
+        "variants": ["modal_view"],
+        "states": ["loading", "loaded", "compare_mode"],
+        "responsive_needs": "Ensure readability on smaller screens.",
+        "dependencies": ["DataTable", "Button", "Checkbox", "DiffViewer"],
+        "complexity_level": "high",
+        "implementation_priority": 8,
+        "estimated_effort": "16 hours"
+      },
+      {
+        "component_name": "DiffViewer",
+        "category": "specialized",
+        "variants": ["side_by_side", "inline"],
+        "states": ["default"],
+        "responsive_needs": "Switch to inline view on smaller viewports.",
+        "dependencies": ["MonacoEditor"],
+        "complexity_level": "medium",
+        "implementation_priority": 8,
+        "estimated_effort": "12 hours"
+      }
+    ]
+  },
+  "screen_inventory": [
+    {
+      "screen_name": "Login Screen",
+      "screen_type": "authentication",
+      "variants": ["default", "2fa_prompt", "forced_password_change"],
+      "states": ["default", "loading", "error"],
+      "required_components": ["TextInput", "Button", "Alert"],
+      "platform_optimizations": "Centered layout, keyboard-friendly.",
+      "implementation_priority": 2,
+      "estimated_effort": "8 hours",
+      "user_flow_criticality": "high"
+    },
+    {
+      "screen_name": "Main Application Layout",
+      "screen_type": "layout_shell",
+      "variants": ["default"],
+      "states": ["default", "trial_mode_banner", "grace_period_banner"],
+      "required_components": ["AppHeader", "SideNav", "Alert"],
+      "platform_optimizations": "Handles sidebar collapse on smaller viewports.",
+      "implementation_priority": 2,
+      "estimated_effort": "12 hours",
+      "user_flow_criticality": "high"
+    },
+    {
+      "screen_name": "Control Panel Dashboard",
+      "screen_type": "dashboard",
+      "variants": ["default"],
+      "states": ["loading", "loaded", "error", "empty"],
+      "required_components": ["PageHeader", "Card", "DataTable"],
+      "platform_optimizations": "Grid layout reflows to a single column on smaller screens.",
+      "implementation_priority": 9,
+      "estimated_effort": "16 hours",
+      "user_flow_criticality": "medium"
+    },
+    {
+      "screen_name": "Report Configuration List Screen",
+      "screen_type": "list_view",
+      "variants": ["default"],
+      "states": ["loading", "loaded", "empty"],
+      "required_components": ["PageHeader", "DataTableWithToolbar"],
+      "platform_optimizations": "Table becomes horizontally scrollable.",
+      "implementation_priority": 5,
+      "estimated_effort": "12 hours",
+      "user_flow_criticality": "high"
+    },
+    {
+      "screen_name": "Report Configuration Wizard Screen",
+      "screen_type": "form_wizard",
+      "variants": ["create", "edit"],
+      "states": ["step_1", "step_2", "step_3", "step_4", "review"],
+      "required_components": ["ReportConfigWizard"],
+      "platform_optimizations": "Increased padding on desktop.",
+      "implementation_priority": 6,
+      "estimated_effort": "24 hours",
+      "user_flow_criticality": "high"
+    },
+    {
+      "screen_name": "Transformation Script List Screen",
+      "screen_type": "list_view",
+      "variants": ["default"],
+      "states": ["loading", "loaded", "empty"],
+      "required_components": ["PageHeader", "DataTableWithToolbar"],
+      "platform_optimizations": "N/A",
+      "implementation_priority": 6,
+      "estimated_effort": "8 hours",
+      "user_flow_criticality": "high"
+    },
+    {
+      "screen_name": "Transformation Script Editor Screen",
+      "screen_type": "specialized_editor",
+      "variants": ["create", "edit"],
+      "states": ["default", "loading_preview", "error"],
+      "required_components": ["TransformationScriptEditor", "VersionHistoryViewer"],
+      "platform_optimizations": "Three-pane layout requires a wide viewport.",
+      "implementation_priority": 7,
+      "estimated_effort": "20 hours",
+      "user_flow_criticality": "high"
+    },
+    {
+      "screen_name": "Job Monitoring Dashboard",
+      "screen_type": "dashboard",
+      "variants": ["default"],
+      "states": ["loading", "loaded", "error", "empty", "polling_for_updates"],
+      "required_components": ["PageHeader", "DataTableWithToolbar", "StatusBadge"],
+      "platform_optimizations": "Table columns may be hidden on smaller viewports.",
+      "implementation_priority": 8,
+      "estimated_effort": "16 hours",
+      "user_flow_criticality": "high"
+    },
+    {
+      "screen_name": "Job Log Viewer Screen",
+      "screen_type": "data_display",
+      "variants": ["default"],
+      "states": ["loading", "loaded", "error", "empty", "auto_refreshing"],
+      "required_components": ["PageHeader", "SearchBar"],
+      "platform_optimizations": "Optimized for readability with monospaced fonts.",
+      "implementation_priority": 8,
+      "estimated_effort": "12 hours",
+      "user_flow_criticality": "high"
+    },
+    {
+      "screen_name": "Report Viewer Screen",
+      "screen_type": "list_view",
+      "variants": ["default"],
+      "states": ["loading", "loaded", "empty", "bulk_actions_active"],
+      "required_components": ["PageHeader", "DataTableWithToolbar"],
+      "platform_optimizations": "N/A",
+      "implementation_priority": 9,
+      "estimated_effort": "16 hours",
+      "user_flow_criticality": "high"
+    },
+    {
+      "screen_name": "User Management Screen",
+      "screen_type": "list_view",
+      "variants": ["default"],
+      "states": ["loading", "loaded", "empty"],
+      "required_components": ["PageHeader", "DataTableWithToolbar"],
+      "platform_optimizations": "N/A",
+      "implementation_priority": 4,
+      "estimated_effort": "12 hours",
+      "user_flow_criticality": "high"
+    },
+    {
+      "screen_name": "System Settings Screen",
+      "screen_type": "settings",
+      "variants": ["security", "licensing", "notifications", "logging", "backup_restore", "developer"],
+      "states": ["loading", "loaded", "saving"],
+      "required_components": ["FormGroup", "Button", "Alert", "ToggleSwitch"],
+      "platform_optimizations": "Tabbed or sectioned layout.",
+      "implementation_priority": 9,
+      "estimated_effort": "24 hours",
+      "user_flow_criticality": "medium"
+    },
+    {
+      "screen_name": "Audit Log Screen",
+      "screen_type": "list_view",
+      "variants": ["default"],
+      "states": ["loading", "loaded", "empty"],
+      "required_components": ["PageHeader", "DataTableWithToolbar", "DatePicker"],
+      "platform_optimizations": "N/A",
+      "implementation_priority": 9,
+      "estimated_effort": "12 hours",
+      "user_flow_criticality": "medium"
+    },
+    {
+      "screen_name": "Error Screen",
+      "screen_type": "utility",
+      "variants": ["403_forbidden", "404_not_found"],
+      "states": ["default"],
+      "required_components": ["Button"],
+      "platform_optimizations": "Centered layout, responsive.",
+      "implementation_priority": 3,
+      "estimated_effort": "4 hours",
+      "user_flow_criticality": "low"
+    }
+  ],
+  "implementation_plan": {
+    "phase_1_foundation": {
+      "components": ["Button", "TextInput", "Checkbox", "Alert", "Spinner", "SkeletonLoader", "Tooltip"],
+      "rationale": "Build the smallest, most reusable atomic components first. These are required by nearly all other UI elements.",
+      "estimated_duration": "3-5 days"
+    },
+    "phase_2_building_blocks": {
+      "components": ["FormGroup", "SelectDropdown", "ModalDialog", "AppHeader", "SideNav"],
+      "screens": ["Login Screen", "Main Application Layout", "Error Screen"],
+      "rationale": "Assemble atomic components into molecules and establish the core application shell and authentication flow.",
+      "estimated_duration": "5-8 days"
+    },
+    "phase_3_complex_components": {
+      "components": ["DataTable", "DataTableWithToolbar", "PageHeader"],
+      "screens": ["User Management Screen"],
+      "rationale": "Build the complex data grid component and implement the first full CRUD feature (Users) to prove out the pattern.",
+      "estimated_duration": "8-12 days"
+    },
+    "phase_4_screens": {
+      "components": ["ReportConfigWizard", "TransformationScriptEditor", "VersionHistoryViewer"],
+      "screens": ["Report Configuration List Screen", "Report Configuration Wizard Screen", "Transformation Script List Screen", "Transformation Script Editor Screen", "Job Monitoring Dashboard", "Job Log Viewer Screen", "Report Viewer Screen", "System Settings Screen", "Audit Log Screen"],
+      "rationale": "Assemble all remaining screens using the established component library, focusing on the core application workflows.",
+      "estimated_duration": "20-30 days"
+    }
+  },
+  "platform_implementation_strategy": {
+    "target_platform": "Desktop Web Browser",
+    "implementation_approach": "desktop_first",
+    "responsive_strategy": "The application is designed for desktop with a minimum viewport of 1280px. Below this, layouts will gracefully degrade but are not the primary target. MUI's responsive breakpoints (lg, xl) will be the focus.",
+    "progressive_enhancement": "Core functionality is the priority. Advanced animations and micro-interactions will be layered on top.",
+    "browser_support": "Latest stable versions of Chrome, Firefox, and Edge.",
+    "accessibility_integration": "WCAG 2.1 Level AA compliance is a core requirement from the start. All components and screens must be built with accessibility in mind, including keyboard navigation, ARIA attributes, and semantic HTML."
+  },
+  "quality_assurance_plan": {
+    "component_testing": "Use Storybook or a similar tool to develop and test components in isolation. Write unit tests for component logic with Jest and React Testing Library.",
+    "integration_testing": "Test the interaction between components within screens and the integration with the backend API.",
+    "responsive_testing": "Validate layout and functionality at key breakpoints (1280px and 1920px). Ensure graceful degradation below 1280px.",
+    "accessibility_testing": "Incorporate automated `axe-core` scans in CI/CD. Perform manual testing for keyboard navigation and screen reader compatibility (NVDA/VoiceOver) for every major user flow.",
+    "performance_testing": "Use Lighthouse and React Profiler to monitor component render times, bundle size, and overall page load performance."
+  }
+}

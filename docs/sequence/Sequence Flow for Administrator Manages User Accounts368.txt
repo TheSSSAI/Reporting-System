@@ -1,0 +1,808 @@
+# 1 Overview
+
+## 1.1 Diagram Id
+
+SEQ-UJ-003
+
+## 1.2 Name
+
+Administrator Manages User Accounts
+
+## 1.3 Description
+
+An Administrator uses the Control Panel to perform Create, Read, Update, and Delete (CRUD) operations on user accounts. This includes creating new users, assigning roles, resetting passwords, and locking/unlocking accounts.
+
+## 1.4 Type
+
+🔹 UserJourney
+
+## 1.5 Purpose
+
+To enable system administrators to manage the user base and their access privileges.
+
+## 1.6 Complexity
+
+Medium
+
+## 1.7 Priority
+
+🔴 High
+
+## 1.8 Frequency
+
+OnDemand
+
+## 1.9 Participants
+
+- presentationlayerreact
+- apiweblayer
+- application_layer
+- infrastructure_layer
+
+## 1.10 Key Interactions
+
+- Admin navigates to the 'Users' section in the Control Panel.
+- UI makes API calls to perform CRUD operations on user entities.
+- API Layer receives DTOs and passes them to the Application Layer.
+- Application Layer uses ASP.NET Core Identity services to manage users and roles.
+- Infrastructure Layer persists changes to the 'User' and 'Role' entities in the SQLite database.
+- Any sensitive operation (role change, password reset) triggers an audit log event.
+
+## 1.11 Triggers
+
+- Admin initiates a user management action (create, edit, delete).
+
+## 1.12 Outcomes
+
+- User accounts and their roles are successfully managed.
+- Security-sensitive changes are recorded in the audit log.
+
+## 1.13 Business Rules
+
+- The primary administrator account created during installation cannot be deleted.
+- Password policies (length, complexity, expiration) are enforced.
+
+## 1.14 Error Scenarios
+
+- Attempting to create a user with a username that already exists.
+- Validation failure on password policy.
+
+## 1.15 Integration Points
+
+*No items available*
+
+# 2.0 Details
+
+## 2.1 Diagram Id
+
+SEQ-UJ-003
+
+## 2.2 Name
+
+Implementation: Administrator Creates a New User Account
+
+## 2.3 Description
+
+This sequence diagram provides a detailed technical specification for the user journey of an Administrator creating a new user via the Control Panel. It covers the end-to-end flow from client-side interaction and validation in the React application, through the backend API, application logic, and infrastructure layers, culminating in data persistence and a final UI state update. The design adheres to Clean Architecture principles, with specific technologies and error handling paths defined at each step.
+
+## 2.4 Participants
+
+### 2.4.1 UI/Client
+
+#### 2.4.1.1 Repository Id
+
+presentation_layer_react
+
+#### 2.4.1.2 Display Name
+
+Presentation Layer (React UI)
+
+#### 2.4.1.3 Type
+
+🔹 UI/Client
+
+#### 2.4.1.4 Technology
+
+React 18, TypeScript, MUI v5, Zustand, Axios
+
+#### 2.4.1.5 Order
+
+1
+
+#### 2.4.1.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | actor |
+| Color | #4CAF50 |
+| Stereotype | User Interface |
+
+### 2.4.2.0 API Gateway
+
+#### 2.4.2.1 Repository Id
+
+api_web_layer
+
+#### 2.4.2.2 Display Name
+
+API/Web Layer
+
+#### 2.4.2.3 Type
+
+🔹 API Gateway
+
+#### 2.4.2.4 Technology
+
+ASP.NET Core 8
+
+#### 2.4.2.5 Order
+
+2
+
+#### 2.4.2.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | component |
+| Color | #2196F3 |
+| Stereotype | Controller |
+
+### 2.4.3.0 Application Service
+
+#### 2.4.3.1 Repository Id
+
+application_layer
+
+#### 2.4.3.2 Display Name
+
+Application Layer
+
+#### 2.4.3.3 Type
+
+🔹 Application Service
+
+#### 2.4.3.4 Technology
+
+.NET 8
+
+#### 2.4.3.5 Order
+
+3
+
+#### 2.4.3.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | component |
+| Color | #FFC107 |
+| Stereotype | Service |
+
+### 2.4.4.0 Infrastructure
+
+#### 2.4.4.1 Repository Id
+
+infrastructure_layer
+
+#### 2.4.4.2 Display Name
+
+Infrastructure Layer
+
+#### 2.4.4.3 Type
+
+🔹 Infrastructure
+
+#### 2.4.4.4 Technology
+
+ASP.NET Core Identity, Entity Framework Core 8, SQLite
+
+#### 2.4.4.5 Order
+
+4
+
+#### 2.4.4.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | database |
+| Color | #9C27B0 |
+| Stereotype | Repository/DB |
+
+## 2.5.0.0 Interactions
+
+### 2.5.1.0 UI Event
+
+#### 2.5.1.1 Source Id
+
+presentation_layer_react
+
+#### 2.5.1.2 Target Id
+
+presentation_layer_react
+
+#### 2.5.1.3 Message
+
+Admin clicks 'Add User', UserForm modal is displayed with input fields.
+
+#### 2.5.1.4 Sequence Number
+
+1
+
+#### 2.5.1.5 Type
+
+🔹 UI Event
+
+#### 2.5.1.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.1.7 Has Return
+
+❌ No
+
+#### 2.5.1.8 Is Activation
+
+✅ Yes
+
+#### 2.5.1.9 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | Internal UI Event |
+| Method | onClick |
+| Parameters | Event object |
+| Authentication | N/A |
+| Error Handling | N/A |
+| Performance | Immediate UI response |
+
+#### 2.5.1.10 Nested Interactions
+
+- {'sourceId': 'presentation_layer_react', 'targetId': 'presentation_layer_react', 'message': 'Perform client-side validation as Admin enters user details (username, password, role). Provide real-time feedback on errors.', 'sequenceNumber': '1.1', 'type': 'Validation', 'isSynchronous': True, 'hasReturn': False, 'technicalDetails': {'protocol': 'Form State Change', 'method': 'onChange handler', 'parameters': 'Input values', 'authentication': 'N/A', 'errorHandling': 'Display error messages below invalid fields.', 'performance': 'Debounced validation for performance'}}
+
+### 2.5.2.0 API Request
+
+#### 2.5.2.1 Source Id
+
+presentation_layer_react
+
+#### 2.5.2.2 Target Id
+
+api_web_layer
+
+#### 2.5.2.3 Message
+
+Admin submits form. UI shows loading state and sends request to create user.
+
+#### 2.5.2.4 Sequence Number
+
+2
+
+#### 2.5.2.5 Type
+
+🔹 API Request
+
+#### 2.5.2.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.2.7 Return Message
+
+HTTP 201 Created with new User object or HTTP 4xx/5xx with error details.
+
+#### 2.5.2.8 Has Return
+
+✅ Yes
+
+#### 2.5.2.9 Is Activation
+
+✅ Yes
+
+#### 2.5.2.10 Technical Details
+
+##### 2.5.2.10.1 Protocol
+
+HTTPS
+
+##### 2.5.2.10.2 Method
+
+POST /api/v1/users
+
+##### 2.5.2.10.3 Parameters
+
+| Property | Value |
+|----------|-------|
+| Header | Authorization: Bearer <jwt_token> |
+| Body | CreateUserRequest DTO { username, password, roles[... |
+
+##### 2.5.2.10.4 Authentication
+
+JWT Bearer Token
+
+##### 2.5.2.10.5 Error Handling
+
+Catch block handles non-2xx responses, displays error toast/message.
+
+##### 2.5.2.10.6 Performance
+
+P95 latency should be < 200ms.
+
+### 2.5.3.0.0 Security Check
+
+#### 2.5.3.1.0 Source Id
+
+api_web_layer
+
+#### 2.5.3.2.0 Target Id
+
+api_web_layer
+
+#### 2.5.3.3.0 Message
+
+Middleware validates JWT and checks for 'Administrator' role.
+
+#### 2.5.3.4.0 Sequence Number
+
+3
+
+#### 2.5.3.5.0 Type
+
+🔹 Security Check
+
+#### 2.5.3.6.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.3.7.0 Return Message
+
+Proceeds or returns HTTP 401/403.
+
+#### 2.5.3.8.0 Has Return
+
+✅ Yes
+
+#### 2.5.3.9.0 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | ASP.NET Core Middleware |
+| Method | [Authorize(Roles = "Administrator")] |
+| Parameters | HttpContext |
+| Authentication | JWT validation |
+| Error Handling | Returns 401 Unauthorized or 403 Forbidden. |
+| Performance | Low latency, cached operations. |
+
+### 2.5.4.0.0 Service Call
+
+#### 2.5.4.1.0 Source Id
+
+api_web_layer
+
+#### 2.5.4.2.0 Target Id
+
+application_layer
+
+#### 2.5.4.3.0 Message
+
+UsersController invokes UserManagementService to create the user.
+
+#### 2.5.4.4.0 Sequence Number
+
+4
+
+#### 2.5.4.5.0 Type
+
+🔹 Service Call
+
+#### 2.5.4.6.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.4.7.0 Return Message
+
+Returns created User object or throws exception.
+
+#### 2.5.4.8.0 Has Return
+
+✅ Yes
+
+#### 2.5.4.9.0 Is Activation
+
+✅ Yes
+
+#### 2.5.4.10.0 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-process method call |
+| Method | UserManagementService.CreateUserAsync(createUserDt... |
+| Parameters | CreateUserRequest DTO |
+| Authentication | N/A (within trusted boundary) |
+| Error Handling | Catches business logic exceptions (e.g., Duplicate... |
+| Performance | Dependent on downstream services. |
+
+### 2.5.5.0.0 Data Operation
+
+#### 2.5.5.1.0 Source Id
+
+application_layer
+
+#### 2.5.5.2.0 Target Id
+
+infrastructure_layer
+
+#### 2.5.5.3.0 Message
+
+Maps DTO to ApplicationUser entity and calls UserManager to create account.
+
+#### 2.5.5.4.0 Sequence Number
+
+5
+
+#### 2.5.5.5.0 Type
+
+🔹 Data Operation
+
+#### 2.5.5.6.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.5.7.0 Return Message
+
+IdentityResult indicating success or failure.
+
+#### 2.5.5.8.0 Has Return
+
+✅ Yes
+
+#### 2.5.5.9.0 Is Activation
+
+✅ Yes
+
+#### 2.5.5.10.0 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-process method call |
+| Method | UserManager.CreateAsync(user, password) |
+| Parameters | ApplicationUser entity, plaintext password |
+| Authentication | N/A |
+| Error Handling | Returns IdentityResult with errors (e.g., Duplicat... |
+| Performance | Includes password hashing, which is CPU-intensive. |
+
+### 2.5.6.0.0 Database Transaction
+
+#### 2.5.6.1.0 Source Id
+
+infrastructure_layer
+
+#### 2.5.6.2.0 Target Id
+
+infrastructure_layer
+
+#### 2.5.6.3.0 Message
+
+Persists new user record to 'Users' table in SQLite database.
+
+#### 2.5.6.4.0 Sequence Number
+
+6
+
+#### 2.5.6.5.0 Type
+
+🔹 Database Transaction
+
+#### 2.5.6.6.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.6.7.0 Return Message
+
+Success confirmation.
+
+#### 2.5.6.8.0 Has Return
+
+✅ Yes
+
+#### 2.5.6.9.0 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | EF Core |
+| Method | DbContext.SaveChangesAsync() |
+| Parameters | User entity |
+| Authentication | Database connection string credentials. |
+| Error Handling | Throws DbUpdateException on constraint violation. |
+| Performance | Database write latency. |
+
+### 2.5.7.0.0 Data Operation
+
+#### 2.5.7.1.0 Source Id
+
+application_layer
+
+#### 2.5.7.2.0 Target Id
+
+infrastructure_layer
+
+#### 2.5.7.3.0 Message
+
+If user creation succeeded, assigns selected roles to the new user.
+
+#### 2.5.7.4.0 Sequence Number
+
+7
+
+#### 2.5.7.5.0 Type
+
+🔹 Data Operation
+
+#### 2.5.7.6.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.7.7.0 Return Message
+
+IdentityResult indicating success or failure.
+
+#### 2.5.7.8.0 Has Return
+
+✅ Yes
+
+#### 2.5.7.9.0 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-process method call |
+| Method | UserManager.AddToRolesAsync(user, roles) |
+| Parameters | ApplicationUser entity, list of role names |
+| Authentication | N/A |
+| Error Handling | Returns IdentityResult with errors. |
+| Performance | Database write latency to 'UserRoles' table. |
+
+### 2.5.8.0.0 Audit
+
+#### 2.5.8.1.0 Source Id
+
+application_layer
+
+#### 2.5.8.2.0 Target Id
+
+infrastructure_layer
+
+#### 2.5.8.3.0 Message
+
+Triggers an audit event for the security-sensitive user creation action.
+
+#### 2.5.8.4.0 Sequence Number
+
+8
+
+#### 2.5.8.5.0 Type
+
+🔹 Audit
+
+#### 2.5.8.6.0 Is Synchronous
+
+❌ No
+
+#### 2.5.8.7.0 Has Return
+
+❌ No
+
+#### 2.5.8.8.0 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-process event or direct service call |
+| Method | AuditService.LogAuditEventAsync(auditEvent) |
+| Parameters | AuditEvent object { Action: 'UserCreated', UserId,... |
+| Authentication | N/A |
+| Error Handling | Logged to system logs if audit persistence fails; ... |
+| Performance | Asynchronous to avoid blocking the user creation f... |
+
+### 2.5.9.0.0 Service Return
+
+#### 2.5.9.1.0 Source Id
+
+application_layer
+
+#### 2.5.9.2.0 Target Id
+
+api_web_layer
+
+#### 2.5.9.3.0 Message
+
+Returns the newly created User DTO.
+
+#### 2.5.9.4.0 Sequence Number
+
+9
+
+#### 2.5.9.5.0 Type
+
+🔹 Service Return
+
+#### 2.5.9.6.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.9.7.0 Has Return
+
+✅ Yes
+
+#### 2.5.9.8.0 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-process method return |
+| Method | return userDto |
+| Parameters | UserResponse DTO |
+| Authentication | N/A |
+| Error Handling | N/A |
+| Performance | Minimal overhead. |
+
+### 2.5.10.0.0 API Response
+
+#### 2.5.10.1.0 Source Id
+
+api_web_layer
+
+#### 2.5.10.2.0 Target Id
+
+presentation_layer_react
+
+#### 2.5.10.3.0 Message
+
+Responds with HTTP 201 Created and the new user's data.
+
+#### 2.5.10.4.0 Sequence Number
+
+10
+
+#### 2.5.10.5.0 Type
+
+🔹 API Response
+
+#### 2.5.10.6.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.10.7.0 Has Return
+
+✅ Yes
+
+#### 2.5.10.8.0 Technical Details
+
+##### 2.5.10.8.1 Protocol
+
+HTTPS
+
+##### 2.5.10.8.2 Method
+
+HTTP 201 Created
+
+##### 2.5.10.8.3 Parameters
+
+| Property | Value |
+|----------|-------|
+| Body | UserResponse DTO |
+
+##### 2.5.10.8.4 Authentication
+
+N/A
+
+##### 2.5.10.8.5 Error Handling
+
+N/A
+
+##### 2.5.10.8.6 Performance
+
+Network latency.
+
+### 2.5.11.0.0 UI State Update
+
+#### 2.5.11.1.0 Source Id
+
+presentation_layer_react
+
+#### 2.5.11.2.0 Target Id
+
+presentation_layer_react
+
+#### 2.5.11.3.0 Message
+
+On success, hides loading state, closes modal, updates Zustand store, and shows success toast.
+
+#### 2.5.11.4.0 Sequence Number
+
+11
+
+#### 2.5.11.5.0 Type
+
+🔹 UI State Update
+
+#### 2.5.11.6.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.11.7.0 Has Return
+
+❌ No
+
+#### 2.5.11.8.0 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | Internal State Management |
+| Method | zustandStore.addUser() |
+| Parameters | New user object |
+| Authentication | N/A |
+| Error Handling | N/A |
+| Performance | Triggers a component re-render. |
+
+## 2.6.0.0.0 Notes
+
+### 2.6.1.0.0 Content
+
+#### 2.6.1.1.0 Content
+
+Client-Side Validation: The React UI performs initial validation to provide immediate feedback, but all validation is duplicated on the server in the API Layer for security and data integrity.
+
+#### 2.6.1.2.0 Position
+
+top
+
+#### 2.6.1.3.0 Participant Id
+
+presentation_layer_react
+
+#### 2.6.1.4.0 Sequence Number
+
+1
+
+### 2.6.2.0.0 Content
+
+#### 2.6.2.1.0 Content
+
+Global Exception Handling: A middleware in the API Layer catches unhandled exceptions from the Application Layer and maps them to appropriate HTTP 4xx/5xx responses, preventing stack trace leaks.
+
+#### 2.6.2.2.0 Position
+
+bottom
+
+#### 2.6.2.3.0 Participant Id
+
+api_web_layer
+
+#### 2.6.2.4.0 Sequence Number
+
+4
+
+### 2.6.3.0.0 Content
+
+#### 2.6.3.1.0 Content
+
+Audit Logging: Security-sensitive operations like user creation, role changes, and password resets are logged to a separate, tamper-evident AuditLog table for compliance.
+
+#### 2.6.3.2.0 Position
+
+bottom
+
+#### 2.6.3.3.0 Participant Id
+
+infrastructure_layer
+
+#### 2.6.3.4.0 Sequence Number
+
+8
+
+## 2.7.0.0.0 Implementation Guidance
+
+| Property | Value |
+|----------|-------|
+| Security Requirements | Authentication is handled via JWT Bearer tokens. A... |
+| Performance Targets | Client-side UI response to user input must be imme... |
+| Error Handling Strategy | Client-side form validation provides instant feedb... |
+| Testing Considerations | Unit tests for the UserManagementService using a m... |
+| Monitoring Requirements | Log all incoming API requests to the Users endpoin... |
+| Deployment Considerations | Database migrations for the Identity and AuditLog ... |
+

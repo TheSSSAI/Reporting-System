@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Organism: Diff Viewer</title>
+    <style>
+        /* --- 1. DESIGN TOKENS & SETUP --- */
+        :root {
+            /* Colors */
+            --color-diff-add-bg: rgba(46, 125, 50, 0.15);
+            --color-diff-remove-bg: rgba(211, 47, 47, 0.15);
+            --color-diff-line-num: #6c757d;
+            --color-code-bg: #f8f9fa;
+            --color-border: #dee2e6;
+            --color-text-primary: #212529;
+            --color-text-secondary: #6c757d;
+            --color-bg-light: #f1f3f5;
+
+            /* Typography */
+            --font-family-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            --font-family-monospace: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            --font-size-sm: 0.875rem;
+            --font-size-md: 1rem;
+            --line-height-base: 1.5;
+
+            /* Spacing */
+            --spacing-sm: 8px;
+            --spacing-md: 16px;
+            --spacing-lg: 24px;
+            --spacing-xl: 32px;
+
+            /* Borders */
+            --border-radius-main: 8px;
+        }
+
+        /* --- 2. BASE & SHOWCASE STYLES --- */
+        body {
+            font-family: var(--font-family-sans);
+            background-color: #e9ecef;
+            color: var(--color-text-primary);
+            margin: 0;
+            padding: var(--spacing-xl);
+        }
+
+        .showcase {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: var(--spacing-lg);
+            border-radius: var(--border-radius-main);
+        }
+
+        h1, h2, p {
+            margin: 0 0 var(--spacing-md) 0;
+        }
+        h2 {
+            margin-top: var(--spacing-xl);
+            padding-bottom: var(--spacing-sm);
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        /* --- 3. DIFF VIEWER COMPONENT --- */
+        .diff-viewer {
+            font-family: var(--font-family-monospace);
+            font-size: var(--font-size-sm);
+            border: 1px solid var(--color-border);
+            border-radius: var(--border-radius-main);
+            overflow: hidden;
+            background-color: var(--color-code-bg);
+        }
+
+        /* --- Side-by-Side Variant --- */
+        .diff-viewer--side-by-side {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .diff-viewer__pane {
+            overflow-x: auto;
+        }
+
+        .diff-viewer__pane:first-of-type {
+            border-right: 1px solid var(--color-border);
+        }
+
+        .diff-viewer__header {
+            padding: var(--spacing-sm) var(--spacing-md);
+            background-color: var(--color-bg-light);
+            border-bottom: 1px solid var(--color-border);
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+
+        .diff-viewer__code {
+            margin: 0;
+            white-space: pre;
+            font-family: inherit;
+            font-size: inherit;
+        }
+
+        .diff-viewer__line {
+            display: flex;
+            padding: 2px var(--spacing-md) 2px var(--spacing-sm);
+            min-height: 22px;
+            line-height: 20px;
+        }
+
+        .diff-viewer__line-num {
+            display: inline-block;
+            width: 30px;
+            padding-right: var(--spacing-md);
+            color: var(--color-diff-line-num);
+            text-align: right;
+            flex-shrink: 0;
+            user-select: none;
+        }
+
+        .diff-viewer__line-content {
+            flex-grow: 1;
+        }
+
+        .diff-viewer__line--added {
+            background-color: var(--color-diff-add-bg);
+        }
+
+        .diff-viewer__line--added .diff-viewer__line-content::before {
+            content: '+';
+            margin-right: var(--spacing-sm);
+            color: #2e7d32;
+            font-weight: bold;
+        }
+
+        .diff-viewer__line--removed {
+            background-color: var(--color-diff-remove-bg);
+        }
+
+        .diff-viewer__line--removed .diff-viewer__line-content::before {
+            content: '-';
+            margin-right: var(--spacing-sm);
+            color: #d32f2f;
+            font-weight: bold;
+        }
+
+        .diff-viewer__line--empty {
+            background-color: #f1f3f5;
+        }
+
+        /* --- Inline Variant --- */
+        .diff-viewer--inline .diff-viewer__header {
+            text-align: center;
+        }
+
+        /* --- Responsive Adaptations for Side-by-Side --- */
+        @media (max-width: 900px) {
+            .diff-viewer--side-by-side {
+                grid-template-columns: 1fr; /* Switch to stacked layout */
+            }
+
+            .diff-viewer--side-by-side .diff-viewer__pane:first-of-type {
+                border-right: none;
+                border-bottom: 1px solid var(--color-border);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="showcase">
+        <h1>Diff Viewer</h1>
+        <p>A component for comparing two blocks of text, mimicking a code diff tool.</p>
+
+        <section>
+            <h2>Side-by-Side (Responsive)</h2>
+            <p>This view shows the original and changed versions in two columns on wide screens, and stacks them on screens narrower than 900px.</p>
+            <div class="diff-viewer diff-viewer--side-by-side">
+                <div class="diff-viewer__pane">
+                    <header class="diff-viewer__header">Original (Version 3)</header>
+                    <pre class="diff-viewer__code"><code><span class="diff-viewer__line"><span class="diff-viewer__line-num">1</span><span class="diff-viewer__line-content">{</span></span><span class="diff-viewer__line"><span class="diff-viewer__line-num">2</span><span class="diff-viewer__line-content">  "reportName": "Weekly Sales",</span></span><span class="diff-viewer__line diff-viewer__line--removed"><span class="diff-viewer__line-num">3</span><span class="diff-viewer__line-content">  "format": "CSV",</span></span><span class="diff-viewer__line"><span class="diff-viewer__line-num">4</span><span class="diff-viewer__line-content">  "schedule": "0 8 * * 1",</span></span><span class="diff-viewer__line diff-viewer__line--removed"><span class="diff-viewer__line-num">5</span><span class="diff-viewer__line-content">  "recipients": [</span></span><span class="diff-viewer__line diff-viewer__line--removed"><span class="diff-viewer__line-num">6</span><span class="diff-viewer__line-content">    "management@example.com"</span></span><span class="diff-viewer__line diff-viewer__line--removed"><span class="diff-viewer__line-num">7</span><span class="diff-viewer__line-content">  ]</span></span><span class="diff-viewer__line diff-viewer__line--empty"><span class="diff-viewer__line-num"></span><span class="diff-viewer__line-content"></span></span><span class="diff-viewer__line diff-viewer__line--empty"><span class="diff-viewer__line-num"></span><span class="diff-viewer__line-content"></span></span><span class="diff-viewer__line"><span class="diff-viewer__line-num">8</span><span class="diff-viewer__line-content">}</span></span></code></pre>
+                </div>
+                <div class="diff-viewer__pane">
+                    <header class="diff-viewer__header">Changed (Version 4)</header>
+                    <pre class="diff-viewer__code"><code><span class="diff-viewer__line"><span class="diff-viewer__line-num">1</span><span class="diff-viewer__line-content">{</span></span><span class="diff-viewer__line"><span class="diff-viewer__line-num">2</span><span class="diff-viewer__line-content">  "reportName": "Weekly Sales",</span></span><span class="diff-viewer__line diff-viewer__line--added"><span class="diff-viewer__line-num">3</span><span class="diff-viewer__line-content">  "format": "PDF",</span></span><span class="diff-viewer__line"><span class="diff-viewer__line-num">4</span><span class="diff-viewer__line-content">  "schedule": "0 8 * * 1",</span></span><span class="diff-viewer__line diff-viewer__line--added"><span class="diff-viewer__line-num">5</span><span class="diff-viewer__line-content">  "delivery": {</span></span><span class="diff-viewer__line diff-viewer__line--added"><span class="diff-viewer__line-num">6</span><span class="diff-viewer__line-content">    "type": "email",</span></span><span class="diff-viewer__line diff-viewer__line--added"><span class="diff-viewer__line-num">7</span><span class="diff-viewer__line-content">    "recipients": [</span></span><span class="diff-viewer__line diff-viewer__line--added"><span class="diff-viewer__line-num">8</span><span class="diff-viewer__line-content">      "management@example.com",</span></span><span class="diff-viewer__line diff-viewer__line--added"><span class="diff-viewer__line-num">9</span><span class="diff-viewer__line-content">      "sales-team@example.com"</span></span><span class="diff-viewer__line diff-viewer__line--added"><span class="diff-viewer__line-num">10</span><span class="diff-viewer__line-content">    ]</span></span><span class="diff-viewer__line diff-viewer__line--added"><span class="diff-viewer__line-num">11</span><span class="diff-viewer__line-content">  }</span></span><span class="diff-viewer__line"><span class="diff-viewer__line-num">12</span><span class="diff-viewer__line-content">}</span></span></code></pre>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>Inline</h2>
+            <p>This view shows changes in a single, unified column.</p>
+            <div class="diff-viewer diff-viewer--inline">
+                <header class="diff-viewer__header">Changes from Version 3 to Version 4</header>
+                <div class="diff-viewer__pane">
+                    <pre class="diff-viewer__code"><code><span class="diff-viewer__line"><span class="diff-viewer__line-num">1</span><span class="diff-viewer__line-content">{</span></span><span class="diff-viewer__line"><span class="diff-viewer__line-num">2</span><span class="diff-viewer__line-content">  "reportName": "Weekly Sales",</span></span><span class="diff-viewer__line diff-viewer__line--removed"><span class="diff-viewer__line-num">3</span><span class="diff-viewer__line-content">  "format": "CSV",</span></span><span class="diff-viewer__line diff-viewer__line--added"><span class="diff-viewer__line-num">3</span><span class="diff-viewer__line-content">  "format": "PDF",</span></span><span class="diff-viewer__line"><span class="diff-viewer__line-num">4</span><span class="diff-viewer__line-content">  "schedule": "0 8 * * 1",</span></span><span class="diff-viewer__line diff-viewer__line--removed"><span class="diff-viewer__line-num">5</span><span class="diff-viewer__line-content">  "recipients": [</span></span><span class="diff-viewer__line diff-viewer__line--removed"><span class="diff-viewer__line-num">6</span><span class="diff-viewer__line-content">    "management@example.com"</span></span><span class="diff-viewer__line diff-viewer__line--removed"><span class="diff-viewer__line-num">7</span><span class="diff-viewer__line-content">  ]</span></span><span class="diff-viewer__line diff-viewer__line--added"><span class="diff-viewer__line-num">5</span><span class="diff-viewer__line-content">  "delivery": {</span></span><span class="diff-viewer__line diff-viewer__line--added"><span class="diff-viewer__line-num">6</span><span class="diff-viewer__line-content">    "type": "email",</span></span><span class="diff-viewer__line diff-viewer__line--added"><span class="diff-viewer__line-num">7</span><span class="diff-viewer__line-content">    "recipients": [</span></span><span class="diff-viewer__line diff-viewer__line--added"><span class="diff-viewer__line-num">8</span><span class="diff-viewer__line-content">      "management@example.com",</span></span><span class="diff-viewer__line diff-viewer__line--added"><span class="diff-viewer__line-num">9</span><span class="diff-viewer__line-content">      "sales-team@example.com"</span></span><span class="diff-viewer__line diff-viewer__line--added"><span class="diff-viewer__line-num">10</span><span class="diff-viewer__line-content">    ]</span></span><span class="diff-viewer__line diff-viewer__line--added"><span class="diff-viewer__line-num">11</span><span class="diff-viewer__line-content">  }</span></span><span class="diff-viewer__line"><span class="diff-viewer__line-num">12</span><span class="diff-viewer__line-content">}</span></span></code></pre>
+                </div>
+            </div>
+        </section>
+    </div>
+	
+	<div class="showcase" style="margin-top: 2rem;"> 
+		<h2> Component Variations</h2>
+      	<div>
+        	<h3>Variant Name : "side_by_side"</h3>
+			<p style="color: #6c757d; font-size: 0.9rem; margin-bottom: 1rem;">Displays two versions of the content in two parallel columns for direct comparison.</p>
+			<!-- variant html -->
+			<div class="diff-viewer diff-viewer--side-by-side" style="max-height: 200px; overflow-y: auto;">
+                <div class="diff-viewer__pane">
+                    <header class="diff-viewer__header">Original</header>
+                    <pre class="diff-viewer__code"><code><span class="diff-viewer__line diff-viewer__line--removed"><span class="diff-viewer__line-num">1</span><span class="diff-viewer__line-content">"color": "blue",</span></span><span class="diff-viewer__line"><span class="diff-viewer__line-num">2</span><span class="diff-viewer__line-content">"size": "medium"</span></span></code></pre>
+                </div>
+                <div class="diff-viewer__pane">
+                    <header class="diff-viewer__header">Changed</header>
+                    <pre class="diff-viewer__code"><code><span class="diff-viewer__line diff-viewer__line--added"><span class="diff-viewer__line-num">1</span><span class="diff-viewer__line-content">"color": "red",</span></span><span class="diff-viewer__line"><span class="diff-viewer__line-num">2</span><span class="diff-viewer__line-content">"size": "medium"</span></span></code></pre>
+                </div>
+            </div>
+		</div>
+      	<div style="margin-top: 2rem;">
+        	<h3>Variant Name : "inline"</h3>
+			<p style="color: #6c757d; font-size: 0.9rem; margin-bottom: 1rem;">Displays changes in a single, unified view, interleaving removed and added lines.</p>
+			<!-- variant html -->
+			<div class="diff-viewer diff-viewer--inline" style="max-height: 200px; overflow-y: auto;">
+                <div class="diff-viewer__pane">
+                    <header class="diff-viewer__header">Changes</header>
+                     <pre class="diff-viewer__code"><code><span class="diff-viewer__line diff-viewer__line--removed"><span class="diff-viewer__line-num">1</span><span class="diff-viewer__line-content">"color": "blue",</span></span><span class="diff-viewer__line diff-viewer__line--added"><span class="diff-viewer__line-num">1</span><span class="diff-viewer__line-content">"color": "red",</span></span><span class="diff-viewer__line"><span class="diff-viewer__line-num">2</span><span class="diff-viewer__line-content">"size": "medium"</span></span></code></pre>
+                </div>
+            </div>
+		</div>
+	 </div>
+	
+</body>
+</html>

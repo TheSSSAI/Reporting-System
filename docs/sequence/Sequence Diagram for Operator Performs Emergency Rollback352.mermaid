@@ -1,0 +1,33 @@
+sequenceDiagram
+    participant "Operator" as Operator
+    participant "CI/CD Pipeline" as CICDPipeline
+    participant "Feature Flag System" as FeatureFlagSystem
+    participant "DB Migration Tool" as DBMigrationTool
+    participant "Application Database" as ApplicationDatabase
+    participant "TransformationEngine.Api" as TransformationEngineApi
+
+    activate CICDPipeline
+    Operator->>CICDPipeline: 1. 1. Triggers 'Rollback-DataTransformation-Feature' job
+    CICDPipeline-->>Operator: 2. Acknowledges job start, returns job URL
+    activate FeatureFlagSystem
+    CICDPipeline->>FeatureFlagSystem: 2. 3. [Rollback Step 1] Disables 'DataTransformationFeature' flag
+    FeatureFlagSystem-->>CICDPipeline: 4. 200 OK - Flag updated
+    activate DBMigrationTool
+    CICDPipeline->>DBMigrationTool: 3. 5. [Rollback Step 2] Invokes migration to revert schema
+    DBMigrationTool-->>CICDPipeline: 8. Exit Code 0 (Success)
+    activate ApplicationDatabase
+    DBMigrationTool->>ApplicationDatabase: 4. 6. Executes Down() migration script in a transaction
+    ApplicationDatabase-->>DBMigrationTool: 7. Transaction committed successfully
+    CICDPipeline->>Operator: 5. 9. Notifies of successful rollback completion
+    TransformationEngineApi->>FeatureFlagSystem: 6. 10. [Loop] On next request, checks feature flag status
+    FeatureFlagSystem-->>TransformationEngineApi: 11. Returns { 'DataTransformationFeature': false }
+    TransformationEngineApi->>TransformationEngineApi: 7. 12. Routes request to legacy transformation logic
+
+    note over CICDPipeline: Audit Requirement: The CI/CD pipeline must log the identity of the operator who triggered the rol...
+    note over DBMigrationTool: Exception Handling: If the DB migration script fails (step 6), the database's transactional integ...
+    note over TransformationEngineApi: Observability: Post-rollback, monitoring systems must be checked to confirm that application erro...
+
+    deactivate ApplicationDatabase
+    deactivate DBMigrationTool
+    deactivate FeatureFlagSystem
+    deactivate CICDPipeline

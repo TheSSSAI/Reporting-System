@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DatePicker Component</title>
+    <style>
+        /* --- Design System & Base Styles --- */
+        :root {
+            --color-primary-500: #0068FF;
+            --color-primary-100: #E6F0FF;
+            --color-gray-50: #F8F9FA;
+            --color-gray-100: #F1F3F5;
+            --color-gray-300: #DEE2E6;
+            --color-gray-400: #CED4DA;
+            --color-gray-600: #868E96;
+            --color-gray-700: #495057;
+            --color-gray-900: #212529;
+            --color-error: #D32F2F;
+            --color-white: #FFFFFF;
+            --color-focus-shadow: rgba(0, 104, 255, 0.1);
+            --font-family-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            --font-size-body: 16px;
+            --font-size-caption: 14px;
+            --spacing-xs: 4px;
+            --spacing-sm: 8px;
+            --spacing-md: 16px;
+            --spacing-lg: 24px;
+            --border-radius-main: 8px;
+            --shadow-md: 0 4px 6px rgba(0,0,0,0.1), 0 2px 4px rgba(0,0,0,0.06);
+            --transition-fast: 0.2s ease-in-out;
+        }
+
+        body {
+            font-family: var(--font-family-sans);
+            background-color: var(--color-gray-50);
+            color: var(--color-gray-900);
+            padding: var(--spacing-lg);
+        }
+
+        .showcase {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .showcase-section {
+            background-color: var(--color-white);
+            padding: var(--spacing-lg);
+            border-radius: var(--border-radius-main);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .showcase-section h2 {
+            margin-top: 0;
+            margin-bottom: var(--spacing-md);
+            border-bottom: 1px solid var(--color-gray-300);
+            padding-bottom: var(--spacing-sm);
+        }
+
+        .component-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: var(--spacing-lg);
+            align-items: start;
+        }
+        
+        .component-display h4 {
+            margin-top: 0;
+            margin-bottom: var(--spacing-sm);
+            font-weight: 600;
+        }
+
+        /* --- DatePicker Component CSS --- */
+        .datepicker-wrapper {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .datepicker-input-container {
+            position: relative;
+        }
+
+        .datepicker__input {
+            width: 100%;
+            padding: 12px 40px 12px 16px;
+            font-size: var(--font-size-body);
+            font-family: var(--font-family-sans);
+            border: 1px solid var(--color-gray-400);
+            border-radius: var(--border-radius-main);
+            background: var(--color-white);
+            transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+        }
+
+        .datepicker__input:focus {
+            outline: none;
+            border-color: var(--color-primary-500);
+            box-shadow: 0 0 0 3px var(--color-focus-shadow);
+        }
+
+        .datepicker__icon {
+            position: absolute;
+            top: 50%;
+            right: 12px;
+            transform: translateY(-50%);
+            color: var(--color-gray-600);
+            pointer-events: none;
+            width: 20px;
+            height: 20px;
+        }
+
+        .datepicker__calendar {
+            visibility: hidden;
+            opacity: 0;
+            transform: translateY(-10px);
+            position: absolute;
+            top: calc(100% + var(--spacing-sm));
+            left: 0;
+            z-index: 1000;
+            background: var(--color-white);
+            border: 1px solid var(--color-gray-300);
+            border-radius: var(--border-radius-main);
+            box-shadow: var(--shadow-md);
+            padding: var(--spacing-md);
+            transition: opacity var(--transition-fast), transform var(--transition-fast);
+            user-select: none;
+            width: 312px;
+        }
+
+        /* --- Component States --- */
+        .datepicker-wrapper.is-open .datepicker__calendar,
+        .datepicker-wrapper:focus-within .datepicker__calendar {
+            visibility: visible;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .datepicker-wrapper.is-disabled .datepicker__input {
+            background-color: var(--color-gray-100);
+            cursor: not-allowed;
+            color: var(--color-gray-600);
+        }
+
+        .datepicker-wrapper.is-disabled .datepicker__icon {
+            color: var(--color-gray-400);
+        }
+
+        .datepicker-wrapper.has-error .datepicker__input {
+            border-color: var(--color-error);
+        }
+        .datepicker-wrapper.has-error .datepicker__input:focus {
+             box-shadow: 0 0 0 3px rgba(211, 47, 47, 0.1);
+        }
+
+        .error-message {
+            font-size: var(--font-size-caption);
+            color: var(--color-error);
+            margin-top: var(--spacing-xs);
+        }
+
+        /* --- Calendar Internals --- */
+        .datepicker__header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-md);
+            padding: 0 var(--spacing-xs);
+            font-weight: 600;
+            color: var(--color-gray-900);
+        }
+
+        .datepicker__nav-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: var(--spacing-xs);
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--color-gray-700);
+        }
+
+        .datepicker__nav-btn:hover {
+            background-color: var(--color-gray-100);
+        }
+
+        .datepicker__grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: var(--spacing-xs);
+            text-align: center;
+        }
+
+        .datepicker__day-name {
+            font-size: var(--font-size-caption);
+            font-weight: 600;
+            color: var(--color-gray-600);
+            padding-bottom: var(--spacing-sm);
+            width: 36px;
+            margin: auto;
+        }
+
+        .datepicker__day {
+            border: none;
+            background: none;
+            cursor: pointer;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color var(--transition-fast), color var(--transition-fast);
+            font-size: var(--font-size-caption);
+        }
+
+        .datepicker__day:not(:disabled):hover {
+            background-color: var(--color-gray-100);
+        }
+
+        .datepicker__day:disabled {
+            color: var(--color-gray-400);
+            cursor: default;
+        }
+
+        .datepicker__day.is-today {
+            font-weight: bold;
+            border: 1px solid var(--color-primary-500);
+        }
+
+        .datepicker__day.is-selected {
+            background-color: var(--color-primary-500);
+            color: var(--color-white);
+            font-weight: 600;
+        }
+        
+        .datepicker__day.is-selected:hover {
+            background-color: var(--color-primary-500);
+        }
+
+        /* --- Date Range Variant --- */
+        .datepicker__day.is-in-range {
+            background-color: var(--color-primary-100);
+            border-radius: 0;
+            color: var(--color-gray-900);
+        }
+
+        .datepicker__day.is-start-date,
+        .datepicker__day.is-end-date {
+            background-color: var(--color-primary-500);
+            color: var(--color-white);
+            font-weight: 600;
+        }
+
+        .datepicker__day.is-start-date:hover,
+        .datepicker__day.is-end-date:hover {
+            background-color: var(--color-primary-500);
+        }
+
+        .datepicker__day.is-start-date {
+            border-top-left-radius: 50%;
+            border-bottom-left-radius: 50%;
+        }
+
+        .datepicker__day.is-end-date {
+            border-top-right-radius: 50%;
+            border-bottom-right-radius: 50%;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="showcase">
+        <div class="showcase-section">
+            <h2>DatePicker Component</h2>
+            <div class="component-grid">
+                
+                <div class="component-display" id="single-date-picker-variants">
+                    <h4>Single Date Picker</h4>
+                    <label for="single-date-input" style="display: block; margin-bottom: 4px; font-size: 14px; font-weight: 500;">Select Date (Interactive)</label>
+                    <div class="datepicker-wrapper">
+                        <div class="datepicker-input-container">
+                            <input type="text" id="single-date-input" class="datepicker__input" placeholder="YYYY-MM-DD" value="2024-07-17" readonly>
+                            <svg class="datepicker__icon" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"></path></svg>
+                        </div>
+                        <div class="datepicker__calendar" role="dialog" aria-modal="true" aria-label="July 2024">
+                            <div class="datepicker__header">
+                                <button class="datepicker__nav-btn" aria-label="Previous month"><svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z"/></svg></button>
+                                <span>July 2024</span>
+                                <button class="datepicker__nav-btn" aria-label="Next month"><svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/></svg></button>
+                            </div>
+                            <div class="datepicker__grid">
+                                <div class="datepicker__day-name">Su</div>
+                                <div class="datepicker__day-name">Mo</div>
+                                <div class="datepicker__day-name">Tu</div>
+                                <div class="datepicker__day-name">We</div>
+                                <div class="datepicker__day-name">Th</div>
+                                <div class="datepicker__day-name">Fr</div>
+                                <div class="datepicker__day-name">Sa</div>
+                                <!-- Days -->
+                                <button class="datepicker__day" disabled>30</button>
+                                <button class="datepicker__day">1</button>
+                                <button class="datepicker__day">2</button>
+                                <button class="datepicker__day">3</button>
+                                <button class="datepicker__day">4</button>
+                                <button class="datepicker__day">5</button>
+                                <button class="datepicker__day">6</button>
+                                <button class="datepicker__day">7</button>
+                                <button class="datepicker__day">8</button>
+                                <button class="datepicker__day">9</button>
+                                <button class="datepicker__day is-today">10</button>
+                                <button class="datepicker__day">11</button>
+                                <button class="datepicker__day">12</button>
+                                <button class="datepicker__day">13</button>
+                                <button class="datepicker__day">14</button>
+                                <button class="datepicker__day">15</button>
+                                <button class="datepicker__day">16</button>
+                                <button class="datepicker__day is-selected">17</button>
+                                <button class="datepicker__day">18</button>
+                                <button class="datepicker__day">19</button>
+                                <button class="datepicker__day">20</button>
+                                <button class="datepicker__day">21</button>
+                                <button class="datepicker__day">22</button>
+                                <button class="datepicker__day">23</button>
+                                <button class="datepicker__day">24</button>
+                                <button class="datepicker__day">25</button>
+                                <button class="datepicker__day">26</button>
+                                <button class="datepicker__day">27</button>
+                                <button class="datepicker__day">28</button>
+                                <button class="datepicker__day">29</button>
+                                <button class="datepicker__day">30</button>
+                                <button class="datepicker__day">31</button>
+                                <button class="datepicker__day" disabled>1</button>
+                                <button class="datepicker__day" disabled>2</button>
+                                <button class="datepicker__day" disabled>3</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="component-display" id="date-range-picker-variants">
+                    <h4>Date Range Picker</h4>
+                    <label for="range-date-input" style="display: block; margin-bottom: 4px; font-size: 14px; font-weight: 500;">Select Date Range (Open State)</label>
+                    <div class="datepicker-wrapper is-open">
+                        <div class="datepicker-input-container">
+                            <input type="text" id="range-date-input" class="datepicker__input" placeholder="YYYY-MM-DD" value="2024-07-15 to 2024-07-20" readonly>
+                            <svg class="datepicker__icon" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"></path></svg>
+                        </div>
+                        <div class="datepicker__calendar" role="dialog" aria-modal="true" aria-label="July 2024">
+                            <div class="datepicker__header">
+                                <button class="datepicker__nav-btn" aria-label="Previous month"><svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z"/></svg></button>
+                                <span>July 2024</span>
+                                <button class="datepicker__nav-btn" aria-label="Next month"><svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/></svg></button>
+                            </div>
+                            <div class="datepicker__grid">
+                                <div class="datepicker__day-name">Su</div><div class="datepicker__day-name">Mo</div><div class="datepicker__day-name">Tu</div><div class="datepicker__day-name">We</div><div class="datepicker__day-name">Th</div><div class="datepicker__day-name">Fr</div><div class="datepicker__day-name">Sa</div>
+                                <button class="datepicker__day" disabled>30</button>
+                                <button class="datepicker__day">1</button><button class="datepicker__day">2</button><button class="datepicker__day">3</button><button class="datepicker__day">4</button><button class="datepicker__day">5</button><button class="datepicker__day">6</button>
+                                <button class="datepicker__day">7</button><button class="datepicker__day">8</button><button class="datepicker__day">9</button><button class="datepicker__day is-today">10</button><button class="datepicker__day">11</button><button class="datepicker__day">12</button><button class="datepicker__day">13</button>
+                                <button class="datepicker__day">14</button>
+                                <button class="datepicker__day is-start-date">15</button>
+                                <button class="datepicker__day is-in-range">16</button>
+                                <button class="datepicker__day is-in-range">17</button>
+                                <button class="datepicker__day is-in-range">18</button>
+                                <button class="datepicker__day is-in-range">19</button>
+                                <button class="datepicker__day is-end-date">20</button>
+                                <button class="datepicker__day">21</button><button class="datepicker__day">22</button><button class="datepicker__day">23</button><button class="datepicker__day">24</button><button class="datepicker__day">25</button><button class="datepicker__day">26</button><button class="datepicker__day">27</button>
+                                <button class="datepicker__day">28</button><button class="datepicker__day">29</button><button class="datepicker__day">30</button><button class="datepicker__day">31</button>
+                                <button class="datepicker__day" disabled>1</button><button class="datepicker__day" disabled>2</button><button class="datepicker__day" disabled>3</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="component-display" id="states">
+                    <h4>States</h4>
+                    <div style="display: flex; flex-direction: column; gap: 16px;">
+                        <div>
+                             <label for="disabled-date-input" style="display: block; margin-bottom: 4px; font-size: 14px; font-weight: 500;">Disabled</label>
+                            <div class="datepicker-wrapper is-disabled">
+                                <div class="datepicker-input-container">
+                                    <input type="text" id="disabled-date-input" class="datepicker__input" placeholder="Disabled" disabled>
+                                    <svg class="datepicker__icon" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"></path></svg>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="error-date-input" style="display: block; margin-bottom: 4px; font-size: 14px; font-weight: 500;">Error</label>
+                            <div class="datepicker-wrapper has-error">
+                                <div class="datepicker-input-container">
+                                    <input type="text" id="error-date-input" class="datepicker__input" placeholder="Invalid date" value="2024-13-40">
+                                    <svg class="datepicker__icon" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"></path></svg>
+                                </div>
+                                <div class="error-message">Please enter a valid date.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+	
+	<div class="showcase-section">
+      <h2>Component Variations</h2>
+      <div>
+        <h4>Variant Name: single_date</h4>
+		<p class="variation-description">Allows a user to select a single calendar date.</p>
+		<div class="component-display" id="single_date-vrient-1">
+             <label for="single-date-input-var" style="display: block; margin-bottom: 4px; font-size: 14px; font-weight: 500;">Select Date</label>
+            <div class="datepicker-wrapper">
+                <div class="datepicker-input-container">
+                    <input type="text" id="single-date-input-var" class="datepicker__input" placeholder="YYYY-MM-DD" readonly>
+                    <svg class="datepicker__icon" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"></path></svg>
+                </div>
+            </div>
+        </div>
+      </div>
+       <div>
+        <h4>Variant Name: date_range</h4>
+		<p class="variation-description">Allows a user to select a start and end date.</p>
+		<div class="component-display" id="date_range-vrient-1">
+             <label for="range-date-input-var" style="display: block; margin-bottom: 4px; font-size: 14px; font-weight: 500;">Select Date Range</label>
+            <div class="datepicker-wrapper">
+                <div class="datepicker-input-container">
+                    <input type="text" id="range-date-input-var" class="datepicker__input" placeholder="Start Date — End Date" readonly>
+                    <svg class="datepicker__icon" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"></path></svg>
+                </div>
+            </div>
+        </div>
+      </div>
+	 </div>
+</body>
+</html>

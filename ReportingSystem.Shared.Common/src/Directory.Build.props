@@ -1,0 +1,29 @@
+<Project>
+  <!-- This file is used to set properties for all projects in the solution. -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>12.0</LangVersion>
+    
+    <!-- Code Analysis Settings -->
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    
+    <!-- Treat warnings as errors in Release builds for higher code quality -->
+    <TreatWarningsAsErrors Condition="'$(Configuration)' == 'Release'">true</TreatWarningsAsErrors>
+    
+    <!-- Common Assembly Info -->
+    <Company>YourCompany</Company>
+    <Authors>ReportingSystem Team</Authors>
+    <Product>ReportingSystem</Product>
+    <Copyright>Copyright © YourCompany 2024</Copyright>
+
+    <!-- SourceLink and Deterministic Build for better debugging and build reproducibility -->
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+
+</Project>

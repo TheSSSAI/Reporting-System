@@ -1,0 +1,620 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SideNav - Component Specifications</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            line-height: 1.6;
+            color: #2d3748;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+        
+        .component-type-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 8px;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .section {
+            margin-bottom: 40px;
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 30px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .section h2 {
+            color: #1e293b;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #4f46e5;
+            display: inline-block;
+        }
+        
+        .section h3 {
+            color: #4f46e5;
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin: 20px 0 12px 0;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .info-card {
+            background: white;
+            padding: 24px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .info-card h4 {
+            color: #374151;
+            font-weight: 600;
+            margin-bottom: 12px;
+            font-size: 1rem;
+        }
+        
+        .info-card p {
+            color: #6b7280;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .variations-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+        }
+        
+        .variation-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .variation-name {
+            font-weight: 600;
+            color: #4f46e5;
+            margin-bottom: 8px;
+        }
+        
+        .variation-code {
+            background: #f1f5f9;
+            padding: 12px;
+            border-radius: 6px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 12px;
+            color: #1e293b;
+            overflow-x: auto;
+            margin: 8px 0;
+            border-left: 4px solid #4f46e5;
+        }
+        
+        .variation-description {
+            font-size: 13px;
+            color: #64748b;
+            font-style: italic;
+        }
+        
+        .feature-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+        }
+        
+        .feature-category {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .feature-category h4 {
+            color: #374151;
+            font-weight: 600;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #f1f5f9;
+        }
+        
+        .feature-category ul {
+            list-style: none;
+        }
+        
+        .feature-category li {
+            padding: 6px 0;
+            color: #4b5563;
+            font-size: 14px;
+            position: relative;
+            padding-left: 20px;
+        }
+        
+        .feature-category li:before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #10b981;
+            font-weight: bold;
+        }
+        
+        .tokens-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 8px;
+        }
+        
+        .token {
+            background: #f0f9ff;
+            color: #0369a1;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 13px;
+            border: 1px solid #bae6fd;
+            text-align: center;
+        }
+        
+        .code-block {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 13px;
+            overflow-x: auto;
+            margin: 16px 0;
+            line-height: 1.4;
+        }
+        
+        .stats-bar {
+            background: linear-gradient(90deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-around;
+            text-align: center;
+        }
+        
+        .stat {
+            flex: 1;
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            display: block;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .header {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .section {
+                padding: 20px;
+            }
+            
+            .stats-bar {
+                flex-direction: column;
+                gap: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>SideNav</h1>
+            <div class="component-type-badge">organism Component</div>
+        </div>
+        <div class="stats-bar">
+            <div class="stat">
+                <span class="stat-number">0</span>
+                <span class="stat-label">Variations</span>
+            </div>
+            <div class="stat">
+                <span class="stat-number">18</span>
+                <span class="stat-label">Design Tokens</span>
+            </div>
+            <div class="stat">
+                <span class="stat-number">3</span>
+                <span class="stat-label">Breakpoints</span>
+            </div>
+            <div class="stat">
+                <span class="stat-number">5</span>
+                <span class="stat-label">A11y Features</span>
+            </div>
+        </div><div class="content">
+        <div class="section">
+            <h2>Component Information</h2>
+            <div class="info-grid">
+                <div class="info-card">
+                    <h4>Component Id</h4>
+                    <p>MU-nav-002</p>
+                </div>
+                <div class="info-card">
+                    <h4>Component Name</h4>
+                    <p>SideNav</p>
+                </div>
+                <div class="info-card">
+                    <h4>Component Type</h4>
+                    <p>organism</p>
+                </div>
+                <div class="info-card">
+                    <h4>Description</h4>
+                    <p>The primary vertical navigation for the application, providing access to all major sections. It can be expanded to show icons and text, or collapsed to show only icons.</p>
+                </div>
+                <div class="info-card">
+                    <h4>Design System Alignment</h4>
+                    <p>Uses design system tokens for colors, spacing, and typography. It incorporates the Icon atomic component. It defines a key part of the application's main layout structure.</p>
+                </div>
+            </div>
+        </div>
+        <div class="section">
+            <h2>Design Tokens Used</h2>
+            <div class="tokens-grid"><div class="token">--color-gray-900</div><div class="token">--color-gray-800</div><div class="token">--color-gray-700</div><div class="token">--color-gray-100</div><div class="token">--color-white</div><div class="token">--color-primary-500</div><div class="token">--color-focus-ring</div><div class="token">--space-xs</div><div class="token">--space-sm</div><div class="token">--space-md</div><div class="token">--space-lg</div><div class="token">--font-size-h4</div><div class="token">--font-size-caption</div><div class="token">--font-weight-semibold</div><div class="token">--border-radius-main</div><div class="token">--border-radius-sm</div><div class="token">--header-height</div><div class="token">--transition-base</div>
+            </div>
+        </div>
+        <div class="section">
+            <h2>Responsive Specifications</h2>
+            <div class="feature-list">
+                <div class="feature-category">
+                    <h4>Mobile Adaptations</h4>
+                    <ul><li>The SideNav is permanently in its collapsed state below 1280px.</li><li>CSS tooltips are disabled in the collapsed state below 1280px as hover is unreliable on touch devices.</li>
+                    </ul>
+                </div>
+                <div class="feature-category">
+                    <h4>Tablet Adaptations</h4>
+                    <ul><li>Same as mobile; the component is collapsed on all viewports below the 1280px desktop threshold.</li>
+                    </ul>
+                </div>
+                <div class="feature-category">
+                    <h4>Desktop Enhancements</h4>
+                    <ul><li>Defaults to the expanded state on viewports >= 1280px.</li><li>Can be toggled to a collapsed state where icons remain and text labels appear in tooltips on hover.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="section">
+            <h2>Accessibility Features</h2>
+            <div class="feature-list">
+                <div class="feature-category">
+                    <h4>Keyboard Support</h4><p>The navigation is a list of links, fully navigable using the Tab key. Enter key activates the focused link.</p>
+                </div>
+                <div class="feature-category">
+                    <h4>Screen Reader Support</h4><p>Uses a `<nav>` landmark role with an `aria-label`. Navigation items are structured as an unordered list (`<ul>`). Links contain both an icon (hidden from screen readers with `aria-hidden`) and descriptive text.</p>
+                </div>
+                <div class="feature-category">
+                    <h4>Focus Management</h4><p>A clear, high-contrast focus ring is applied to links using `:focus-visible`.</p>
+                </div>
+                <div class="feature-category">
+                    <h4>Aria Attributes</h4><ul><li>aria-label on the root `<nav>` element.</li><li>aria-current='page' on the active link.</li><li>aria-hidden='true' on decorative icons.</li></ul>
+                </div>
+                <div class="feature-category">
+                    <h4>Color Contrast</h4><p>Text and icon colors meet WCAG 2.1 AA contrast requirements against the dark background.</p>
+                </div>
+            </div>
+        </div>
+        <div class="section">
+            <h2>CSS Implementation</h2>
+            <div class="code-block">/* SideNav Component CSS */
+
+.side-nav {
+  background-color: var(--color-gray-900);
+  color: var(--color-gray-100);
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: var(--sidenav-width-expanded);
+  position: sticky;
+  top: 0;
+  transition: width var(--transition-base);
+  overflow-x: hidden;
+}
+
+/* Header / Logo */
+.side-nav__header {
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-lg);
+  height: var(--header-height);
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--color-gray-800);
+}
+
+.side-nav__logo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  text-decoration: none;
+  color: var(--color-white);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.side-nav__logo .logo-icon {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+}
+
+.side-nav__logo .logo-text {
+  font-size: var(--font-size-h4);
+  font-weight: var(--font-weight-semibold);
+  opacity: 1;
+  transition: opacity 0.1s ease-out;
+}
+
+/* Navigation Lists */
+.side-nav__main,
+.side-nav__footer {
+  list-style: none;
+  margin: 0;
+  padding: var(--space-md) 0;
+}
+
+.side-nav__main {
+  flex-grow: 1;
+  overflow-y: auto;
+}
+
+/* Navigation Item &amp; Link */
+.side-nav__item {
+  padding: 0 var(--space-md);
+}
+
+.side-nav__link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--border-radius-main);
+  text-decoration: none;
+  color: var(--color-gray-100);
+  white-space: nowrap;
+  overflow: hidden;
+  position: relative; /* For tooltips */
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.side-nav__link .icon {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+}
+
+.side-nav__link-text {
+  opacity: 1;
+  transition: opacity 0.1s ease-out;
+}
+
+/* Link States */
+.side-nav__link:hover {
+  background-color: var(--color-gray-700);
+  color: var(--color-white);
+}
+
+.side-nav__link:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: -2px;
+  background-color: var(--color-gray-700);
+}
+
+.side-nav__link--active {
+  background-color: var(--color-gray-800);
+  color: var(--color-white);
+  font-weight: var(--font-weight-semibold);
+  box-shadow: inset 3px 0 0 0 var(--color-primary-500);
+}
+
+/* --- Collapsed State --- */
+.side-nav.is-collapsed {
+  width: var(--sidenav-width-collapsed);
+}
+
+.side-nav.is-collapsed .side-nav__logo-text,
+.side-nav.is-collapsed .side-nav__link-text {
+  opacity: 0;
+  width: 0;
+  pointer-events: none;
+}
+
+.side-nav.is-collapsed .side-nav__item {
+  padding: 0 var(--space-sm);
+}
+
+.side-nav.is-collapsed .side-nav__link {
+  justify-content: center;
+  padding: var(--space-md);
+}
+
+/* Tooltip for collapsed state */
+.side-nav.is-collapsed .side-nav__link .side-nav__tooltip {
+  visibility: hidden;
+  opacity: 0;
+  position: absolute;
+  left: calc(100% + 12px);
+  background-color: var(--color-gray-800);
+  color: var(--color-white);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-caption);
+  font-weight: 500;
+  white-space: nowrap;
+  pointer-events: none;
+  transition: opacity 0.2s, visibility 0.2s;
+  z-index: 10;
+}
+
+.side-nav.is-collapsed .side-nav__link:hover .side-nav__tooltip,
+.side-nav.is-collapsed .side-nav__link:focus-visible .side-nav__tooltip {
+  visibility: visible;
+  opacity: 1;
+  transition-delay: 0.3s;
+}
+
+/* --- Responsive Behavior --- */
+@media (max-width: 1279px) {
+  .side-nav {
+    width: var(--sidenav-width-collapsed);
+  }
+  .side-nav .side-nav__logo-text,
+  .side-nav .side-nav__link-text {
+    opacity: 0;
+    width: 0;
+    pointer-events: none;
+  }
+  .side-nav .side-nav__item {
+    padding: 0 var(--space-sm);
+  }
+  .side-nav .side-nav__link {
+    justify-content: center;
+    padding: var(--space-md);
+  }
+  .side-nav .side-nav__link .side-nav__tooltip {
+      display: none; /* Hide tooltips on touch devices */
+  }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .side-nav, .side-nav__logo-text, .side-nav__link {
+    transition: none;
+  }
+}</div>
+        </div>
+        <div class="section">
+            <h2>Implementation Notes</h2>
+            <div class="info-grid">
+                <div class="info-card">
+                    <h4>Embedded Css Architecture</h4>
+                    <p>All styles are embedded in a single `<style>` tag. Design tokens are defined as CSS custom properties. Component styling uses BEM methodology.</p>
+                </div>
+                <div class="info-card">
+                    <h4>Component Organization</h4>
+                    <p>The showcase uses a CSS Grid layout to simulate the component's place in an application shell. A checkbox hack is used to demonstrate the interactive collapsed/expanded state on desktop.</p>
+                </div>
+                <div class="info-card">
+                    <h4>Responsive Design</h4>
+                    <p>A single media query at 1279px enforces the collapsed state on smaller screens, overriding the default expanded state.</p>
+                </div>
+                <div class="info-card">
+                    <h4>Accessibility Compliance</h4>
+                    <p>Built with semantic HTML and appropriate ARIA attributes for a high level of accessibility. Reduced motion is respected for transitions.</p>
+                </div>
+                <div class="info-card">
+                    <h4>Browser Support</h4>
+                    <p>Designed for modern browsers, using flexbox, grid, and custom properties.</p>
+                </div>
+            </div>
+        </div>
+        <div class="section">
+            <h2>Usage Guidelines</h2>
+            <div class="info-grid">
+                <div class="info-card">
+                    <h4>When To Use</h4><p>As the primary, persistent navigation element for the application shell.</p>
+                </div>
+                <div class="info-card">
+                    <h4>Content Guidelines</h4><p>Link text should be concise and descriptive, ideally 1-3 words. The number of top-level items should be kept to a minimum (5-9) to avoid overwhelming the user.</p>
+                </div>
+                <div class="info-card">
+                    <h4>Placement Rules</h4><p>Should be vertically fixed to the left edge of the viewport.</p>
+                </div>
+                <div class="info-card">
+                    <h4>Customization Options</h4><ul><li style="list-style: disc; margin-left: 16px; padding-left: 0;">Add the `.is-collapsed` class to the root `.side-nav` element to toggle the collapsed state.</li><li style="list-style: disc; margin-left: 16px; padding-left: 0;">Add the `.side-nav__link--active` class to a link and set `aria-current='page'` to indicate the current page.</li></ul>
+                </div>
+            </div>
+        </div>
+        <div class="section">
+            <h2>Testing Recommendations</h2>
+            <div class="feature-list">
+                <div class="feature-category">
+                    <h4>Browser Testing</h4><p>Test in Chrome, Firefox, Safari, Edge.</p>
+                </div>
+                <div class="feature-category">
+                    <h4>Device Testing</h4><p>Verify layout on desktop (>1280px) and tablet/mobile (<1280px) viewports to check responsive behavior.</p>
+                </div>
+                <div class="feature-category">
+                    <h4>Accessibility Testing</h4><ul><li>Keyboard navigation through all links.</li><li>Screen reader testing to ensure links are announced correctly and the current page is identified.</li><li>Color contrast validation.</li></ul>
+                </div>
+                <div class="feature-category">
+                    <h4>Performance Testing</h4><p>N/A - Component is lightweight with minimal performance impact.</p>
+                </div>
+            </div>
+        </div>
+        </div>
+    </div>
+</body>
+</html>

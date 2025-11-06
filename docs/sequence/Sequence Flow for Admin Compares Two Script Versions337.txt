@@ -1,0 +1,856 @@
+# 1 Overview
+
+## 1.1 Diagram Id
+
+SEQ-UJ-005
+
+## 1.2 Name
+
+Admin Compares Two Script Versions
+
+## 1.3 Description
+
+An administrator selects two versions of a script from its history. The UI fetches the decrypted content of both versions from the backend and displays a visual, side-by-side 'diff' view highlighting the changes.
+
+## 1.4 Type
+
+🔹 UserJourney
+
+## 1.5 Purpose
+
+To allow administrators to easily understand the changes made between different versions of a script for troubleshooting or auditing.
+
+## 1.6 Complexity
+
+Medium
+
+## 1.7 Priority
+
+🟡 Medium
+
+## 1.8 Frequency
+
+OnDemand
+
+## 1.9 Participants
+
+- REPO-APP-UI-005
+- REPO-APP-API-001
+- REPO-LIB-DATA-003
+
+## 1.10 Key Interactions
+
+- Admin selects two versions from the history list and clicks 'Compare'.
+- UI makes GET requests to `/api/v1/transformations/{id}/versions/{versionNumber}` for each selected version.
+- API controller retrieves the requested `ScriptVersion` entities from the database.
+- Service decrypts the script content for each version.
+- API returns the decrypted plain-text content for both versions.
+- UI uses a component (e.g., Monaco Diff Editor) to render the visual comparison.
+
+## 1.11 Triggers
+
+- User selects two versions in the UI and initiates a comparison.
+
+## 1.12 Outcomes
+
+- A side-by-side view with highlighted differences between the two script versions is displayed to the administrator.
+
+## 1.13 Business Rules
+
+- The comparison view must present a visual 'diff' (REQ-DTR-008).
+
+## 1.14 Error Scenarios
+
+- One of the requested version numbers is invalid, API returns 404 Not Found.
+
+## 1.15 Integration Points
+
+- Control Panel UI (React)
+- Application Database
+
+# 2.0 Details
+
+## 2.1 Diagram Id
+
+SEQ-UJ-005
+
+## 2.2 Name
+
+Implementation-Ready Sequence for Script Version Comparison
+
+## 2.3 Description
+
+This sequence details the end-to-end user journey of an administrator comparing two versions of a transformation script. It covers the UI state management, parallel API requests for performance, backend authorization, data retrieval, decryption, and final rendering of the visual diff. It models both the successful data retrieval and the error handling path for invalid version requests.
+
+## 2.4 Participants
+
+### 2.4.1 Frontend Application
+
+#### 2.4.1.1 Repository Id
+
+REPO-APP-UI-005
+
+#### 2.4.1.2 Display Name
+
+React Control Panel
+
+#### 2.4.1.3 Type
+
+🔹 Frontend Application
+
+#### 2.4.1.4 Technology
+
+React 18, TypeScript, Monaco Diff Editor, Axios
+
+#### 2.4.1.5 Order
+
+1
+
+#### 2.4.1.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | actor |
+| Color | #1E90FF |
+| Stereotype | UI |
+
+### 2.4.2.0 Backend API
+
+#### 2.4.2.1 Repository Id
+
+REPO-APP-API-001
+
+#### 2.4.2.2 Display Name
+
+TransformationEngine.Api
+
+#### 2.4.2.3 Type
+
+🔹 Backend API
+
+#### 2.4.2.4 Technology
+
+ASP.NET Core 8
+
+#### 2.4.2.5 Order
+
+2
+
+#### 2.4.2.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | component |
+| Color | #2E8B57 |
+| Stereotype | API |
+
+### 2.4.3.0 Data Access Layer
+
+#### 2.4.3.1 Repository Id
+
+REPO-LIB-DATA-003
+
+#### 2.4.3.2 Display Name
+
+Data Access Library
+
+#### 2.4.3.3 Type
+
+🔹 Data Access Layer
+
+#### 2.4.3.4 Technology
+
+Entity Framework Core 8
+
+#### 2.4.3.5 Order
+
+3
+
+#### 2.4.3.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | database |
+| Color | #A52A2A |
+| Stereotype | Repository |
+
+## 2.5.0.0 Interactions
+
+### 2.5.1.0 User Interaction
+
+#### 2.5.1.1 Source Id
+
+REPO-APP-UI-005
+
+#### 2.5.1.2 Target Id
+
+REPO-APP-UI-005
+
+#### 2.5.1.3 Message
+
+1. Admin selects two script versions (e.g., v3 and v5) in the `VersionHistoryComponent` and clicks the 'Compare' button.
+
+#### 2.5.1.4 Sequence Number
+
+1
+
+#### 2.5.1.5 Type
+
+🔹 User Interaction
+
+#### 2.5.1.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.1.7 Has Return
+
+❌ No
+
+#### 2.5.1.8 Is Activation
+
+❌ No
+
+### 2.5.2.0 State Change
+
+#### 2.5.2.1 Source Id
+
+REPO-APP-UI-005
+
+#### 2.5.2.2 Target Id
+
+REPO-APP-UI-005
+
+#### 2.5.2.3 Message
+
+2. `handleCompareClick()` is invoked. UI enters loading state and initiates parallel data fetching.
+
+#### 2.5.2.4 Sequence Number
+
+2
+
+#### 2.5.2.5 Type
+
+🔹 State Change
+
+#### 2.5.2.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.2.7 Has Return
+
+❌ No
+
+#### 2.5.2.8 Is Activation
+
+✅ Yes
+
+#### 2.5.2.9 Technical Details
+
+##### 2.5.2.9.1 Protocol
+
+Internal
+
+##### 2.5.2.9.2 Method
+
+setState({ isLoading: true, error: null, contentA: '', contentB: '' })
+
+##### 2.5.2.9.3 Parameters
+
+*No items available*
+
+##### 2.5.2.9.4 Authentication
+
+N/A
+
+##### 2.5.2.9.5 Error Handling
+
+N/A
+
+##### 2.5.2.9.6 Performance
+
+Immediate UI feedback is critical.
+
+#### 2.5.2.10.0 Nested Interactions
+
+##### 2.5.2.10.1 API Request
+
+###### 2.5.2.10.1.1 Source Id
+
+REPO-APP-UI-005
+
+###### 2.5.2.10.1.2 Target Id
+
+REPO-APP-API-001
+
+###### 2.5.2.10.1.3 Message
+
+2.1. [SUCCESS PATH] Fetch content for Version A (v3).
+
+###### 2.5.2.10.1.4 Sequence Number
+
+3
+
+###### 2.5.2.10.1.5 Type
+
+🔹 API Request
+
+###### 2.5.2.10.1.6 Is Synchronous
+
+✅ Yes
+
+###### 2.5.2.10.1.7 Return Message
+
+2.1.8. [200 OK] Responds with { "content": "(decrypted script content for v3)" }.
+
+###### 2.5.2.10.1.8 Has Return
+
+✅ Yes
+
+###### 2.5.2.10.1.9 Is Activation
+
+✅ Yes
+
+###### 2.5.2.10.1.10 Technical Details
+
+####### 2.5.2.10.1.10.1 Protocol
+
+HTTP/2
+
+####### 2.5.2.10.1.10.2 Method
+
+GET /api/v1/transformations/{scriptId}/versions/3
+
+####### 2.5.2.10.1.10.3 Parameters
+
+######## 2.5.2.10.1.10.3.1 GUID
+
+######### 2.5.2.10.1.10.3.1.1 Name
+
+scriptId
+
+######### 2.5.2.10.1.10.3.1.2 Type
+
+🔹 GUID
+
+######### 2.5.2.10.1.10.3.1.3 In
+
+path
+
+######## 2.5.2.10.1.10.3.2.0 integer
+
+######### 2.5.2.10.1.10.3.2.1 Name
+
+versionNumber
+
+######### 2.5.2.10.1.10.3.2.2 Type
+
+🔹 integer
+
+######### 2.5.2.10.1.10.3.2.3 In
+
+path
+
+####### 2.5.2.10.1.10.4.0.0 Authentication
+
+JWT Bearer Token in Authorization header.
+
+####### 2.5.2.10.1.10.5.0.0 Error Handling
+
+Handled by `Promise.all` on the client.
+
+####### 2.5.2.10.1.10.6.0.0 Performance
+
+SLA: p99 < 500ms
+
+###### 2.5.2.10.1.11.0.0.0 Nested Interactions
+
+####### 2.5.2.10.1.11.1.0.0 Method Call
+
+######## 2.5.2.10.1.11.1.1.0 Source Id
+
+REPO-APP-API-001
+
+######## 2.5.2.10.1.11.1.2.0 Target Id
+
+REPO-APP-API-001
+
+######## 2.5.2.10.1.11.1.3.0 Message
+
+2.1.1. `TransformationScriptsController.GetVersionContent()` is invoked. Middleware performs authorization check.
+
+######## 2.5.2.10.1.11.1.4.0 Sequence Number
+
+4
+
+######## 2.5.2.10.1.11.1.5.0 Type
+
+🔹 Method Call
+
+######## 2.5.2.10.1.11.1.6.0 Is Synchronous
+
+✅ Yes
+
+######## 2.5.2.10.1.11.1.7.0 Has Return
+
+❌ No
+
+######## 2.5.2.10.1.11.1.8.0 Is Activation
+
+❌ No
+
+######## 2.5.2.10.1.11.1.9.0 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-process |
+| Method | GetVersionContent(Guid scriptId, int versionNumber... |
+| Authentication | [Authorize(Roles="Administrator")] attribute check... |
+
+####### 2.5.2.10.1.11.2.0.0 Method Call
+
+######## 2.5.2.10.1.11.2.1.0 Source Id
+
+REPO-APP-API-001
+
+######## 2.5.2.10.1.11.2.2.0 Target Id
+
+REPO-LIB-DATA-003
+
+######## 2.5.2.10.1.11.2.3.0 Message
+
+2.1.2. Call repository to get script version entity.
+
+######## 2.5.2.10.1.11.2.4.0 Sequence Number
+
+5
+
+######## 2.5.2.10.1.11.2.5.0 Type
+
+🔹 Method Call
+
+######## 2.5.2.10.1.11.2.6.0 Is Synchronous
+
+✅ Yes
+
+######## 2.5.2.10.1.11.2.7.0 Return Message
+
+2.1.4. Return `ScriptVersion` entity with encrypted content.
+
+######## 2.5.2.10.1.11.2.8.0 Has Return
+
+✅ Yes
+
+######## 2.5.2.10.1.11.2.9.0 Is Activation
+
+✅ Yes
+
+######## 2.5.2.10.1.11.2.10.0 Technical Details
+
+######### 2.5.2.10.1.11.2.10.1 Protocol
+
+In-process
+
+######### 2.5.2.10.1.11.2.10.2 Method
+
+ITransformationScriptRepository.GetVersionByNumberAsync(Guid scriptId, int versionNumber)
+
+######### 2.5.2.10.1.11.2.10.3 Parameters
+
+- scriptId
+- versionNumber
+
+######### 2.5.2.10.1.11.2.10.4 Error Handling
+
+Handles DB connection errors; throws NotFoundException if not found.
+
+######## 2.5.2.10.1.11.2.11.0 Nested Interactions
+
+- {'sourceId': 'REPO-LIB-DATA-003', 'targetId': 'REPO-LIB-DATA-003', 'message': '2.1.3. Execute EF Core query against database.', 'sequenceNumber': 6, 'type': 'Database Query', 'isSynchronous': True, 'returnMessage': 'Return database record.', 'hasReturn': True, 'technicalDetails': {'protocol': 'SQL', 'method': 'SELECT * FROM "ScriptVersions" WHERE "TransformationScriptId" = @p0 AND "VersionNumber" = @p1'}}
+
+####### 2.5.2.10.1.11.3.0.0 Method Call
+
+######## 2.5.2.10.1.11.3.1.0 Source Id
+
+REPO-APP-API-001
+
+######## 2.5.2.10.1.11.3.2.0 Target Id
+
+REPO-APP-API-001
+
+######## 2.5.2.10.1.11.3.3.0 Message
+
+2.1.5. `TransformationScriptService` decrypts the `scriptContent` field.
+
+######## 2.5.2.10.1.11.3.4.0 Sequence Number
+
+7
+
+######## 2.5.2.10.1.11.3.5.0 Type
+
+🔹 Method Call
+
+######## 2.5.2.10.1.11.3.6.0 Is Synchronous
+
+✅ Yes
+
+######## 2.5.2.10.1.11.3.7.0 Return Message
+
+2.1.6. Decrypted content returned.
+
+######## 2.5.2.10.1.11.3.8.0 Has Return
+
+✅ Yes
+
+######## 2.5.2.10.1.11.3.9.0 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-process |
+| Method | IEncryptionService.Decrypt(byte[] encryptedContent... |
+| Error Handling | Throws `DecryptionException` on failure. |
+
+####### 2.5.2.10.1.11.4.0.0 Return
+
+######## 2.5.2.10.1.11.4.1.0 Source Id
+
+REPO-APP-API-001
+
+######## 2.5.2.10.1.11.4.2.0 Target Id
+
+REPO-APP-API-001
+
+######## 2.5.2.10.1.11.4.3.0 Message
+
+2.1.7. Service returns decrypted content to controller.
+
+######## 2.5.2.10.1.11.4.4.0 Sequence Number
+
+8
+
+######## 2.5.2.10.1.11.4.5.0 Type
+
+🔹 Return
+
+######## 2.5.2.10.1.11.4.6.0 Is Synchronous
+
+✅ Yes
+
+######## 2.5.2.10.1.11.4.7.0 Has Return
+
+❌ No
+
+##### 2.5.2.10.2.0.0.0.0 API Request
+
+###### 2.5.2.10.2.1.0.0.0 Source Id
+
+REPO-APP-UI-005
+
+###### 2.5.2.10.2.2.0.0.0 Target Id
+
+REPO-APP-API-001
+
+###### 2.5.2.10.2.3.0.0.0 Message
+
+2.2. [ERROR PATH] Fetch content for Version B (v5 - invalid).
+
+###### 2.5.2.10.2.4.0.0.0 Sequence Number
+
+9
+
+###### 2.5.2.10.2.5.0.0.0 Type
+
+🔹 API Request
+
+###### 2.5.2.10.2.6.0.0.0 Is Synchronous
+
+✅ Yes
+
+###### 2.5.2.10.2.7.0.0.0 Return Message
+
+2.2.4. [404 Not Found] Responds with standard error object.
+
+###### 2.5.2.10.2.8.0.0.0 Has Return
+
+✅ Yes
+
+###### 2.5.2.10.2.9.0.0.0 Is Activation
+
+✅ Yes
+
+###### 2.5.2.10.2.10.0.0.0 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | HTTP/2 |
+| Method | GET /api/v1/transformations/{scriptId}/versions/5 |
+| Authentication | JWT Bearer Token in Authorization header. |
+
+###### 2.5.2.10.2.11.0.0.0 Nested Interactions
+
+- {'sourceId': 'REPO-APP-API-001', 'targetId': 'REPO-LIB-DATA-003', 'message': '2.2.1. Controller and Service call repository as before.', 'sequenceNumber': 10, 'type': 'Method Call', 'isSynchronous': True, 'returnMessage': '2.2.3. Return `null` as no entity was found.', 'hasReturn': True, 'isActivation': True, 'nestedInteractions': [{'sourceId': 'REPO-LIB-DATA-003', 'targetId': 'REPO-LIB-DATA-003', 'message': '2.2.2. EF Core query finds no matching record.', 'sequenceNumber': 11, 'type': 'Database Query', 'isSynchronous': True, 'returnMessage': 'Return empty result set.', 'hasReturn': True}]}
+
+### 2.5.3.0.0.0.0.0.0 Error Handling
+
+#### 2.5.3.1.0.0.0.0.0 Source Id
+
+REPO-APP-UI-005
+
+#### 2.5.3.2.0.0.0.0.0 Target Id
+
+REPO-APP-UI-005
+
+#### 2.5.3.3.0.0.0.0.0 Message
+
+3. `Promise.all` rejects due to the 404 response. UI enters error handling flow.
+
+#### 2.5.3.4.0.0.0.0.0 Sequence Number
+
+12
+
+#### 2.5.3.5.0.0.0.0.0 Type
+
+🔹 Error Handling
+
+#### 2.5.3.6.0.0.0.0.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.3.7.0.0.0.0.0 Has Return
+
+❌ No
+
+#### 2.5.3.8.0.0.0.0.0 Is Activation
+
+❌ No
+
+#### 2.5.3.9.0.0.0.0.0 Technical Details
+
+##### 2.5.3.9.1.0.0.0.0 Protocol
+
+Internal
+
+##### 2.5.3.9.2.0.0.0.0 Method
+
+catch(error => { ... })
+
+##### 2.5.3.9.3.0.0.0.0 Parameters
+
+- error object from Axios
+
+##### 2.5.3.9.4.0.0.0.0 Authentication
+
+N/A
+
+##### 2.5.3.9.5.0.0.0.0 Error Handling
+
+Central client-side API error handler.
+
+##### 2.5.3.9.6.0.0.0.0 Performance
+
+N/A
+
+### 2.5.4.0.0.0.0.0.0 State Change
+
+#### 2.5.4.1.0.0.0.0.0 Source Id
+
+REPO-APP-UI-005
+
+#### 2.5.4.2.0.0.0.0.0 Target Id
+
+REPO-APP-UI-005
+
+#### 2.5.4.3.0.0.0.0.0 Message
+
+4. Update state to exit loading and display the error.
+
+#### 2.5.4.4.0.0.0.0.0 Sequence Number
+
+13
+
+#### 2.5.4.5.0.0.0.0.0 Type
+
+🔹 State Change
+
+#### 2.5.4.6.0.0.0.0.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.4.7.0.0.0.0.0 Has Return
+
+❌ No
+
+#### 2.5.4.8.0.0.0.0.0 Is Activation
+
+❌ No
+
+#### 2.5.4.9.0.0.0.0.0 Technical Details
+
+##### 2.5.4.9.1.0.0.0.0 Protocol
+
+Internal
+
+##### 2.5.4.9.2.0.0.0.0 Method
+
+setState({ isLoading: false, error: 'One or more versions could not be found.' })
+
+##### 2.5.4.9.3.0.0.0.0 Parameters
+
+*No items available*
+
+##### 2.5.4.9.4.0.0.0.0 Authentication
+
+N/A
+
+##### 2.5.4.9.5.0.0.0.0 Error Handling
+
+N/A
+
+##### 2.5.4.9.6.0.0.0.0 Performance
+
+N/A
+
+### 2.5.5.0.0.0.0.0.0 UI Render
+
+#### 2.5.5.1.0.0.0.0.0 Source Id
+
+REPO-APP-UI-005
+
+#### 2.5.5.2.0.0.0.0.0 Target Id
+
+REPO-APP-UI-005
+
+#### 2.5.5.3.0.0.0.0.0 Message
+
+5. A user-friendly error message is rendered in the UI instead of the diff view.
+
+#### 2.5.5.4.0.0.0.0.0 Sequence Number
+
+14
+
+#### 2.5.5.5.0.0.0.0.0 Type
+
+🔹 UI Render
+
+#### 2.5.5.6.0.0.0.0.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.5.7.0.0.0.0.0 Has Return
+
+❌ No
+
+#### 2.5.5.8.0.0.0.0.0 Is Activation
+
+❌ No
+
+### 2.5.6.0.0.0.0.0.0 State Change
+
+#### 2.5.6.1.0.0.0.0.0 Source Id
+
+REPO-APP-UI-005
+
+#### 2.5.6.2.0.0.0.0.0 Target Id
+
+REPO-APP-UI-005
+
+#### 2.5.6.3.0.0.0.0.0 Message
+
+6. [ALT: Success Path] If both API calls succeed, UI state is updated with content, and `ScriptDiffComponent` is rendered.
+
+#### 2.5.6.4.0.0.0.0.0 Sequence Number
+
+15
+
+#### 2.5.6.5.0.0.0.0.0 Type
+
+🔹 State Change
+
+#### 2.5.6.6.0.0.0.0.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.6.7.0.0.0.0.0 Has Return
+
+❌ No
+
+#### 2.5.6.8.0.0.0.0.0 Is Activation
+
+❌ No
+
+#### 2.5.6.9.0.0.0.0.0 Technical Details
+
+##### 2.5.6.9.1.0.0.0.0 Protocol
+
+Internal
+
+##### 2.5.6.9.2.0.0.0.0 Method
+
+setState({ isLoading: false, contentA: resA.data.content, contentB: resB.data.content })
+
+## 2.6.0.0.0.0.0.0.0 Notes
+
+### 2.6.1.0.0.0.0.0.0 Content
+
+#### 2.6.1.1.0.0.0.0.0 Content
+
+API calls for version content should be executed in parallel (e.g., using `Promise.all`) to optimize user-perceived performance.
+
+#### 2.6.1.2.0.0.0.0.0 Position
+
+top
+
+#### 2.6.1.3.0.0.0.0.0 Participant Id
+
+REPO-APP-UI-005
+
+#### 2.6.1.4.0.0.0.0.0 Sequence Number
+
+2
+
+### 2.6.2.0.0.0.0.0.0 Content
+
+#### 2.6.2.1.0.0.0.0.0 Content
+
+The `ScriptDiffComponent` should wrap a library like Monaco Diff Editor to provide a rich, performant, and visually intuitive comparison view.
+
+#### 2.6.2.2.0.0.0.0.0 Position
+
+bottom
+
+#### 2.6.2.3.0.0.0.0.0 Participant Id
+
+REPO-APP-UI-005
+
+#### 2.6.2.4.0.0.0.0.0 Sequence Number
+
+15
+
+### 2.6.3.0.0.0.0.0.0 Content
+
+#### 2.6.3.1.0.0.0.0.0 Content
+
+Authorization is enforced at the API gateway layer via middleware, ensuring that only authenticated users with the correct role can access version content.
+
+#### 2.6.3.2.0.0.0.0.0 Position
+
+top
+
+#### 2.6.3.3.0.0.0.0.0 Participant Id
+
+REPO-APP-API-001
+
+#### 2.6.3.4.0.0.0.0.0 Sequence Number
+
+3
+
+## 2.7.0.0.0.0.0.0.0 Implementation Guidance
+
+| Property | Value |
+|----------|-------|
+| Security Requirements | The API endpoint `/api/v1/transformations/{scriptI... |
+| Performance Targets | The end-to-end latency from the user clicking 'Com... |
+| Error Handling Strategy | The frontend should use `Promise.all` to await bot... |
+| Testing Considerations | 1. **E2E (Cypress/Playwright):** Simulate the full... |
+| Monitoring Requirements | Monitor the latency and error rate (especially 4xx... |
+| Deployment Considerations | The Monaco Diff Editor is a substantial dependency... |
+

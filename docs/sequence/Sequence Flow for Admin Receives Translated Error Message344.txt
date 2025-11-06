@@ -1,0 +1,596 @@
+# 1 Overview
+
+## 1.1 Diagram Id
+
+SEQ-FF-001
+
+## 1.2 Name
+
+Admin Receives Translated Error Message
+
+## 1.3 Description
+
+An administrator, with a preferred language set to Spanish, triggers a script error. The backend returns a structured error with a language-agnostic error code and parameters. The frontend uses this code and the user's language to display the correctly translated and interpolated error message.
+
+## 1.4 Type
+
+🔹 FeatureFlow
+
+## 1.5 Purpose
+
+To improve system usability for a global user base by providing error messages in their native language, as per REQ-DTR-019.
+
+## 1.6 Complexity
+
+Medium
+
+## 1.7 Priority
+
+🟢 Low
+
+## 1.8 Frequency
+
+OnDemand
+
+## 1.9 Participants
+
+- REPO-APP-UI-005
+- REPO-APP-API-001
+
+## 1.10 Key Interactions
+
+- A user with language 'es' triggers a script preview that fails.
+- The .NET backend catches the error and generates a structured error response.
+- The response includes a language-agnostic code and parameters: `{"error": {"code": "JS_REFERENCE_ERROR", "params": {"variableName": "foo", "lineNumber": 5}}}`.
+- The React frontend receives this response.
+- The frontend's `i18next` service uses the current language ('es') and the code (`JS_REFERENCE_ERROR`) to find the translation string: `Error de referencia: {{variableName}} no está definido en la línea {{lineNumber}}.`
+- The i18n service interpolates the parameters into the string.
+- The final translated message is displayed in the UI's output pane.
+
+## 1.11 Triggers
+
+- An error occurs for a user whose profile language is not the system default (English).
+
+## 1.12 Outcomes
+
+- The user sees a clear, understandable error message in their preferred language.
+
+## 1.13 Business Rules
+
+- Error messages returned by the API and displayed in the UI shall be internationalized (REQ-DTR-019).
+- If a translation is not available, the system must fall back to the default language (English).
+
+## 1.14 Error Scenarios
+
+- A translation key is missing for the user's language; the UI gracefully displays the English version of the error.
+- The user's language preference cannot be determined; the UI defaults to English.
+
+## 1.15 Integration Points
+
+- User Profile Service (to get language preference)
+- Frontend/Backend translation resource files (e.g., JSON, RESX)
+
+# 2.0 Details
+
+## 2.1 Diagram Id
+
+SEQ-FF-001-IMPL
+
+## 2.2 Name
+
+Implementation: Admin Receives Translated Script Error Message
+
+## 2.3 Description
+
+This sequence diagram provides a detailed technical implementation for displaying internationalized error messages to an administrator. It covers the end-to-end flow from a user action in the React client, through the ASP.NET Core backend's structured error generation, to the final translation and rendering of the message in the user's preferred language, in accordance with REQ-DTR-019.
+
+## 2.4 Participants
+
+### 2.4.1 Actor
+
+#### 2.4.1.1 Repository Id
+
+USER-BROWSER
+
+#### 2.4.1.2 Display Name
+
+User's Browser (Admin)
+
+#### 2.4.1.3 Type
+
+🔹 Actor
+
+#### 2.4.1.4 Technology
+
+Web Browser
+
+#### 2.4.1.5 Order
+
+1
+
+#### 2.4.1.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | actor |
+| Color | #90A4AE |
+| Stereotype | User |
+
+### 2.4.2.0 Presentation
+
+#### 2.4.2.1 Repository Id
+
+REPO-APP-UI-005
+
+#### 2.4.2.2 Display Name
+
+Control Panel UI
+
+#### 2.4.2.3 Type
+
+🔹 Presentation
+
+#### 2.4.2.4 Technology
+
+React 18, TypeScript, react-i18next
+
+#### 2.4.2.5 Order
+
+2
+
+#### 2.4.2.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | rectangle |
+| Color | #42A5F5 |
+| Stereotype | React SPA |
+
+### 2.4.3.0 Application Services
+
+#### 2.4.3.1 Repository Id
+
+REPO-APP-API-001
+
+#### 2.4.3.2 Display Name
+
+Transformation Engine API
+
+#### 2.4.3.3 Type
+
+🔹 Application Services
+
+#### 2.4.3.4 Technology
+
+ASP.NET Core 8, Jint
+
+#### 2.4.3.5 Order
+
+3
+
+#### 2.4.3.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | rectangle |
+| Color | #66BB6A |
+| Stereotype | .NET API |
+
+## 2.5.0.0 Interactions
+
+### 2.5.1.0 User Interaction
+
+#### 2.5.1.1 Source Id
+
+USER-BROWSER
+
+#### 2.5.1.2 Target Id
+
+REPO-APP-UI-005
+
+#### 2.5.1.3 Message
+
+1. Administrator with language 'es' clicks 'Preview Script'.
+
+#### 2.5.1.4 Sequence Number
+
+1
+
+#### 2.5.1.5 Type
+
+🔹 User Interaction
+
+#### 2.5.1.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.1.7 Return Message
+
+
+
+#### 2.5.1.8 Has Return
+
+❌ No
+
+#### 2.5.1.9 Is Activation
+
+✅ Yes
+
+#### 2.5.1.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | DOM Event |
+| Method | onClick |
+| Parameters | Event object containing script content and sample ... |
+| Authentication | N/A |
+| Error Handling | Standard React error boundaries. |
+| Performance | Sub-50ms UI response. |
+
+### 2.5.2.0 HTTP Request
+
+#### 2.5.2.1 Source Id
+
+REPO-APP-UI-005
+
+#### 2.5.2.2 Target Id
+
+REPO-APP-API-001
+
+#### 2.5.2.3 Message
+
+2. POST /api/v1/transformations/preview
+
+#### 2.5.2.4 Sequence Number
+
+2
+
+#### 2.5.2.5 Type
+
+🔹 HTTP Request
+
+#### 2.5.2.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.2.7 Return Message
+
+8. HTTP 400 Bad Request with structured error JSON.
+
+#### 2.5.2.8 Has Return
+
+✅ Yes
+
+#### 2.5.2.9 Is Activation
+
+✅ Yes
+
+#### 2.5.2.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | HTTPS/1.1 |
+| Method | POST |
+| Parameters | Headers: { Authorization: 'Bearer [JWT]', 'Accept-... |
+| Authentication | JWT Bearer token validation is required. |
+| Error Handling | Axios client handles HTTP status codes. Promise re... |
+| Performance | API timeout enforced by client-side configuration ... |
+
+#### 2.5.2.11 Nested Interactions
+
+##### 2.5.2.11.1 Internal Method Call
+
+###### 2.5.2.11.1.1 Source Id
+
+REPO-APP-API-001
+
+###### 2.5.2.11.1.2 Target Id
+
+REPO-APP-API-001
+
+###### 2.5.2.11.1.3 Message
+
+3. [Controller] Catches request and invokes ScriptExecutionService.
+
+###### 2.5.2.11.1.4 Sequence Number
+
+3
+
+###### 2.5.2.11.1.5 Type
+
+🔹 Internal Method Call
+
+###### 2.5.2.11.1.6 Is Synchronous
+
+✅ Yes
+
+###### 2.5.2.11.1.7 Return Message
+
+7. Returns structured error DTO to controller.
+
+###### 2.5.2.11.1.8 Has Return
+
+✅ Yes
+
+###### 2.5.2.11.1.9 Is Activation
+
+❌ No
+
+###### 2.5.2.11.1.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-process |
+| Method | ScriptPreviewController.Preview() -> IScriptExecut... |
+| Parameters | PreviewRequestDto, CancellationToken |
+| Authentication | Authorization attribute [Authorize(Roles='Administ... |
+| Error Handling | Global exception handler middleware. |
+| Performance | N/A |
+
+##### 2.5.2.11.2.0 Internal Method Call
+
+###### 2.5.2.11.2.1 Source Id
+
+REPO-APP-API-001
+
+###### 2.5.2.11.2.2 Target Id
+
+REPO-APP-API-001
+
+###### 2.5.2.11.2.3 Message
+
+4. [Service] Invokes JintEngineWrapper to execute script.
+
+###### 2.5.2.11.2.4 Sequence Number
+
+4
+
+###### 2.5.2.11.2.5 Type
+
+🔹 Internal Method Call
+
+###### 2.5.2.11.2.6 Is Synchronous
+
+✅ Yes
+
+###### 2.5.2.11.2.7 Return Message
+
+5. Throws Jint.Runtime.JavaScriptException('foo is not defined').
+
+###### 2.5.2.11.2.8 Has Return
+
+✅ Yes
+
+###### 2.5.2.11.2.9 Is Activation
+
+❌ No
+
+###### 2.5.2.11.2.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-process |
+| Method | JintEngineWrapper.Execute() |
+| Parameters | Script text, JsonNode input, EngineOptions |
+| Authentication | N/A |
+| Error Handling | Wrapped in a try-catch block within the ScriptExec... |
+| Performance | Execution is constrained by configured timeout, me... |
+
+##### 2.5.2.11.3.0 Exception Handling
+
+###### 2.5.2.11.3.1 Source Id
+
+REPO-APP-API-001
+
+###### 2.5.2.11.3.2 Target Id
+
+REPO-APP-API-001
+
+###### 2.5.2.11.3.3 Message
+
+6. [Service] Catches exception and maps it to a structured error DTO.
+
+###### 2.5.2.11.3.4 Sequence Number
+
+6
+
+###### 2.5.2.11.3.5 Type
+
+🔹 Exception Handling
+
+###### 2.5.2.11.3.6 Is Synchronous
+
+✅ Yes
+
+###### 2.5.2.11.3.7 Return Message
+
+
+
+###### 2.5.2.11.3.8 Has Return
+
+❌ No
+
+###### 2.5.2.11.3.9 Is Activation
+
+❌ No
+
+###### 2.5.2.11.3.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-process |
+| Method | ExceptionMappingLogic |
+| Parameters | Jint.Runtime.JavaScriptException instance. |
+| Authentication | N/A |
+| Error Handling | Maps exception type and properties (e.g., LineNumb... |
+| Performance | Negligible. |
+
+### 2.5.3.0.0.0 Internal Method Call
+
+#### 2.5.3.1.0.0 Source Id
+
+REPO-APP-UI-005
+
+#### 2.5.3.2.0.0 Target Id
+
+REPO-APP-UI-005
+
+#### 2.5.3.3.0.0 Message
+
+9. [API Client] Parses error response and invokes i18n service.
+
+#### 2.5.3.4.0.0 Sequence Number
+
+9
+
+#### 2.5.3.5.0.0 Type
+
+🔹 Internal Method Call
+
+#### 2.5.3.6.0.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.3.7.0.0 Return Message
+
+11. Returns interpolated, translated string.
+
+#### 2.5.3.8.0.0 Has Return
+
+✅ Yes
+
+#### 2.5.3.9.0.0 Is Activation
+
+❌ No
+
+#### 2.5.3.10.0.0 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-process |
+| Method | i18n.t('errors:JS_REFERENCE_ERROR', { ...params }) |
+| Parameters | Key: 'errors:JS_REFERENCE_ERROR', Interpolation ob... |
+| Authentication | N/A |
+| Error Handling | If key is not found for current language ('es'), r... |
+| Performance | Sub-millisecond lookup from in-memory translation ... |
+
+#### 2.5.3.11.0.0 Nested Interactions
+
+- {'sourceId': 'REPO-APP-UI-005', 'targetId': 'REPO-APP-UI-005', 'message': "10. [i18n Service] Looks up translation key 'JS_REFERENCE_ERROR' for language 'es' and interpolates parameters.", 'sequenceNumber': 10, 'type': 'Data Lookup', 'isSynchronous': True, 'returnMessage': '', 'hasReturn': False, 'isActivation': False, 'technicalDetails': {'protocol': 'In-memory', 'method': 'Resource file lookup', 'parameters': "Resource file (e.g., `es/errors.json`) provides: 'Error de referencia: {{variableName}} no está definido en la línea {{lineNumber}}.'", 'authentication': 'N/A', 'errorHandling': 'N/A', 'performance': 'Highly optimized.'}}
+
+### 2.5.4.0.0.0 UI Update
+
+#### 2.5.4.1.0.0 Source Id
+
+REPO-APP-UI-005
+
+#### 2.5.4.2.0.0 Target Id
+
+USER-BROWSER
+
+#### 2.5.4.3.0.0 Message
+
+12. Renders final translated error message in the output pane.
+
+#### 2.5.4.4.0.0 Sequence Number
+
+12
+
+#### 2.5.4.5.0.0 Type
+
+🔹 UI Update
+
+#### 2.5.4.6.0.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.4.7.0.0 Return Message
+
+
+
+#### 2.5.4.8.0.0 Has Return
+
+❌ No
+
+#### 2.5.4.9.0.0 Is Activation
+
+❌ No
+
+#### 2.5.4.10.0.0 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | DOM Update |
+| Method | React render cycle |
+| Parameters | String: 'Error de referencia: foo no está definido... |
+| Authentication | N/A |
+| Error Handling | N/A |
+| Performance | Component re-render should be efficient. |
+
+## 2.6.0.0.0.0 Notes
+
+### 2.6.1.0.0.0 Content
+
+#### 2.6.1.1.0.0 Content
+
+User's language preference ('es') is assumed to be loaded into the UI's application state (e.g., Redux store or React Context) upon initial login from a User Profile service.
+
+#### 2.6.1.2.0.0 Position
+
+top-left
+
+#### 2.6.1.3.0.0 Participant Id
+
+REPO-APP-UI-005
+
+#### 2.6.1.4.0.0 Sequence Number
+
+1
+
+### 2.6.2.0.0.0 Content
+
+#### 2.6.2.1.0.0 Content
+
+A mapping layer (e.g., a dictionary or switch statement) exists in the backend to convert specific exception types like `Jint.Runtime.JavaScriptException` or `TimeoutException` into the language-agnostic error codes (`JS_REFERENCE_ERROR`, `API_TIMEOUT_ERROR`, etc.) defined in REQ-DTR-019.
+
+#### 2.6.2.2.0.0 Position
+
+bottom-right
+
+#### 2.6.2.3.0.0 Participant Id
+
+REPO-APP-API-001
+
+#### 2.6.2.4.0.0 Sequence Number
+
+6
+
+### 2.6.3.0.0.0 Content
+
+#### 2.6.3.1.0.0 Content
+
+Graceful Fallback: If `es/errors.json` does not contain the key 'JS_REFERENCE_ERROR', the i18n library automatically attempts to find the key in the default `en/errors.json` resource file, ensuring an English message is always displayed.
+
+#### 2.6.3.2.0.0 Position
+
+bottom-left
+
+#### 2.6.3.3.0.0 Participant Id
+
+REPO-APP-UI-005
+
+#### 2.6.3.4.0.0 Sequence Number
+
+10
+
+## 2.7.0.0.0.0 Implementation Guidance
+
+| Property | Value |
+|----------|-------|
+| Security Requirements | The frontend i18n library must be configured to es... |
+| Performance Targets | The entire error-handling and translation process,... |
+| Error Handling Strategy | The primary error handling strategy is graceful fa... |
+| Testing Considerations | E2E tests (using Cypress or Playwright) are critic... |
+| Monitoring Requirements | The frontend should be configured to log a warning... |
+| Deployment Considerations | Translation resource files (e.g., JSON files) shou... |
+

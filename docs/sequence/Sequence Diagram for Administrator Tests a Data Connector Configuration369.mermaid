@@ -1,0 +1,24 @@
+sequenceDiagram
+    participant "Presentation: Control Panel UI" as PresentationControlPanelUI
+    participant "API/Web Layer" as APIWebLayer
+    participant "Application Layer" as ApplicationLayer
+    participant "Infrastructure Layer" as InfrastructureLayer
+
+    activate APIWebLayer
+    PresentationControlPanelUI->>APIWebLayer: 1. Sends connection test request with configuration details.
+    APIWebLayer-->>PresentationControlPanelUI: Returns structured result: { isSuccess: boolean, message: string, details: string }.
+    activate ApplicationLayer
+    APIWebLayer->>ApplicationLayer: 2. Invokes connection testing service with validated DTO.
+    ApplicationLayer-->>APIWebLayer: Returns TestConnectionResult object.
+    activate InfrastructureLayer
+    ApplicationLayer->>InfrastructureLayer: 3. Resolves and invokes the specific connector's TestConnection method.
+    InfrastructureLayer-->>ApplicationLayer: Returns TestConnectionResult indicating success or failure with diagnostics.
+    InfrastructureLayer->>InfrastructureLayer: 4. Attempts to establish connection with the external data source.
+    InfrastructureLayer-->>InfrastructureLayer: Connection succeeds or fails with a specific exception.
+
+    note over PresentationControlPanelUI: The 'Save' button in the UI remains disabled until a successful response (isSuccess: true) for th...
+    note over InfrastructureLayer: The actual I/O call to the external data source (Database, OPC UA Server, etc.). This is the poin...
+
+    deactivate InfrastructureLayer
+    deactivate ApplicationLayer
+    deactivate APIWebLayer

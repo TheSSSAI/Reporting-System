@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job Monitoring Dashboard</title>
+    <style>
+        /* CSS Reset */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html { font-size: 16px; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--color-background-default);
+            color: var(--color-text-primary);
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { text-align: left; padding: 0.75rem 1rem; }
+        th { font-weight: 600; }
+        button, input, select { font: inherit; }
+
+        /* Design System Tokens */
+        :root {
+            --color-background-default: #f8f9fa;
+            --color-background-card: #ffffff;
+            --color-border-default: #dee2e6;
+            --color-text-primary: #212529;
+            --color-text-secondary: #6c757d;
+            --color-text-disabled: #adb5bd;
+            --color-primary-main: #0d6efd;
+            --color-primary-light: #cfe2ff;
+            --color-primary-dark: #0a58ca;
+            --color-primary-contrast: #ffffff;
+            --color-success-main: #198754;
+            --color-success-light: #d1e7dd;
+            --color-warning-main: #ffc107;
+            --color-warning-light: #fff3cd;
+            --color-danger-main: #dc3545;
+            --color-danger-light: #f8d7da;
+            --color-info-main: #0dcaf0;
+            --color-info-light: #cff4fc;
+            --color-neutral-main: #6c757d;
+            --color-neutral-light: #e9ecef;
+            --font-size-sm: 0.875rem;
+            --font-size-md: 1rem;
+            --font-size-lg: 1.25rem;
+            --spacing-xs: 0.25rem;
+            --spacing-sm: 0.5rem;
+            --spacing-md: 1rem;
+            --spacing-lg: 1.5rem;
+            --border-radius: 0.375rem;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+
+        /* Screen Layout */
+        .screen-container {
+            padding: var(--spacing-lg);
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        .screen-header {
+            margin-bottom: var(--spacing-lg);
+        }
+        .screen-header h1 {
+            font-size: 1.75rem;
+            font-weight: 600;
+        }
+        .card {
+            background-color: var(--color-background-card);
+            border: 1px solid var(--color-border-default);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* Toolbar Component */
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: var(--spacing-md);
+            padding: var(--spacing-md);
+            border-bottom: 1px solid var(--color-border-default);
+        }
+        .toolbar__filters {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: var(--spacing-md);
+        }
+        .toolbar__actions {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        /* SearchBar Component */
+        .search-bar {
+            position: relative;
+        }
+        .search-bar__icon {
+            position: absolute;
+            top: 50%;
+            left: 0.75rem;
+            transform: translateY(-50%);
+            color: var(--color-text-secondary);
+            pointer-events: none;
+        }
+        .search-bar__input {
+            padding: 0.5rem 0.75rem 0.5rem 2.25rem;
+            border: 1px solid var(--color-border-default);
+            border-radius: var(--border-radius);
+            min-width: 250px;
+        }
+        .search-bar__input:focus {
+            outline: 2px solid transparent;
+            outline-offset: 2px;
+            border-color: var(--color-primary-main);
+            box-shadow: 0 0 0 2px var(--color-primary-light);
+        }
+
+        /* SelectDropdown Component */
+        .select-dropdown {
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--color-border-default);
+            border-radius: var(--border-radius);
+            background-color: var(--color-background-card);
+        }
+
+        /* Button Component */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            padding: 0.5rem 1rem;
+            border: 1px solid transparent;
+            border-radius: var(--border-radius);
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+        .btn:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+        }
+        .btn--primary {
+            background-color: var(--color-primary-main);
+            color: var(--color-primary-contrast);
+            border-color: var(--color-primary-main);
+        }
+        .btn--primary:hover:not(:disabled) { background-color: var(--color-primary-dark); }
+        .btn--secondary {
+            background-color: var(--color-background-card);
+            color: var(--color-text-primary);
+            border-color: var(--color-border-default);
+        }
+        .btn--secondary:hover:not(:disabled) { background-color: var(--color-neutral-light); }
+        .btn--danger {
+            background-color: var(--color-danger-main);
+            color: #fff;
+            border-color: var(--color-danger-main);
+        }
+        .btn--danger:hover:not(:disabled) { background-color: #bb2d3b; }
+
+        /* IconButton Component */
+        .icon-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 2rem;
+            height: 2rem;
+            border: none;
+            background-color: transparent;
+            border-radius: 50%;
+            cursor: pointer;
+            color: var(--color-text-secondary);
+        }
+        .icon-btn:hover:not(:disabled) { background-color: var(--color-neutral-light); color: var(--color-text-primary); }
+        .icon-btn:disabled { color: var(--color-text-disabled); cursor: not-allowed; }
+
+        /* DataTable Component */
+        .table-container { overflow-x: auto; }
+        .data-table { width: 100%; border-spacing: 0; }
+        .data-table thead { background-color: var(--color-neutral-light); }
+        .data-table th, .data-table td {
+            padding: var(--spacing-md);
+            border-bottom: 1px solid var(--color-border-default);
+            white-space: nowrap;
+        }
+        .data-table tbody tr {
+            cursor: pointer;
+            transition: background-color 0.15s;
+        }
+        .data-table tbody tr:hover { background-color: #f1f3f5; }
+        .data-table tbody tr.selected-row { background-color: var(--color-primary-light); }
+        .data-table td:first-child, .data-table th:first-child { padding-left: var(--spacing-lg); }
+        .data-table td:last-child, .data-table th:last-child { padding-right: var(--spacing-lg); }
+
+        /* Checkbox Component */
+        .checkbox {
+            width: 1rem;
+            height: 1rem;
+            accent-color: var(--color-primary-main);
+        }
+
+        /* StatusIndicator Component */
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            padding: var(--spacing-xs) var(--spacing-sm);
+            border-radius: 1rem;
+            font-size: var(--font-size-sm);
+            font-weight: 500;
+        }
+        .status-indicator--succeeded { background-color: var(--color-success-light); color: var(--color-success-main); }
+        .status-indicator--failed { background-color: var(--color-danger-light); color: var(--color-danger-main); }
+        .status-indicator--running { background-color: var(--color-info-light); color: var(--color-info-main); }
+        .status-indicator--queued { background-color: var(--color-neutral-light); color: var(--color-neutral-main); }
+        .status-indicator--cancelled { background-color: var(--color-warning-light); color: var(--color-warning-main); }
+        
+        /* Pagination Component */
+        .pagination {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--spacing-md);
+            border-top: 1px solid var(--color-border-default);
+        }
+        .pagination__info { color: var(--color-text-secondary); font-size: var(--font-size-sm); }
+        .pagination__controls { display: flex; gap: var(--spacing-xs); }
+        .pagination .btn { padding: 0.375rem 0.75rem; }
+
+        /* Empty/Error States */
+        .state-container {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--color-text-secondary);
+        }
+        .state-container__icon {
+            width: 4rem;
+            height: 4rem;
+            margin-bottom: var(--spacing-md);
+            color: var(--color-text-disabled);
+        }
+        .state-container h3 {
+            color: var(--color-text-primary);
+            font-size: var(--font-size-lg);
+            margin-bottom: var(--spacing-xs);
+        }
+        
+        /* Skeleton Loader */
+        .skeleton {
+            background-color: #e9ecef;
+            border-radius: 0.25rem;
+            animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            50% { opacity: .5; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="screen-container">
+    <header class="screen-header">
+        <h1>Job Monitoring</h1>
+    </header>
+
+    <div class="card">
+        <div class="toolbar">
+            <div class="toolbar__filters">
+                <div class="search-bar">
+                    <svg class="search-bar__icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"/>
+                    </svg>
+                    <input type="search" class="search-bar__input" placeholder="Search by report name...">
+                </div>
+                <select class="select-dropdown">
+                    <option>All Statuses</option>
+                    <option>Succeeded</option>
+                    <option>Failed</option>
+                    <option>Running</option>
+                    <option>Queued</option>
+                    <option>Cancelled</option>
+                </select>
+                <!-- Date Picker would go here -->
+            </div>
+            <div class="toolbar__actions">
+                <button class="btn btn--secondary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2z"/>
+                        <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466"/>
+                    </svg>
+                    <span>Refresh</span>
+                </button>
+            </div>
+        </div>
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th style="width: 2.5rem;"><input type="checkbox" class="checkbox"></th>
+                        <th>Report Name</th>
+                        <th>Status</th>
+                        <th>Start Time</th>
+                        <th>End Time</th>
+                        <th>Duration</th>
+                        <th style="text-align: right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><input type="checkbox" class="checkbox"></td>
+                        <td>Monthly Sales Performance</td>
+                        <td><span class="status-indicator status-indicator--succeeded">Succeeded</span></td>
+                        <td>2025-01-20 09:00:15 UTC</td>
+                        <td>2025-01-20 09:01:22 UTC</td>
+                        <td>1m 7s</td>
+                        <td style="text-align: right;">
+                             <button class="icon-btn" aria-label="Retry job for Monthly Sales Performance" disabled>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 3a.5.5 0 0 1 .5.5v2.5a.5.5 0 0 1-1 0V4a.5.5 0 0 1 .5-.5M1.705 8.005a.5.5 0 0 1 .834.666 4 4 0 0 0 6.592 3.999.5.5 0 1 1 .583.807A5 5 0 0 1 2.019 7.112a.5.5 0 0 1 .686-.107m9.507.159a.5.5 0 0 1-.666-.834 4 4 0 0 0-6.592-3.999.5.5 0 0 1-.583-.807A5 5 0 0 1 13.981 8.888a.5.5 0 0 1-.107-.686Z"/></svg>
+                            </button>
+                        </td>
+                    </tr>
+                    <tr class="selected-row">
+                        <td><input type="checkbox" class="checkbox" checked></td>
+                        <td>Daily Inventory Check</td>
+                        <td><span class="status-indicator status-indicator--failed">Failed</span></td>
+                        <td>2025-01-20 08:30:05 UTC</td>
+                        <td>2025-01-20 08:30:08 UTC</td>
+                        <td>3s</td>
+                        <td style="text-align: right;">
+                             <button class="icon-btn" aria-label="Retry job for Daily Inventory Check">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 3a.5.5 0 0 1 .5.5v2.5a.5.5 0 0 1-1 0V4a.5.5 0 0 1 .5-.5M1.705 8.005a.5.5 0 0 1 .834.666 4 4 0 0 0 6.592 3.999.5.5 0 1 1 .583.807A5 5 0 0 1 2.019 7.112a.5.5 0 0 1 .686-.107m9.507.159a.5.5 0 0 1-.666-.834 4 4 0 0 0-6.592-3.999.5.5 0 0 1-.583-.807A5 5 0 0 1 13.981 8.888a.5.5 0 0 1-.107-.686Z"/></svg>
+                            </button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox" class="checkbox"></td>
+                        <td>Large Dataset Analysis</td>
+                        <td><span class="status-indicator status-indicator--running">Running</span></td>
+                        <td>2025-01-20 09:05:00 UTC</td>
+                        <td>-</td>
+                        <td>-</td>
+                        <td style="text-align: right;">
+                             <button class="icon-btn" aria-label="Cancel job for Large Dataset Analysis">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.92.035A.5.5 0 0 1 6.5 0h3a.5.5 0 0 1 .5.5v1.278l4.096 4.096a.5.5 0 0 1-.353.854H1.757a.5.5 0 0 1-.353-.854L5.5 1.778V.5a.5.5 0 0 1 .42-.465Z"/><path d="M.5 13a1 1 0 0 0 1 1h13a1 1 0 0 0 1-1V8.5a.5.5 0 0 0-.5-.5h-13a.5.5 0 0 0-.5.5zm2-4a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5m5 0a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5"/></svg>
+                            </button>
+                        </td>
+                    </tr>
+                    <tr class="selected-row">
+                        <td><input type="checkbox" class="checkbox" checked></td>
+                        <td>Hourly System Health Check</td>
+                        <td><span class="status-indicator status-indicator--queued">Queued</span></td>
+                        <td>2025-01-20 09:10:00 UTC</td>
+                        <td>-</td>
+                        <td>-</td>
+                        <td style="text-align: right;">
+                            <button class="icon-btn" aria-label="Cancel job for Hourly System Health Check">
+                               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.92.035A.5.5 0 0 1 6.5 0h3a.5.5 0 0 1 .5.5v1.278l4.096 4.096a.5.5 0 0 1-.353.854H1.757a.5.5 0 0 1-.353-.854L5.5 1.778V.5a.5.5 0 0 1 .42-.465Z"/><path d="M.5 13a1 1 0 0 0 1 1h13a1 1 0 0 0 1-1V8.5a.5.5 0 0 0-.5-.5h-13a.5.5 0 0 0-.5.5zm2-4a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5m5 0a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5"/></svg>
+                            </button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox" class="checkbox"></td>
+                        <td>Weekly User Activity Log</td>
+                        <td><span class="status-indicator status-indicator--cancelled">Cancelled</span></td>
+                        <td>2025-01-20 08:55:00 UTC</td>
+                        <td>2025-01-20 08:55:10 UTC</td>
+                        <td>10s</td>
+                        <td style="text-align: right;">
+                             <button class="icon-btn" aria-label="Retry job for Weekly User Activity Log">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 3a.5.5 0 0 1 .5.5v2.5a.5.5 0 0 1-1 0V4a.5.5 0 0 1 .5-.5M1.705 8.005a.5.5 0 0 1 .834.666 4 4 0 0 0 6.592 3.999.5.5 0 1 1 .583.807A5 5 0 0 1 2.019 7.112a.5.5 0 0 1 .686-.107m9.507.159a.5.5 0 0 1-.666-.834 4 4 0 0 0-6.592-3.999.5.5 0 0 1-.583-.807A5 5 0 0 1 13.981 8.888a.5.5 0 0 1-.107-.686Z"/></svg>
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="pagination">
+            <span class="pagination__info">Showing 1-5 of 87 jobs</span>
+            <div class="pagination__controls">
+                <button class="btn btn--secondary" disabled>Previous</button>
+                <button class="btn btn--secondary">Next</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="screen-variations" style="padding: 2rem; margin-top: 2rem; background-color: #e9ecef;">
+    <h2>Screen Variations</h2>
+
+    <div class="variation-group" style="margin-top: 2rem;">
+      <h3>Variant Name: "Bulk Actions Active"</h3>
+      <p>When one or more rows are selected, the toolbar filters are replaced with a selection count and bulk action buttons.</p>
+      <div class="card" style="margin-top: 1rem;">
+          <div class="toolbar">
+              <div class="toolbar__filters">
+                  <span style="font-weight: 600; color: var(--color-primary-dark);">2 items selected</span>
+              </div>
+              <div class="toolbar__actions">
+                  <button class="btn btn--secondary">Re-deliver</button>
+                  <button class="btn btn--danger">Delete</button>
+              </div>
+          </div>
+          <!-- Table would be the same as above -->
+      </div>
+    </div>
+    
+    <div class="variation-group" style="margin-top: 2rem;">
+      <h3>Variant Name: "Loading State"</h3>
+      <p>A skeleton loader is shown while the initial list of jobs is being fetched.</p>
+        <div class="card" style="margin-top: 1rem;">
+             <div class="toolbar">
+                <div class="toolbar__filters">
+                    <div class="skeleton" style="width: 250px; height: 38px;"></div>
+                    <div class="skeleton" style="width: 120px; height: 38px;"></div>
+                </div>
+                <div class="toolbar__actions">
+                    <div class="skeleton" style="width: 90px; height: 38px;"></div>
+                </div>
+            </div>
+             <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 2.5rem;"><div class="skeleton" style="width: 16px; height: 16px; margin: auto;"></div></th>
+                            <th><div class="skeleton" style="width: 150px; height: 16px;"></div></th>
+                            <th><div class="skeleton" style="width: 80px; height: 16px;"></div></th>
+                            <th><div class="skeleton" style="width: 130px; height: 16px;"></div></th>
+                            <th><div class="skeleton" style="width: 130px; height: 16px;"></div></th>
+                            <th><div class="skeleton" style="width: 50px; height: 16px;"></div></th>
+                            <th style="text-align: right;"><div class="skeleton" style="width: 60px; height: 16px; float: right;"></div></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><div class="skeleton" style="width: 16px; height: 16px; margin: auto;"></div></td>
+                            <td><div class="skeleton" style="width: 200px; height: 16px;"></div></td>
+                            <td><div class="skeleton" style="width: 100px; height: 28px; border-radius: 1rem;"></div></td>
+                            <td><div class="skeleton" style="width: 150px; height: 16px;"></div></td>
+                            <td><div class="skeleton" style="width: 150px; height: 16px;"></div></td>
+                            <td><div class="skeleton" style="width: 40px; height: 16px;"></div></td>
+                            <td style="text-align: right;"><div class="skeleton" style="width: 32px; height: 32px; border-radius: 50%; float: right;"></div></td>
+                        </tr>
+                         <tr>
+                            <td><div class="skeleton" style="width: 16px; height: 16px; margin: auto;"></div></td>
+                            <td><div class="skeleton" style="width: 180px; height: 16px;"></div></td>
+                            <td><div class="skeleton" style="width: 100px; height: 28px; border-radius: 1rem;"></div></td>
+                            <td><div class="skeleton" style="width: 150px; height: 16px;"></div></td>
+                            <td><div class="skeleton" style="width: 150px; height: 16px;"></div></td>
+                            <td><div class="skeleton" style="width: 40px; height: 16px;"></div></td>
+                            <td style="text-align: right;"><div class="skeleton" style="width: 32px; height: 32px; border-radius: 50%; float: right;"></div></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="pagination">
+                <div class="skeleton" style="width: 120px; height: 16px;"></div>
+                <div class="pagination__controls">
+                     <div class="skeleton" style="width: 80px; height: 34px;"></div>
+                     <div class="skeleton" style="width: 60px; height: 34px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="variation-group" style="margin-top: 2rem;">
+      <h3>Variant Name: "Empty State"</h3>
+      <p>Shown on a new installation or when no jobs have been executed yet.</p>
+        <div class="card" style="margin-top: 1rem;">
+             <!-- Toolbar would be present -->
+            <div class="state-container">
+                 <svg class="state-container__icon" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v1h14V4a1 1 0 0 0-1-1zM1 7v5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V7z"/>
+                </svg>
+                <h3>No jobs have been executed yet</h3>
+                <p>Scheduled and on-demand report jobs will appear here as they run.</p>
+            </div>
+        </div>
+    </div>
+
+     <div class="variation-group" style="margin-top: 2rem;">
+      <h3>Variant Name: "Error State"</h3>
+      <p>Shown if the API call to fetch jobs fails.</p>
+        <div class="card" style="margin-top: 1rem;">
+             <!-- Toolbar would be present -->
+            <div class="state-container">
+                 <svg class="state-container__icon" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" style="color: var(--color-danger-main);">
+                    <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5m.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2"/>
+                </svg>
+                <h3>Could not load jobs</h3>
+                <p>There was an error connecting to the server. Please try again.</p>
+                <button class="btn btn--secondary" style="margin-top: 1rem;">
+                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2z"/>
+                        <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466"/>
+                    </svg>
+                    <span>Retry</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

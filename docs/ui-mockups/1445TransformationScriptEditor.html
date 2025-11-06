@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transformation Script Editor</title>
+    <style>
+        /* --- 1. DESIGN TOKENS & SETUP --- */
+        :root {
+            /* Colors */
+            --color-primary-500: #0068FF;
+            --color-primary-600: #0052CC;
+            --color-danger-500: #D32F2F;
+            --color-text-primary: #212529;
+            --color-text-secondary: #495057;
+            --color-text-white: #FFFFFF;
+            --color-border: #DEE2E6;
+            --color-border-focus: #5C9EFF;
+            --color-bg-light: #F8F9FA;
+            --color-bg-panel: #FFFFFF;
+            --color-bg-editor: #1E1E1E;
+            --color-text-editor: #D4D4D4;
+            --color-error-bg: #FDEDED;
+            --color-error-text: #5F2120;
+            --color-error-border: #f5c6cb;
+            --color-success-bg: #EDF7ED;
+            --color-success-text: #1E4620;
+
+            /* Typography */
+            --font-family-primary: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            --font-family-monospace: 'Menlo', 'Monaco', 'Courier New', monospace;
+            --font-size-sm: 14px;
+            --font-size-md: 16px;
+            --font-weight-semibold: 600;
+
+            /* Spacing */
+            --space-xs: 4px;
+            --space-sm: 8px;
+            --space-md: 16px;
+            --space-lg: 24px;
+
+            /* Borders & Shadows */
+            --border-radius-main: 8px;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+
+            /* Transitions */
+            --transition-base: all 0.2s ease-in-out;
+        }
+
+        /* --- 2. BASE & LAYOUT STYLES --- */
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: var(--font-family-primary);
+            font-size: var(--font-size-md);
+            color: var(--color-text-primary);
+            background-color: var(--color-bg-light);
+            margin: 0;
+        }
+        .showcase {
+            padding: var(--space-lg);
+        }
+        .showcase h2 {
+            margin-bottom: var(--space-md);
+            border-bottom: 1px solid var(--color-border);
+            padding-bottom: var(--space-sm);
+        }
+        .showcase-instance {
+            margin-top: var(--space-lg);
+            border: 1px solid var(--color-border);
+            border-radius: var(--border-radius-main);
+            padding: var(--space-lg);
+        }
+
+        /* --- 3. ATOMIC DEPENDENCY STYLES --- */
+        /* Button */
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center; gap: var(--space-sm);
+            font-weight: var(--font-weight-semibold); text-align: center; cursor: pointer; user-select: none;
+            border: 1px solid transparent; transition: var(--transition-base);
+            font-size: var(--font-size-sm); padding: var(--space-sm) var(--space-md); border-radius: var(--border-radius-main);
+        }
+        .btn:focus-visible { outline: 2px solid var(--color-border-focus); outline-offset: 2px; }
+        .btn--primary { color: var(--color-text-white); background-color: var(--color-primary-500); }
+        .btn--primary:hover { background-color: var(--color-primary-600); }
+        .btn--secondary { color: var(--color-text-primary); background-color: transparent; border-color: var(--color-border); }
+        .btn--secondary:hover { background-color: var(--color-bg-light); }
+        .btn:disabled { cursor: not-allowed; opacity: 0.65; }
+
+        /* SelectDropdown */
+        .select-input {
+            display: block; width: 100%; padding: 8px 12px;
+            font-size: var(--font-size-sm); line-height: 1.5;
+            color: var(--color-text-primary); background-color: var(--color-text-white);
+            border: 1px solid var(--color-border); border-radius: var(--border-radius-main);
+            -webkit-appearance: none; -moz-appearance: none; appearance: none;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+            background-repeat: no-repeat; background-position: right 0.75rem center; background-size: 16px 12px;
+        }
+
+        /* Alert */
+        .alert {
+            display: flex; align-items: flex-start; gap: var(--space-md);
+            padding: var(--space-md); border: 1px solid transparent; border-radius: var(--border-radius-main);
+        }
+        .alert__icon { flex-shrink: 0; margin-top: 2px; }
+        .alert--error { color: var(--color-error-text); background-color: var(--color-error-bg); border-color: var(--color-error-border); }
+
+        /* Spinner */
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        .spinner { display: inline-block; border: 4px solid rgba(0,0,0,0.1); border-left-color: var(--color-primary-500); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+
+        /* --- 4. ORGANISM: TransformationScriptEditor --- */
+        .editor-layout {
+            display: grid;
+            grid-template-columns: minmax(400px, 2fr) minmax(300px, 1fr);
+            grid-template-rows: auto 1fr;
+            gap: var(--space-md);
+            height: 80vh;
+            min-height: 600px;
+            background: #f0f2f5;
+            padding: var(--space-md);
+            border-radius: var(--border-radius-main);
+        }
+
+        .editor-pane {
+            display: flex;
+            flex-direction: column;
+            background: var(--color-bg-panel);
+            border-radius: var(--border-radius-main);
+            border: 1px solid var(--color-border);
+            box-shadow: var(--shadow-sm);
+            overflow: hidden; /* Important for children rounding */
+        }
+
+        .editor-pane--script {
+            grid-column: 1 / 2;
+            grid-row: 1 / 3;
+        }
+
+        .editor-pane--input {
+            grid-column: 2 / 3;
+            grid-row: 1 / 2;
+        }
+
+        .editor-pane--output {
+            grid-column: 2 / 3;
+            grid-row: 2 / 3;
+        }
+
+        .editor-pane__header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--space-sm) var(--space-md);
+            border-bottom: 1px solid var(--color-border);
+            background-color: var(--color-bg-light);
+            flex-shrink: 0;
+        }
+
+        .editor-pane__title {
+            font-size: var(--font-size-sm);
+            font-weight: var(--font-weight-semibold);
+            color: var(--color-text-secondary);
+        }
+        
+        .editor-pane__header .actions {
+            display: flex;
+            gap: var(--space-sm);
+            align-items: center;
+        }
+
+        .editor-pane__body {
+            flex-grow: 1;
+            overflow: auto;
+            position: relative; /* For spinner positioning */
+        }
+
+        .editor-pane__footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: var(--space-sm);
+            padding: var(--space-sm) var(--space-md);
+            border-top: 1px solid var(--color-border);
+            background-color: var(--color-bg-light);
+            flex-shrink: 0;
+        }
+
+        /* Monaco Editor Mock */
+        .monaco-editor-mock {
+            background-color: var(--color-bg-editor);
+            color: var(--color-text-editor);
+            font-family: var(--font-family-monospace);
+            font-size: var(--font-size-sm);
+            padding: var(--space-md);
+            height: 100%;
+            white-space: pre-wrap;
+            line-height: 1.6;
+        }
+        .monaco-editor-mock .token-keyword { color: #C586C0; }
+        .monaco-editor-mock .token-function { color: #DCDCAA; }
+        .monaco-editor-mock .token-parameter { color: #9CDCFE; }
+        .monaco-editor-mock .token-string { color: #CE9178; }
+        .monaco-editor-mock .token-comment { color: #6A9955; }
+
+
+        /* Sample/Output Data Panes */
+        .data-editor {
+            font-family: var(--font-family-monospace);
+            font-size: var(--font-size-sm);
+            padding: var(--space-md);
+            width: 100%;
+            height: 100%;
+            border: none;
+            resize: none;
+            outline: none;
+            line-height: 1.6;
+        }
+
+        .json-output {
+            padding: var(--space-md);
+            white-space: pre;
+            font-family: var(--font-family-monospace);
+            font-size: var(--font-size-sm);
+            color: var(--color-success-text);
+        }
+
+        /* State Handlers for Output Pane */
+        .editor-pane--output.is-loading .editor-pane__body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .editor-pane--output.is-error .editor-pane__body {
+            padding: var(--space-md);
+        }
+
+        .editor-pane--output.is-success .editor-pane__body {
+            background-color: var(--color-success-bg);
+        }
+
+        /* Responsive (informational comment as JS is needed for true resizing) */
+        /* The grid layout with 'fr' units is inherently flexible. */
+        /* A JavaScript implementation would add draggable gutter elements */
+        /* to manipulate the `grid-template-columns` and `grid-template-rows` properties. */
+        @media (max-width: 900px) {
+            .editor-layout {
+                grid-template-columns: 1fr;
+                grid-template-rows: 40vh 30vh 30vh;
+                height: auto;
+            }
+            .editor-pane--script { grid-row: 1 / 2; grid-column: 1 / 2; }
+            .editor-pane--input { grid-row: 2 / 3; grid-column: 1 / 2; }
+            .editor-pane--output { grid-row: 3 / 4; grid-column: 1 / 2; }
+        }
+    </style>
+</head>
+<body>
+    <div class="showcase">
+        <h2>Transformation Script Editor</h2>
+
+        <div class="editor-layout">
+            <!-- Script Editor Pane -->
+            <div class="editor-pane editor-pane--script">
+                <header class="editor-pane__header">
+                    <h2 class="editor-pane__title">Transformation Script (ES6)</h2>
+                </header>
+                <div class="editor-pane__body">
+                    <div class="monaco-editor-mock">
+<span class="token-comment">/**
+ * @param {object} data - The input JSON data.
+ * @returns {object} The transformed JSON data.
+ */</span>
+<span class="token-keyword">function</span> <span class="token-function">transform</span>(<span class="token-parameter">data</span>) {
+    <span class="token-keyword">if</span> (!Array.isArray(<span class="token-parameter">data</span>)) {
+        <span class="token-keyword">return</span> { <span class="token-string">'error'</span>: <span class="token-string">'Input is not an array'</span> };
+    }
+
+    <span class="token-keyword">return</span> <span class="token-parameter">data</span>.map(<span class="token-parameter">item</span> => ({
+        id: <span class="token-parameter">item</span>.user_id,
+        fullName: `${<span class="token-parameter">item</span>.first_name} ${<span class="token-parameter">item</span>.last_name}`,
+        isActive: <span class="token-parameter">item</span>.status === <span class="token-string">'active'</span>
+    }));
+}
+                    </div>
+                </div>
+                <footer class="editor-pane__footer">
+                    <button class="btn btn--secondary">Cancel</button>
+                    <button class="btn btn--primary">Save Script</button>
+                </footer>
+            </div>
+
+            <!-- Sample Data Pane -->
+            <div class="editor-pane editor-pane--input">
+                <header class="editor-pane__header">
+                    <h2 class="editor-pane__title">Sample Data / Live Preview</h2>
+                    <div class="actions">
+                        <button class="btn btn--secondary" style="padding: 4px 8px;">Preview</button>
+                    </div>
+                </header>
+                <div class="editor-pane__body">
+                    <textarea class="data-editor" spellcheck="false">[
+    {
+        "user_id": 101,
+        "first_name": "John",
+        "last_name": "Doe",
+        "status": "active"
+    },
+    {
+        "user_id": 102,
+        "first_name": "Jane",
+        "last_name": "Smith",
+        "status": "inactive"
+    }
+]</textarea>
+                </div>
+            </div>
+
+            <!-- Output Pane -->
+            <div class="editor-pane editor-pane--output">
+                <header class="editor-pane__header">
+                    <h2 class="editor-pane__title">Output Preview</h2>
+                </header>
+                <div class="editor-pane__body">
+                    <!-- Content will be shown in states below -->
+                </div>
+            </div>
+        </div>
+
+        <div class="showcase-instance">
+            <h3>Component States</h3>
+            
+            <h4>Loading State</h4>
+            <div class="editor-pane editor-pane--output is-loading" style="height: 200px;">
+                <div class="editor-pane__body">
+                    <div class="spinner" role="status" aria-label="Loading preview"></div>
+                </div>
+            </div>
+
+            <h4 style="margin-top: var(--space-lg);">Preview Success State</h4>
+            <div class="editor-pane editor-pane--output is-success">
+                <div class="editor-pane__body">
+                    <pre class="json-output">[
+    {
+        "id": 101,
+        "fullName": "John Doe",
+        "isActive": true
+    },
+    {
+        "id": 102,
+        "fullName": "Jane Smith",
+        "isActive": false
+    }
+]</pre>
+                </div>
+            </div>
+
+            <h4 style="margin-top: var(--space-lg);">Preview Error State</h4>
+            <div class="editor-pane editor-pane--output is-error">
+                <div class="editor-pane__body">
+                    <div class="alert alert--error" role="alert">
+                        <div class="alert__icon">
+                            <svg fill="currentColor" width="24" height="24" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z"/></svg>
+                        </div>
+                        <div>
+                            <strong>Script Execution Error</strong>
+                            <p style="font-size: var(--font-size-sm); margin-top: var(--space-xs);">TypeError: Cannot read properties of null (reading 'first_name') at line 12.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+	<div> <h2> Component Variations</h2>
+      <div>
+        <h3>Variant Name : default<h3>
+		<normal> The standard three-pane layout for script editing, sample data input, and previewing results. </normal>
+        <!-- The default variant is the main component showcased above. -->
+		
+      <div>
+	 </div>
+	</div>
+</body>
+</html>

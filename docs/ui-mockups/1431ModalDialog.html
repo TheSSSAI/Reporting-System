@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Molecular Component: Modal Dialog</title>
+  <style>
+    /* --- 1. DESIGN TOKENS & SETUP --- */
+    :root {
+      /* Colors */
+      --color-primary-500: #0068FF;
+      --color-primary-600: #0052CC;
+      --color-secondary-500: #6c757d;
+      --color-secondary-600: #5a6268;
+      --color-danger-500: #D32F2F;
+      --color-danger-600: #c82333;
+      --color-text-primary: #212529;
+      --color-text-secondary: #495057;
+      --color-text-white: #FFFFFF;
+      --color-border: #DEE2E6;
+      --color-border-focus: #5C9EFF;
+      --color-bg-light: #F8F9FA;
+      --color-bg-overlay: rgba(33, 37, 41, 0.5);
+      /* Typography */
+      --font-family-primary: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --font-size-h3: 1.5rem; /* 24px */
+      --font-size-body: 1rem; /* 16px */
+      --font-weight-semibold: 600;
+      --line-height-base: 1.5;
+      /* Spacing */
+      --space-sm: 8px;
+      --space-md: 16px;
+      --space-lg: 24px;
+      /* Borders & Shadows */
+      --border-radius-main: 8px;
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      /* Transitions */
+      --transition-base: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* --- 2. BASE & SHOWCASE STYLES --- */
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: var(--font-family-primary);
+      font-size: var(--font-size-body);
+      line-height: var(--line-height-base);
+      color: var(--color-text-primary);
+      background-color: var(--color-bg-light);
+      margin: 0;
+      padding: var(--space-lg);
+    }
+    .showcase-container {
+      max-width: 1000px;
+      margin: 2rem auto;
+      padding: 2rem;
+      background: white;
+      border-radius: var(--border-radius-main);
+    }
+    h1, h2, p {
+      margin: 0 0 1rem 0;
+    }
+    .variant-section {
+      margin-top: 2rem;
+      padding: 1rem;
+      border: 1px solid var(--color-border);
+      border-radius: var(--border-radius-main);
+    }
+    .variant-section h3 {
+      margin-top: 0;
+    }
+
+    /* --- 3. DEPENDENCY STYLES (Button, Icon, Forms) --- */
+    /* Button */
+    .btn {
+      display: inline-flex;align-items: center;justify-content: center;gap: var(--space-sm);
+      font-family: var(--font-family-primary);font-weight: var(--font-weight-semibold);
+      text-align: center;vertical-align: middle;cursor: pointer;user-select: none;
+      border: 1px solid transparent;transition: var(--transition-base);
+      font-size: var(--font-size-body);line-height: var(--line-height-base);
+      padding: var(--space-sm) var(--space-md);
+      border-radius: var(--border-radius-main);
+    }
+    .btn:focus-visible { outline: 2px solid var(--color-border-focus); outline-offset: 2px; }
+    .btn--primary { color: var(--color-text-white); background-color: var(--color-primary-500); }
+    .btn--primary:hover { background-color: var(--color-primary-600); }
+    .btn--secondary { color: var(--color-text-primary); background-color: transparent; border-color: var(--color-border); }
+    .btn--secondary:hover { background-color: var(--color-bg-light); }
+    .btn--danger { color: var(--color-text-white); background-color: var(--color-danger-500); }
+    .btn--danger:hover { background-color: var(--color-danger-600); }
+
+    /* Icon */
+    .icon-btn {
+      background: none; border: none; padding: var(--space-sm);
+      cursor: pointer; line-height: 1; color: var(--color-text-secondary);
+      border-radius: 50%;
+    }
+    .icon-btn:hover { background-color: var(--color-bg-light); }
+    .icon-btn:focus-visible { outline: 2px solid var(--color-border-focus); outline-offset: 2px; }
+
+    /* Form Input */
+    .form-group { margin-bottom: var(--space-md); }
+    .form-group label { display: block; font-weight: var(--font-weight-semibold); margin-bottom: var(--space-sm); }
+    .text-input {
+        display: block; width: 100%; padding: 12px 16px;
+        font-size: var(--font-size-body); font-family: var(--font-family-primary);
+        border: 1px solid var(--color-border); border-radius: var(--border-radius-main);
+        transition: var(--transition-base);
+    }
+    .text-input:focus { border-color: var(--color-primary-500); box-shadow: 0 0 0 3px rgba(0, 104, 255, 0.1); outline: 0; }
+
+    /* --- 4. MODAL DIALOG COMPONENT --- */
+    .modal-toggle {
+      position: absolute; 
+      width: 1px; 
+      height: 1px; 
+      padding: 0; 
+      margin: -1px; 
+      overflow: hidden; 
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: var(--color-bg-overlay);
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-md);
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    .modal-toggle:checked ~ .modal-backdrop { 
+      display: flex;
+    }
+    .modal-toggle:checked ~ .modal-backdrop {
+      opacity: 1;
+    }
+
+    .modal-dialog {
+      background: white;
+      border-radius: var(--border-radius-main);
+      box-shadow: var(--shadow-lg);
+      width: 100%;
+      max-width: 500px;
+      display: flex;
+      flex-direction: column;
+      max-height: 90vh;
+      transform: scale(0.95);
+      transition: transform 0.2s ease;
+    }
+
+    .modal-toggle:checked ~ .modal-backdrop .modal-dialog {
+      transform: scale(1);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: var(--space-md) var(--space-lg);
+      border-bottom: 1px solid var(--color-border);
+      flex-shrink: 0;
+    }
+
+    .modal-title {
+      font-size: var(--font-size-h3);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-primary);
+      margin: 0;
+    }
+
+    .modal-body {
+      padding: var(--space-lg);
+      overflow-y: auto;
+      flex-grow: 1;
+    }
+    .modal-body p { margin-bottom: 0; }
+    .modal-body p + p { margin-top: 1rem; }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: var(--space-sm);
+      padding: var(--space-md) var(--space-lg);
+      border-top: 1px solid var(--color-border);
+      background-color: var(--color-bg-light);
+      border-bottom-left-radius: var(--border-radius-main);
+      border-bottom-right-radius: var(--border-radius-main);
+      flex-shrink: 0;
+    }
+
+    /* Responsive: Full-screen on mobile */
+    @media (max-width: 600px) {
+      .modal-backdrop { padding: 0; }
+      .modal-dialog {
+        max-width: 100%;
+        width: 100%;
+        height: 100%;
+        max-height: 100vh;
+        border-radius: 0;
+      }
+      .modal-footer {
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+      }
+    }
+
+    /* Accessibility */
+    @media (prefers-reduced-motion: reduce) {
+      .modal-backdrop, .modal-dialog {
+        transition: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="showcase-container">
+    <h1>Modal Dialog</h1>
+    <p>This component displays content in a layer above the main application. It is used for confirmations, forms, or important information that requires user attention.</p>
+    <p><strong>Note:</strong> This demonstration uses a CSS-only checkbox hack to show/hide the modals. A production implementation would use JavaScript to manage state, focus trapping, and keyboard interactions (like the Escape key).</p>
+
+    <!-- Variants Showcase -->
+    <div id="varients">
+      <div class="variant-section">
+        <h3>Confirmation Dialog</h3>
+        <p>Used to confirm a user's intent to perform a potentially destructive or irreversible action.</p>
+        <label for="modal-toggle-1" class="btn btn--danger">Delete Account</label>
+      </div>
+
+      <div class="variant-section">
+        <h3>Informational Dialog</h3>
+        <p>Used to present important information to the user that must be acknowledged.</p>
+        <label for="modal-toggle-2" class="btn btn--primary">Show System Update</label>
+      </div>
+
+      <div class="variant-section">
+        <h3>Form Dialog</h3>
+        <p>Used to host a short, self-contained form for actions like creating a new item or editing settings.</p>
+        <label for="modal-toggle-3" class="btn btn--primary">Create New User</label>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 1: CONFIRMATION -->
+  <input type="checkbox" id="modal-toggle-1" class="modal-toggle">
+  <div class="modal-backdrop">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="modal-title-1" aria-describedby="modal-desc-1">
+      <header class="modal-header">
+        <h2 id="modal-title-1" class="modal-title">Delete Account</h2>
+        <label for="modal-toggle-1" class="icon-btn" aria-label="Close">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+          </svg>
+        </label>
+      </header>
+      <section id="modal-desc-1" class="modal-body">
+        <p>Are you sure you want to permanently delete this account? This action cannot be undone.</p>
+      </section>
+      <footer class="modal-footer">
+        <label for="modal-toggle-1" class="btn btn--secondary">Cancel</label>
+        <label for="modal-toggle-1" class="btn btn--danger">Delete</label>
+      </footer>
+    </div>
+  </div>
+
+  <!-- MODAL 2: INFORMATIONAL -->
+  <input type="checkbox" id="modal-toggle-2" class="modal-toggle">
+  <div class="modal-backdrop">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="modal-title-2" aria-describedby="modal-desc-2">
+      <header class="modal-header">
+        <h2 id="modal-title-2" class="modal-title">System Update</h2>
+        <label for="modal-toggle-2" class="icon-btn" aria-label="Close">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+          </svg>
+        </label>
+      </header>
+      <section id="modal-desc-2" class="modal-body">
+        <p>The system has been updated to version 2.1.0. This update includes performance improvements and bug fixes.</p>
+        <p>Please refresh your browser to ensure you have the latest version.</p>
+      </section>
+      <footer class="modal-footer">
+        <label for="modal-toggle-2" class="btn btn--primary">OK</label>
+      </footer>
+    </div>
+  </div>
+
+  <!-- MODAL 3: FORM DIALOG -->
+  <input type="checkbox" id="modal-toggle-3" class="modal-toggle">
+  <div class="modal-backdrop">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="modal-title-3" aria-describedby="modal-desc-3">
+      <header class="modal-header">
+        <h2 id="modal-title-3" class="modal-title">Create New User</h2>
+        <label for="modal-toggle-3" class="icon-btn" aria-label="Close">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+          </svg>
+        </label>
+      </header>
+      <section id="modal-desc-3" class="modal-body">
+        <p>Enter the details for the new user account.</p>
+        <div class="form-group">
+          <label for="username-input">Username</label>
+          <input type="text" id="username-input" class="text-input" placeholder="e.g., jsmith">
+        </div>
+        <div class="form-group">
+          <label for="email-input">Email Address</label>
+          <input type="email" id="email-input" class="text-input" placeholder="e.g., john.smith@example.com">
+        </div>
+      </section>
+      <footer class="modal-footer">
+        <label for="modal-toggle-3" class="btn btn--secondary">Cancel</label>
+        <label for="modal-toggle-3" class="btn btn--primary">Create User</label>
+      </footer>
+    </div>
+  </div>
+
+</body>
+</html>

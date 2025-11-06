@@ -1,0 +1,753 @@
+# 1 Overview
+
+## 1.1 Diagram Id
+
+SEQ-OF-003
+
+## 1.2 Name
+
+Operator Runs Legacy Data Migration
+
+## 1.3 Description
+
+During the transition phase, an operator executes a one-time migration script. This script reads transformation logic from the legacy system, converts it into the new format, encrypts it, and saves it into the new database schema, preserving all report associations.
+
+## 1.4 Type
+
+🔹 OperationalFlow
+
+## 1.5 Purpose
+
+To ensure a seamless transition from the legacy system to the new data transformation feature without data loss.
+
+## 1.6 Complexity
+
+High
+
+## 1.7 Priority
+
+🔴 High
+
+## 1.8 Frequency
+
+OnDemand
+
+## 1.9 Participants
+
+- External: Operator
+- REPO-APP-API-001
+- REPO-LIB-DATA-003
+- External: Legacy Database
+
+## 1.10 Key Interactions
+
+- Operator executes the migration script via a CLI or a secured administrative endpoint.
+- The script connects to the legacy system's database.
+- It iterates through legacy transformation logic, reading the script content and its report associations.
+- For each script, it creates a `TransformationScript` and `ScriptVersion` entity in the new system.
+- The script content is encrypted using the new system's encryption service.
+- The entities and their preserved associations are saved to the new database.
+- The script outputs a summary of migrated items and any failures.
+
+## 1.11 Triggers
+
+- Manual execution by an authorized operator during the deployment window.
+
+## 1.12 Outcomes
+
+- All transformation logic and report associations from the legacy system are successfully migrated to the new system.
+
+## 1.13 Business Rules
+
+- A one-time migration script and documented procedure must be provided (REQ-IMP-002).
+- The migration must validate and preserve all associations (REQ-IMP-002).
+
+## 1.14 Error Scenarios
+
+- The script fails to connect to the legacy database.
+- Data in the legacy system is in an unexpected format, causing a migration error for a specific item.
+
+## 1.15 Integration Points
+
+- Legacy System Database
+- Application Database
+
+# 2.0 Details
+
+## 2.1 Diagram Id
+
+SEQ-IMP-002
+
+## 2.2 Name
+
+Operator Executes Legacy Data Migration Script
+
+## 2.3 Description
+
+A detailed sequence for the one-time operational task of migrating transformation scripts and their report associations from a legacy database to the new system. The process is initiated by an authorized operator via a command-line interface, ensuring data is correctly transformed, encrypted, and persisted.
+
+## 2.4 Participants
+
+### 2.4.1 Human Actor
+
+#### 2.4.1.1 Repository Id
+
+External: Operator
+
+#### 2.4.1.2 Display Name
+
+Operator
+
+#### 2.4.1.3 Type
+
+🔹 Human Actor
+
+#### 2.4.1.4 Technology
+
+Secure Shell (SSH) / CLI
+
+#### 2.4.1.5 Order
+
+1
+
+#### 2.4.1.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | actor |
+| Color | #90A4AE |
+| Stereotype | External |
+
+### 2.4.2.0 Application Service
+
+#### 2.4.2.1 Repository Id
+
+REPO-APP-API-001
+
+#### 2.4.2.2 Display Name
+
+Migration Service (CLI)
+
+#### 2.4.2.3 Type
+
+🔹 Application Service
+
+#### 2.4.2.4 Technology
+
+.NET 8 CLI Command
+
+#### 2.4.2.5 Order
+
+2
+
+#### 2.4.2.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | participant |
+| Color | #1E88E5 |
+| Stereotype | Application |
+
+### 2.4.3.0 Database
+
+#### 2.4.3.1 Repository Id
+
+External: Legacy Database
+
+#### 2.4.3.2 Display Name
+
+Legacy Database
+
+#### 2.4.3.3 Type
+
+🔹 Database
+
+#### 2.4.3.4 Technology
+
+Relational Database (e.g., SQL Server, PostgreSQL)
+
+#### 2.4.3.5 Order
+
+3
+
+#### 2.4.3.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | database |
+| Color | #F4511E |
+| Stereotype | External |
+
+### 2.4.4.0 Library
+
+#### 2.4.4.1 Repository Id
+
+REPO-LIB-DATA-003
+
+#### 2.4.4.2 Display Name
+
+Data Access Layer
+
+#### 2.4.4.3 Type
+
+🔹 Library
+
+#### 2.4.4.4 Technology
+
+Entity Framework Core 8
+
+#### 2.4.4.5 Order
+
+4
+
+#### 2.4.4.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | component |
+| Color | #43A047 |
+| Stereotype | Infrastructure |
+
+## 2.5.0.0 Interactions
+
+### 2.5.1.0 CLI Execution
+
+#### 2.5.1.1 Source Id
+
+External: Operator
+
+#### 2.5.1.2 Target Id
+
+REPO-APP-API-001
+
+#### 2.5.1.3 Message
+
+Executes migration command with credentials.
+
+#### 2.5.1.4 Sequence Number
+
+1
+
+#### 2.5.1.5 Type
+
+🔹 CLI Execution
+
+#### 2.5.1.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.1.7 Return Message
+
+Returns migration summary report to standard output.
+
+#### 2.5.1.8 Has Return
+
+✅ Yes
+
+#### 2.5.1.9 Is Activation
+
+✅ Yes
+
+#### 2.5.1.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | CLI / Standard I/O |
+| Method | dotnet run --project TransformationEngine.Api -- m... |
+| Parameters | Database credentials sourced from secure environme... |
+| Authentication | Requires OS-level authentication and authorization... |
+| Error Handling | Command exits with a non-zero status code on failu... |
+| Performance | N/A |
+
+### 2.5.2.0 Logging
+
+#### 2.5.2.1 Source Id
+
+REPO-APP-API-001
+
+#### 2.5.2.2 Target Id
+
+REPO-APP-API-001
+
+#### 2.5.2.3 Message
+
+Logs start of migration process and validates credentials.
+
+#### 2.5.2.4 Sequence Number
+
+2
+
+#### 2.5.2.5 Type
+
+🔹 Logging
+
+#### 2.5.2.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.2.7 Return Message
+
+
+
+#### 2.5.2.8 Has Return
+
+❌ No
+
+#### 2.5.2.9 Is Activation
+
+❌ No
+
+#### 2.5.2.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-process |
+| Method | ILogger.LogInformation("Starting legacy data migra... |
+| Parameters | CorrelationId for the entire run. |
+| Authentication | N/A |
+| Error Handling | If credentials are not found, the process terminat... |
+| Performance | Low |
+
+### 2.5.3.0 Database Connection
+
+#### 2.5.3.1 Source Id
+
+REPO-APP-API-001
+
+#### 2.5.3.2 Target Id
+
+External: Legacy Database
+
+#### 2.5.3.3 Message
+
+Establishes read-only database connection.
+
+#### 2.5.3.4 Sequence Number
+
+3
+
+#### 2.5.3.5 Type
+
+🔹 Database Connection
+
+#### 2.5.3.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.3.7 Return Message
+
+Connection object or throws exception.
+
+#### 2.5.3.8 Has Return
+
+✅ Yes
+
+#### 2.5.3.9 Is Activation
+
+❌ No
+
+#### 2.5.3.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | TDS / PGWire |
+| Method | DbConnection.OpenAsync() |
+| Parameters | Legacy DB connection string. |
+| Authentication | Database user credentials with read-only permissio... |
+| Error Handling | Catches `DbException`. Implements a retry policy (... |
+| Performance | Latency depends on network and DB health. |
+
+### 2.5.4.0 Database Query
+
+#### 2.5.4.1 Source Id
+
+REPO-APP-API-001
+
+#### 2.5.4.2 Target Id
+
+External: Legacy Database
+
+#### 2.5.4.3 Message
+
+Executes query to fetch all transformation scripts and their report associations.
+
+#### 2.5.4.4 Sequence Number
+
+4
+
+#### 2.5.4.5 Type
+
+🔹 Database Query
+
+#### 2.5.4.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.4.7 Return Message
+
+Returns a stream or collection of data rows.
+
+#### 2.5.4.8 Has Return
+
+✅ Yes
+
+#### 2.5.4.9 Is Activation
+
+❌ No
+
+#### 2.5.4.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | SQL |
+| Method | SELECT LegacyId, ScriptContent, ReportId FROM Lega... |
+| Parameters | None |
+| Authentication | N/A (uses existing connection) |
+| Error Handling | Catches `DbException` for query failures. Logs the... |
+| Performance | Depends on the size of the legacy dataset. Uses a ... |
+
+### 2.5.5.0 Loop Start
+
+#### 2.5.5.1 Source Id
+
+REPO-APP-API-001
+
+#### 2.5.5.2 Target Id
+
+REPO-APP-API-001
+
+#### 2.5.5.3 Message
+
+Begin iterating over each legacy script record.
+
+#### 2.5.5.4 Sequence Number
+
+5
+
+#### 2.5.5.5 Type
+
+🔹 Loop Start
+
+#### 2.5.5.6 Is Synchronous
+
+❌ No
+
+#### 2.5.5.7 Return Message
+
+
+
+#### 2.5.5.8 Has Return
+
+❌ No
+
+#### 2.5.5.9 Is Activation
+
+❌ No
+
+#### 2.5.5.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-process |
+| Method | foreach (var row in dataReader) |
+| Parameters | Legacy data row |
+| Authentication | N/A |
+| Error Handling | A `try-catch` block surrounds the entire loop body... |
+| Performance | N/A |
+
+#### 2.5.5.11 Nested Interactions
+
+##### 2.5.5.11.1 Data Transformation & Encryption
+
+###### 2.5.5.11.1.1 Source Id
+
+REPO-APP-API-001
+
+###### 2.5.5.11.1.2 Target Id
+
+REPO-APP-API-001
+
+###### 2.5.5.11.1.3 Message
+
+Maps legacy data and encrypts script content.
+
+###### 2.5.5.11.1.4 Sequence Number
+
+5.1
+
+###### 2.5.5.11.1.5 Type
+
+🔹 Data Transformation & Encryption
+
+###### 2.5.5.11.1.6 Is Synchronous
+
+✅ Yes
+
+###### 2.5.5.11.1.7 Return Message
+
+New `TransformationScript` & `ScriptVersion` domain entities.
+
+###### 2.5.5.11.1.8 Has Return
+
+✅ Yes
+
+###### 2.5.5.11.1.9 Is Activation
+
+❌ No
+
+###### 2.5.5.11.1.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-process |
+| Method | IEncryptionService.Encrypt(row.ScriptContent) |
+| Parameters | Raw script string. |
+| Authentication | N/A |
+| Error Handling | Catches `FormatException` or validation errors. Lo... |
+| Performance | Low overhead per script. |
+
+##### 2.5.5.11.2.0 Repository Method Call
+
+###### 2.5.5.11.2.1 Source Id
+
+REPO-APP-API-001
+
+###### 2.5.5.11.2.2 Target Id
+
+REPO-LIB-DATA-003
+
+###### 2.5.5.11.2.3 Message
+
+Saves new script, version, and associations within a transaction.
+
+###### 2.5.5.11.2.4 Sequence Number
+
+5.2
+
+###### 2.5.5.11.2.5 Type
+
+🔹 Repository Method Call
+
+###### 2.5.5.11.2.6 Is Synchronous
+
+✅ Yes
+
+###### 2.5.5.11.2.7 Return Message
+
+Success or throws exception.
+
+###### 2.5.5.11.2.8 Has Return
+
+✅ Yes
+
+###### 2.5.5.11.2.9 Is Activation
+
+✅ Yes
+
+###### 2.5.5.11.2.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-process Method Call |
+| Method | ITransformationScriptRepository.CreateScriptWithVe... |
+| Parameters | Fully populated domain entities. |
+| Authentication | N/A |
+| Error Handling | The repository method uses a `DbContextTransaction... |
+| Performance | High-performance due to transactional write to a m... |
+
+##### 2.5.5.11.3.0 Logging
+
+###### 2.5.5.11.3.1 Source Id
+
+REPO-APP-API-001
+
+###### 2.5.5.11.3.2 Target Id
+
+REPO-APP-API-001
+
+###### 2.5.5.11.3.3 Message
+
+Logs successful migration of individual item.
+
+###### 2.5.5.11.3.4 Sequence Number
+
+5.3
+
+###### 2.5.5.11.3.5 Type
+
+🔹 Logging
+
+###### 2.5.5.11.3.6 Is Synchronous
+
+✅ Yes
+
+###### 2.5.5.11.3.7 Return Message
+
+
+
+###### 2.5.5.11.3.8 Has Return
+
+❌ No
+
+###### 2.5.5.11.3.9 Is Activation
+
+❌ No
+
+###### 2.5.5.11.3.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-process |
+| Method | ILogger.LogInformation("Successfully migrated lega... |
+| Parameters | LegacyId, NewScriptId. |
+| Authentication | N/A |
+| Error Handling | N/A |
+| Performance | Low |
+
+### 2.5.6.0.0.0 Loop End
+
+#### 2.5.6.1.0.0 Source Id
+
+REPO-APP-API-001
+
+#### 2.5.6.2.0.0 Target Id
+
+REPO-APP-API-001
+
+#### 2.5.6.3.0.0 Message
+
+End loop.
+
+#### 2.5.6.4.0.0 Sequence Number
+
+6
+
+#### 2.5.6.5.0.0 Type
+
+🔹 Loop End
+
+#### 2.5.6.6.0.0 Is Synchronous
+
+❌ No
+
+#### 2.5.6.7.0.0 Return Message
+
+
+
+#### 2.5.6.8.0.0 Has Return
+
+❌ No
+
+#### 2.5.6.9.0.0 Is Activation
+
+❌ No
+
+#### 2.5.6.10.0.0 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | N/A |
+| Method | N/A |
+| Parameters | N/A |
+| Authentication | N/A |
+| Error Handling | N/A |
+| Performance | N/A |
+
+### 2.5.7.0.0.0 Logging
+
+#### 2.5.7.1.0.0 Source Id
+
+REPO-APP-API-001
+
+#### 2.5.7.2.0.0 Target Id
+
+REPO-APP-API-001
+
+#### 2.5.7.3.0.0 Message
+
+Logs final summary of the migration.
+
+#### 2.5.7.4.0.0 Sequence Number
+
+7
+
+#### 2.5.7.5.0.0 Type
+
+🔹 Logging
+
+#### 2.5.7.6.0.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.7.7.0.0 Return Message
+
+
+
+#### 2.5.7.8.0.0 Has Return
+
+❌ No
+
+#### 2.5.7.9.0.0 Is Activation
+
+❌ No
+
+#### 2.5.7.10.0.0 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-process |
+| Method | ILogger.LogInformation("Migration complete. Succee... |
+| Parameters | SuccessCount, FailureCount. |
+| Authentication | N/A |
+| Error Handling | N/A |
+| Performance | Low |
+
+## 2.6.0.0.0.0 Notes
+
+### 2.6.1.0.0.0 Content
+
+#### 2.6.1.1.0.0 Content
+
+The entire migration should be performed after taking a full backup of the new application database to enable a clean rollback if necessary.
+
+#### 2.6.1.2.0.0 Position
+
+Top
+
+#### 2.6.1.3.0.0 Participant Id
+
+*Not specified*
+
+#### 2.6.1.4.0.0 Sequence Number
+
+0
+
+### 2.6.2.0.0.0 Content
+
+#### 2.6.2.1.0.0 Content
+
+The script must be idempotent. If re-run, it should check for the existence of a migrated script (e.g., via a mapping table or a unique constraint on a `LegacyId` column) and skip it to avoid data duplication.
+
+#### 2.6.2.2.0.0 Position
+
+Bottom
+
+#### 2.6.2.3.0.0 Participant Id
+
+REPO-APP-API-001
+
+#### 2.6.2.4.0.0 Sequence Number
+
+1
+
+## 2.7.0.0.0.0 Implementation Guidance
+
+| Property | Value |
+|----------|-------|
+| Security Requirements | Operator must have administrative privileges. Data... |
+| Performance Targets | The script should be able to migrate 10,000 legacy... |
+| Error Handling Strategy | The process will implement two levels of error han... |
+| Testing Considerations | Requires an integration test environment with a sa... |
+| Monitoring Requirements | The script must log to the centralized logging sys... |
+| Deployment Considerations | This is a one-time script executed during a schedu... |
+

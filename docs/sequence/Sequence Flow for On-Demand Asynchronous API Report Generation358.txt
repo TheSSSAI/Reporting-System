@@ -1,0 +1,704 @@
+# 1 Overview
+
+## 1.1 Diagram Id
+
+SEQ-SI-001
+
+## 1.2 Name
+
+On-Demand Asynchronous API Report Generation
+
+## 1.3 Description
+
+An external client makes a REST API call to trigger a long-running report. The system immediately validates the request, creates a job record, enqueues the job for background processing, and returns a job ID and a status URL. The client can then poll the status URL to check progress and retrieve the result from a separate URL upon completion.
+
+## 1.4 Type
+
+🔹 ServiceInteraction
+
+## 1.5 Purpose
+
+To provide a robust, non-blocking mechanism for external systems to trigger long-running report jobs without holding an HTTP connection open.
+
+## 1.6 Complexity
+
+High
+
+## 1.7 Priority
+
+🔴 High
+
+## 1.8 Frequency
+
+OnDemand
+
+## 1.9 Participants
+
+- apiweblayer
+- application_layer
+- infrastructure_layer
+
+## 1.10 Key Interactions
+
+- External client sends POST /api/v1/reports/{id}/generate.
+- API/Web Layer validates the request and JWT token.
+- Application Layer verifies the report is configured for asynchronous API delivery.
+- Application Layer creates a new JobExecutionLog record with status 'Queued' and a unique job ID.
+- The job is enqueued for background processing by the Quartz.NET scheduler.
+- API/Web Layer immediately returns an HTTP 202 Accepted response with `jobId` and `statusUrl` in the body.
+- Client periodically sends GET /api/v1/jobs/{jobId} to poll the status.
+- Once the background job completes and the status is 'Succeeded', the client sends GET /api/v1/jobs/{jobId}/result to download the report artifact.
+
+## 1.11 Triggers
+
+- External system calls the on-demand report generation API endpoint.
+
+## 1.12 Outcomes
+
+- Report generation is initiated in the background without blocking the API client.
+- Client receives a job identifier to track the asynchronous process.
+- Client can successfully poll for status and retrieve the report result upon completion.
+
+## 1.13 Business Rules
+
+- A report configured for 'API Response' delivery with asynchronous mode enabled will follow this flow.
+
+## 1.14 Error Scenarios
+
+- The specified report ID does not exist (404 Not Found).
+- The background job fails during execution; the status poll will reflect the 'Failed' status and provide error details.
+- The client attempts to retrieve the result before the job is complete.
+
+## 1.15 Integration Points
+
+- External Client System (API Consumer)
+
+# 2.0 Details
+
+## 2.1 Diagram Id
+
+SEQ-SI-001
+
+## 2.2 Name
+
+Implementation-Ready: On-Demand Asynchronous API Report Generation
+
+## 2.3 Description
+
+Defines the technical sequence for an external client triggering a long-running report generation via a REST API. The system uses an asynchronous, non-blocking pattern by immediately accepting the request, enqueuing a background job via Quartz.NET, and returning a job identifier. The client then polls a status endpoint to track progress and retrieves the final report artifact from a result endpoint upon successful completion. This sequence adheres to the Modular Monolith and Clean Architecture principles.
+
+## 2.4 Participants
+
+### 2.4.1 Actor
+
+#### 2.4.1.1 Repository Id
+
+ExternalClient
+
+#### 2.4.1.2 Display Name
+
+External Client
+
+#### 2.4.1.3 Type
+
+🔹 Actor
+
+#### 2.4.1.4 Technology
+
+Generic API Consumer (e.g., Postman, curl, custom application)
+
+#### 2.4.1.5 Order
+
+1
+
+#### 2.4.1.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | actor |
+| Color | #999999 |
+| Stereotype | External |
+
+### 2.4.2.0 APIGateway
+
+#### 2.4.2.1 Repository Id
+
+api_web_layer
+
+#### 2.4.2.2 Display Name
+
+API/Web Layer
+
+#### 2.4.2.3 Type
+
+🔹 APIGateway
+
+#### 2.4.2.4 Technology
+
+ASP.NET Core 8
+
+#### 2.4.2.5 Order
+
+2
+
+#### 2.4.2.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | component |
+| Color | #82CFFD |
+| Stereotype | Controller |
+
+### 2.4.3.0 ApplicationServices
+
+#### 2.4.3.1 Repository Id
+
+application_layer
+
+#### 2.4.3.2 Display Name
+
+Application Layer
+
+#### 2.4.3.3 Type
+
+🔹 ApplicationServices
+
+#### 2.4.3.4 Technology
+
+.NET 8
+
+#### 2.4.3.5 Order
+
+3
+
+#### 2.4.3.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | component |
+| Color | #43A047 |
+| Stereotype | Service |
+
+### 2.4.4.0 Infrastructure
+
+#### 2.4.4.1 Repository Id
+
+infrastructure_layer
+
+#### 2.4.4.2 Display Name
+
+Infrastructure Layer
+
+#### 2.4.4.3 Type
+
+🔹 Infrastructure
+
+#### 2.4.4.4 Technology
+
+Entity Framework Core 8, Quartz.NET 3.x
+
+#### 2.4.4.5 Order
+
+4
+
+#### 2.4.4.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | component |
+| Color | #F06292 |
+| Stereotype | Repository/Scheduler |
+
+## 2.5.0.0 Interactions
+
+### 2.5.1.0 Request
+
+#### 2.5.1.1 Source Id
+
+ExternalClient
+
+#### 2.5.1.2 Target Id
+
+api_web_layer
+
+#### 2.5.1.3 Message
+
+1. POST /api/v1/reports/{id}/generate
+
+#### 2.5.1.4 Sequence Number
+
+1
+
+#### 2.5.1.5 Type
+
+🔹 Request
+
+#### 2.5.1.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.1.7 Return Message
+
+10. HTTP 202 Accepted
+
+#### 2.5.1.8 Has Return
+
+✅ Yes
+
+#### 2.5.1.9 Is Activation
+
+✅ Yes
+
+#### 2.5.1.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | HTTPS |
+| Method | POST |
+| Parameters | URL Path: {id} (Guid)
+Request Body: (optional) JSO... |
+| Authentication | Required. JWT Bearer token in 'Authorization' head... |
+| Error Handling | Handled by Global Exception Middleware. Returns 40... |
+| Performance | P95 Latency Goal: < 100ms |
+
+### 2.5.2.0 InternalProcessing
+
+#### 2.5.2.1 Source Id
+
+api_web_layer
+
+#### 2.5.2.2 Target Id
+
+api_web_layer
+
+#### 2.5.2.3 Message
+
+2. Validate JWT and Request DTO
+
+#### 2.5.2.4 Sequence Number
+
+2
+
+#### 2.5.2.5 Type
+
+🔹 InternalProcessing
+
+#### 2.5.2.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.2.7 Return Message
+
+
+
+#### 2.5.2.8 Has Return
+
+❌ No
+
+#### 2.5.2.9 Is Activation
+
+❌ No
+
+#### 2.5.2.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | Internal |
+| Method | Invoke Authentication & Validation Middleware |
+| Parameters | HttpContext, Authorization Header, Request Body |
+| Authentication | ASP.NET Core Identity's JWT Bearer handler validat... |
+| Error Handling | Throws SecurityTokenException on invalid token (ca... |
+| Performance | Should be < 5ms. |
+
+### 2.5.3.0 MethodCall
+
+#### 2.5.3.1 Source Id
+
+api_web_layer
+
+#### 2.5.3.2 Target Id
+
+application_layer
+
+#### 2.5.3.3 Message
+
+3. Invoke InitiateAsynchronousReportJobAsync(reportId)
+
+#### 2.5.3.4 Sequence Number
+
+3
+
+#### 2.5.3.5 Type
+
+🔹 MethodCall
+
+#### 2.5.3.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.3.7 Return Message
+
+9. Return JobInitiationResult DTO { JobId, StatusUrl }
+
+#### 2.5.3.8 Has Return
+
+✅ Yes
+
+#### 2.5.3.9 Is Activation
+
+✅ Yes
+
+#### 2.5.3.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-Process |
+| Method | Task<JobInitiationResult> InitiateAsynchronousRepo... |
+| Parameters | reportId: from URL, userId: from JWT claims. |
+| Authentication | N/A (trust boundary) |
+| Error Handling | Catches exceptions from deeper layers (e.g., Repor... |
+| Performance | N/A |
+
+### 2.5.4.0 DatabaseQuery
+
+#### 2.5.4.1 Source Id
+
+application_layer
+
+#### 2.5.4.2 Target Id
+
+infrastructure_layer
+
+#### 2.5.4.3 Message
+
+4. GetByIdAsync<ReportConfiguration>(reportId)
+
+#### 2.5.4.4 Sequence Number
+
+4
+
+#### 2.5.4.5 Type
+
+🔹 DatabaseQuery
+
+#### 2.5.4.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.4.7 Return Message
+
+5. Return ReportConfiguration entity
+
+#### 2.5.4.8 Has Return
+
+✅ Yes
+
+#### 2.5.4.9 Is Activation
+
+✅ Yes
+
+#### 2.5.4.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | EF Core |
+| Method | IReportConfigurationRepository.GetByIdAsync(report... |
+| Parameters | Primary key of the report. |
+| Authentication | Database connection string credentials. |
+| Error Handling | EF Core throws exceptions on DB connection failure... |
+| Performance | Expected < 10ms (indexed query). |
+
+### 2.5.5.0 InternalProcessing
+
+#### 2.5.5.1 Source Id
+
+application_layer
+
+#### 2.5.5.2 Target Id
+
+application_layer
+
+#### 2.5.5.3 Message
+
+6. Verify Report Delivery is Async API
+
+#### 2.5.5.4 Sequence Number
+
+6
+
+#### 2.5.5.5 Type
+
+🔹 InternalProcessing
+
+#### 2.5.5.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.5.7 Return Message
+
+
+
+#### 2.5.5.8 Has Return
+
+❌ No
+
+#### 2.5.5.9 Is Activation
+
+❌ No
+
+#### 2.5.5.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | Internal |
+| Method | Check reportConfig.DeliveryTarget == 'API_RESPONSE... |
+| Parameters | ReportConfiguration entity. |
+| Authentication | N/A |
+| Error Handling | If check fails, throws ConflictException as per RE... |
+| Performance | Negligible. |
+
+### 2.5.6.0 DatabaseInsert
+
+#### 2.5.6.1 Source Id
+
+application_layer
+
+#### 2.5.6.2 Target Id
+
+infrastructure_layer
+
+#### 2.5.6.3 Message
+
+7. CreateJobExecutionLogAsync(newJob)
+
+#### 2.5.6.4 Sequence Number
+
+7
+
+#### 2.5.6.5 Type
+
+🔹 DatabaseInsert
+
+#### 2.5.6.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.6.7 Return Message
+
+Return created JobExecutionLog with new JobId
+
+#### 2.5.6.8 Has Return
+
+✅ Yes
+
+#### 2.5.6.9 Is Activation
+
+❌ No
+
+#### 2.5.6.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | EF Core |
+| Method | IJobExecutionLogRepository.AddAsync(jobLog) |
+| Parameters | JobExecutionLog entity with Status='Queued', Repor... |
+| Authentication | N/A |
+| Error Handling | Handled by EF Core transaction management. |
+| Performance | Expected < 20ms. |
+
+### 2.5.7.0 MessageQueue
+
+#### 2.5.7.1 Source Id
+
+application_layer
+
+#### 2.5.7.2 Target Id
+
+infrastructure_layer
+
+#### 2.5.7.3 Message
+
+8. Enqueue background job
+
+#### 2.5.7.4 Sequence Number
+
+8
+
+#### 2.5.7.5 Type
+
+🔹 MessageQueue
+
+#### 2.5.7.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.7.7 Return Message
+
+Job successfully scheduled
+
+#### 2.5.7.8 Has Return
+
+✅ Yes
+
+#### 2.5.7.9 Is Activation
+
+❌ No
+
+#### 2.5.7.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | Quartz.NET API |
+| Method | IScheduler.ScheduleJob(jobDetail, trigger) |
+| Parameters | JobDetail containing JobType=ReportGenerationJob a... |
+| Authentication | N/A |
+| Error Handling | Throws SchedulerException if the job cannot be sto... |
+| Performance | Expected < 25ms. |
+
+### 2.5.8.0 Request
+
+#### 2.5.8.1 Source Id
+
+ExternalClient
+
+#### 2.5.8.2 Target Id
+
+api_web_layer
+
+#### 2.5.8.3 Message
+
+11. GET /api/v1/jobs/{jobId}
+
+#### 2.5.8.4 Sequence Number
+
+11
+
+#### 2.5.8.5 Type
+
+🔹 Request
+
+#### 2.5.8.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.8.7 Return Message
+
+12. HTTP 200 OK with Job Status DTO
+
+#### 2.5.8.8 Has Return
+
+✅ Yes
+
+#### 2.5.8.9 Is Activation
+
+❌ No
+
+#### 2.5.8.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | HTTPS |
+| Method | GET |
+| Parameters | URL Path: {jobId} (Guid) |
+| Authentication | Required. JWT Bearer token. User must be originato... |
+| Error Handling | Returns 404 if job ID not found. |
+| Performance | P95 Latency Goal: < 50ms |
+
+### 2.5.9.0 Request
+
+#### 2.5.9.1 Source Id
+
+ExternalClient
+
+#### 2.5.9.2 Target Id
+
+api_web_layer
+
+#### 2.5.9.3 Message
+
+13. GET /api/v1/jobs/{jobId}/result
+
+#### 2.5.9.4 Sequence Number
+
+13
+
+#### 2.5.9.5 Type
+
+🔹 Request
+
+#### 2.5.9.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.9.7 Return Message
+
+14. HTTP 200 OK with report content
+
+#### 2.5.9.8 Has Return
+
+✅ Yes
+
+#### 2.5.9.9 Is Activation
+
+❌ No
+
+#### 2.5.9.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | HTTPS |
+| Method | GET |
+| Parameters | URL Path: {jobId} (Guid) |
+| Authentication | Required. JWT Bearer token. User must be originato... |
+| Error Handling | Returns 404 if job not found. Returns 409 (Conflic... |
+| Performance | Dependent on report size. |
+
+## 2.6.0.0 Notes
+
+### 2.6.1.0 Content
+
+#### 2.6.1.1 Content
+
+The actual report generation process (data ingestion, transformation, etc.) is executed by a background worker triggered by the Quartz.NET scheduler. That complex process is out of scope for this specific sequence diagram.
+
+#### 2.6.1.2 Position
+
+bottom
+
+#### 2.6.1.3 Participant Id
+
+*Not specified*
+
+#### 2.6.1.4 Sequence Number
+
+*Not specified*
+
+### 2.6.2.0 Content
+
+#### 2.6.2.1 Content
+
+The `statusUrl` and `resultUrl` returned in the response are constructed by the Application Layer based on the request's base URL and the generated `jobId`.
+
+#### 2.6.2.2 Position
+
+inline
+
+#### 2.6.2.3 Participant Id
+
+application_layer
+
+#### 2.6.2.4 Sequence Number
+
+9
+
+## 2.7.0.0 Implementation Guidance
+
+| Property | Value |
+|----------|-------|
+| Security Requirements | All endpoints (`/generate`, `/jobs/{id}`, `/jobs/{... |
+| Performance Targets | The initial request (`POST /generate`) must return... |
+| Error Handling Strategy | Utilize a global exception handling middleware in ... |
+| Testing Considerations | Integration tests are crucial. They should: 1. Moc... |
+| Monitoring Requirements | Instrument the system with Prometheus metrics. Key... |
+| Deployment Considerations | The application must run as a single Windows Servi... |
+

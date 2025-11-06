@@ -1,0 +1,23 @@
+sequenceDiagram
+    participant "ScriptExecutionService" as ScriptExecutionService
+    participant "JintEngineWrapper" as JintEngineWrapper
+    actor "PrometheusClient" as PrometheusClient
+    participant "InProcessEventBus" as InProcessEventBus
+    participant "SecurityViolationEventHandler" as SecurityViolationEventHandler
+    participant "SecurityViolationLogRepository" as SecurityViolationLogRepository
+
+    activate JintEngineWrapper
+    ScriptExecutionService->>JintEngineWrapper: 1. Execute(script, inputJson, cancellationToken)
+    JintEngineWrapper-->>ScriptExecutionService: Throws SandboxConstraintViolationException
+    JintEngineWrapper->>JintEngineWrapper: 2. [ALT: Constraint Violation] engine.Execute(script)
+    JintEngineWrapper-->>JintEngineWrapper: Throws Jint.Runtime.MemoryLimitExceededException
+    JintEngineWrapper->>JintEngineWrapper: 3. catch (Jint.Runtime.MemoryLimitExceededException ex)
+    JintEngineWrapper->>PrometheusClient: 4. IncrementConstraintViolationMetric('MEMORY_LIMIT')
+    JintEngineWrapper->>InProcessEventBus: 5. Publish(new ScriptSecurityViolationOccurred(...))
+    JintEngineWrapper->>ScriptExecutionService: 8. throw new SandboxConstraintViolationException(...)
+
+    note over JintEngineWrapper: Crucial Security Checkpoint: The try...catch block inside the JintEngineWrapper is the primary de...
+    note over InProcessEventBus: Asynchronous Logging: Security logging is intentionally asynchronous via an event bus. This ensur...
+    note over SecurityViolationLogRepository: Compliance Mandate (SOC 2/ISO 27001): The data written to the SecurityViolationLog table must be ...
+
+    deactivate JintEngineWrapper

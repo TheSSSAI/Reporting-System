@@ -1,0 +1,22 @@
+sequenceDiagram
+    participant "Application Service (TransformationService)" as ApplicationServiceTransformationService
+    participant "Jint Transformation Engine" as JintTransformationEngine
+    participant "Security Audit Service" as SecurityAuditService
+    participant "Audit Log Database" as AuditLogDatabase
+
+    activate JintTransformationEngine
+    ApplicationServiceTransformationService->>JintTransformationEngine: 1. 1.1: ITransformationEngine.ExecuteAsync(script, jsonData, constraints)
+    JintTransformationEngine-->>ApplicationServiceTransformationService: 1.10: Returns faulted Task, propagating wrapped TransformationEngineException
+    JintTransformationEngine->>JintTransformationEngine: 2. 1.2: Configure Jint Engine instance with security constraints
+    JintTransformationEngine->>JintTransformationEngine: 3. 1.3: [try] engine.Execute(script). A constraint is violated during execution.
+    JintTransformationEngine-->>JintTransformationEngine: 1.4: [catch] Throws TimeoutException, MemoryLimitExceededException, or StatementsCountOverflowException
+    activate SecurityAuditService
+    JintTransformationEngine->>SecurityAuditService: 4. 1.5: IAuditLogger.LogSecurityEventAsync(violationEvent)
+    SecurityAuditService-->>JintTransformationEngine: 1.8: Returns completed Task
+    JintTransformationEngine->>JintTransformationEngine: 6. 1.9: Wraps Jint exception and re-throws new TransformationEngineException
+
+    note over JintTransformationEngine: Defense-in-Depth: The Jint sandbox is a critical layer of defense, isolating untrusted user code ...
+    note over SecurityAuditService: Compliance & Audit: This flow is essential for REQ-COMP-DTR-001. The immutable audit log provides...
+
+    deactivate SecurityAuditService
+    deactivate JintTransformationEngine

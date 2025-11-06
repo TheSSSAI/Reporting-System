@@ -1,0 +1,309 @@
+
+{
+  "visual_foundation": {
+    "typography": {
+      "font_families": {
+        "primary": "'IBM Plex Sans', sans-serif",
+        "secondary": "'Inter', sans-serif",
+        "monospace": "'IBM Plex Mono', monospace"
+      },
+      "font_scale": {
+        "h1": {
+          "size": "48px",
+          "weight": "600",
+          "line_height": "1.2"
+        },
+        "h2": {
+          "size": "36px",
+          "weight": "600",
+          "line_height": "1.25"
+        },
+        "h3": {
+          "size": "28px",
+          "weight": "600",
+          "line_height": "1.3"
+        },
+        "h4": {
+          "size": "20px",
+          "weight": "600",
+          "line_height": "1.4"
+        },
+        "body": {
+          "size": "16px",
+          "weight": "400",
+          "line_height": "1.5"
+        },
+        "caption": {
+          "size": "14px",
+          "weight": "400",
+          "line_height": "1.4"
+        }
+      },
+      "responsive_scaling": "For viewports below 1440px, heading font sizes (H1-H3) can be scaled down by a factor of 0.8 to preserve space. Body and caption text remain fixed for readability."
+    },
+    "color_palette": {
+      "primary": {
+        "50": "#E6F0FF",
+        "100": "#B8D5FF",
+        "200": "#8AB9FF",
+        "300": "#5C9EFF",
+        "400": "#2E83FF",
+        "500": "#0068FF",
+        "600": "#0052CC",
+        "700": "#003E99",
+        "800": "#002966",
+        "900": "#001533"
+      },
+      "secondary": {
+        "50": "#E0F7F6",
+        "500": "#009688",
+        "900": "#002D29"
+      },
+      "neutrals": {
+        "white": "#FFFFFF",
+        "gray_50": "#F8F9FA",
+        "gray_100": "#F1F3F5",
+        "gray_200": "#E9ECEF",
+        "gray_300": "#DEE2E6",
+        "gray_400": "#CED4DA",
+        "gray_500": "#ADB5BD",
+        "gray_600": "#868E96",
+        "gray_700": "#495057",
+        "gray_800": "#343A40",
+        "gray_900": "#212529",
+        "black": "#000000"
+      },
+      "semantic": {
+        "success": "#2E7D32",
+        "warning": "#ED6C02",
+        "error": "#D32F2F",
+        "info": "#0288D1"
+      }
+    },
+    "spacing_system": {
+      "scale": [
+        "4px",
+        "8px",
+        "12px",
+        "16px",
+        "24px",
+        "32px",
+        "48px",
+        "64px"
+      ],
+      "grid_system": "Based on MUI's 12-column responsive grid system. Standard spacing between grid items is 16px.",
+      "container_widths": {
+        "mobile": "100%",
+        "tablet": "100%",
+        "desktop": "100%",
+        "max_content_width": "1600px"
+      },
+      "responsive_spacing": "Use MUI's theme.spacing() utility for consistent application of the scale. Padding on main containers should reduce from 24px on desktop to 16px on smaller viewports."
+    }
+  },
+  "component_specifications": {
+    "buttons": {
+      "primary": {
+        "default_state": {
+          "background": "#0068FF",
+          "text": "#FFFFFF",
+          "padding": "8px 22px"
+        },
+        "hover_state": {
+          "background": "#0052CC",
+          "text": "#FFFFFF",
+          "elevation": "shadow-md"
+        },
+        "active_state": {
+          "background": "#003E99",
+          "transform": "scale(0.98)"
+        },
+        "disabled_state": {
+          "background": "#ADB5BD",
+          "text": "#F1F3F5",
+          "cursor": "not-allowed"
+        },
+        "focus_state": {
+          "outline": "2px solid #5C9EFF",
+          "outline_offset": "2px"
+        }
+      },
+      "secondary": {
+        "default_state": {
+          "background": "transparent",
+          "text": "#0068FF",
+          "border": "1px solid #B8D5FF",
+          "padding": "8px 22px"
+        },
+        "hover_state": {
+          "background": "#E6F0FF",
+          "border": "1px solid #0068FF"
+        },
+        "active_state": {
+          "background": "#B8D5FF"
+        },
+        "disabled_state": {
+          "background": "transparent",
+          "text": "#ADB5BD",
+          "border": "1px solid #E9ECEF"
+        },
+        "focus_state": {
+          "outline": "2px solid #5C9EFF",
+          "outline_offset": "2px"
+        }
+      },
+      "accessibility": "All buttons must have a discernible text label. Icon-only buttons must use `aria-label` to describe their function."
+    },
+    "form_inputs": {
+      "text_input": {
+        "default_state": {
+          "border": "1px solid #CED4DA",
+          "padding": "12px 16px",
+          "background": "#FFFFFF"
+        },
+        "focus_state": {
+          "border": "2px solid #0068FF",
+          "box_shadow": "0 0 0 3px rgba(0, 104, 255, 0.1)"
+        },
+        "error_state": {
+          "border": "2px solid #D32F2F"
+        },
+        "disabled_state": {
+          "background": "#F1F3F5",
+          "cursor": "not-allowed",
+          "border": "1px solid #E9ECEF"
+        },
+        "accessibility": "Every input must have a corresponding `<label>`. Validation error messages must be linked via `aria-describedby`."
+      }
+    },
+    "navigation": {
+      "header": {
+        "desktop_layout": "Height: 64px, Background: #FFFFFF, Border-bottom: 1px solid #E9ECEF. Contains logo, utility navigation, and user profile menu.",
+        "mobile_layout": "Hamburger menu icon appears below 1280px to toggle the collapsed SideNav.",
+        "active_states": "Not applicable for header items.",
+        "accessibility": "Ensure user profile menu is keyboard navigable and follows ARIA menu patterns."
+      },
+      "side_nav": {
+        "desktop_layout": "Width: 240px, Background: #212529. Text color: #F1F3F5.",
+        "active_states": "Active link has a background of #343A40 and a left border of 3px solid #0068FF.",
+        "hover_states": "Inactive link hover background: #495057.",
+        "accessibility": "Must be a `<nav>` element with a clear `aria-label`. Use a list structure for navigation items."
+      }
+    },
+    "data_display": {
+      "cards": {
+        "default_card": {
+          "padding": "24px",
+          "border_radius": "8px",
+          "shadow": "0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06)",
+          "background": "#FFFFFF",
+          "border": "1px solid #E9ECEF"
+        },
+        "hover_state": {
+          "elevation": "0 4px 6px rgba(0,0,0,0.1), 0 2px 4px rgba(0,0,0,0.06)",
+          "transform": "translateY(-2px)"
+        },
+        "content_structure": "Cards should use a header section for titles and actions, a body for primary content, and an optional footer."
+      },
+      "status_badge": {
+        "succeeded": {
+          "background": "#E8F5E9",
+          "text": "#2E7D32"
+        },
+        "failed": {
+          "background": "#FFEBEE",
+          "text": "#D32F2F"
+        },
+        "running": {
+          "background": "#E3F2FD",
+          "text": "#0288D1"
+        },
+        "queued": {
+          "background": "#F1F3F5",
+          "text": "#495057"
+        }
+      }
+    },
+    "feedback": {
+      "alerts": {
+        "success": {
+          "background": "#EDF7ED",
+          "icon": "CheckCircle",
+          "text": "#1E4620"
+        },
+        "error": {
+          "background": "#FDEDED",
+          "icon": "Error",
+          "text": "#5F2120"
+        },
+        "warning": {
+          "background": "#FFF4E5",
+          "icon": "Warning",
+          "text": "#663C00"
+        },
+        "accessibility": "Must use `role='alert'` for critical messages. For less critical updates, use an ARIA live region with `aria-live='polite'`."
+      }
+    }
+  },
+  "interaction_patterns": {
+    "micro_interactions": [
+      {
+        "pattern_name": "Button Press Feedback",
+        "trigger": "User clicks/taps a button",
+        "animation": "Scale down to 0.98 for 150ms using a `cubic-bezier(0.4, 0, 0.2, 1)` easing function.",
+        "accessibility": "Animation is disabled if the user has `prefers-reduced-motion` enabled."
+      },
+      {
+        "pattern_name": "Card Hover Lift",
+        "trigger": "User hovers over a card",
+        "animation": "Transition `box-shadow` and `transform` over 200ms ease-out.",
+        "accessibility": "No motion for `prefers-reduced-motion`."
+      }
+    ],
+    "loading_states": [
+      {
+        "pattern_name": "Content Area Loading",
+        "visual": "Use MUI's Skeleton components that mimic the shape of the content being loaded (e.g., skeleton rows for a table, skeleton cards for a dashboard).",
+        "duration": "Animation is a slow, pulsing wave effect.",
+        "accessibility": "The loading area should have `aria-busy='true'` and announce 'Loading content' to screen readers."
+      },
+      {
+        "pattern_name": "Action Loading",
+        "visual": "For button-triggered actions, replace the button's content with a small circular spinner (MUI CircularProgress).",
+        "duration": "N/A",
+        "accessibility": "The button should be disabled and announce 'Loading' to screen readers."
+      }
+    ]
+  },
+  "implementation_guidelines": {
+    "css_architecture": {
+      "custom_properties": {
+        "--color-primary-500": "#0068FF",
+        "--color-neutral-100": "#F1F3F5",
+        "--spacing-md": "16px",
+        "--font-size-body": "16px",
+        "--border-radius-main": "8px"
+      },
+      "naming_conventions": "Primarily rely on MUI's styling solution (Emotion with `sx` prop or styled-components). For any custom CSS, use BEM (`Block__Element--Modifier`) for clarity and to avoid style conflicts.",
+      "component_organization": "Follow a standard React component structure: `src/components/{ComponentName}/{ComponentName}.tsx`, `index.ts`.",
+      "utility_classes": "Avoid creating a large utility class system. Instead, leverage MUI's `sx` prop for one-off style overrides and create styled components for reusable variations."
+    },
+    "responsive_strategy": {
+      "breakpoints": {
+        "xs": "0px",
+        "sm": "600px",
+        "md": "900px",
+        "lg": "1280px",
+        "xl": "1536px"
+      },
+      "approach": "Desktop-first design, with a minimum supported viewport of 1280px (`lg`). Use MUI's grid system and responsive props (`sx={{ display: { xs: 'none', lg: 'block' } }}`) to adapt layouts below this breakpoint, such as collapsing the sidebar.",
+      "component_adaptations": "DataGrids may become horizontally scrollable on smaller screens. Multi-step wizards may reduce padding. Dashboards will reflow from multi-column to single-column layouts."
+    },
+    "accessibility_implementation": {
+      "focus_management": "A highly visible focus ring (`2px solid #5C9EFF`) must be present on all interactive elements. For modals and dialogs, focus must be trapped within the component and returned to the trigger element on close.",
+      "color_contrast": "All text and UI elements must meet a minimum contrast ratio of 4.5:1 against their background. Use automated tools like `axe-core` in CI/CD and browser extensions for manual checks.",
+      "screen_reader_support": "Use semantic HTML5 elements (`<nav>`, `<main>`, `<header>`, `<table>`) wherever possible. For custom components, apply appropriate ARIA roles, states, and properties (e.g., `role='dialog'`, `aria-modal='true'`).",
+      "keyboard_navigation": "All functionality must be operable via keyboard. Ensure a logical tab order. Use standard keys for interaction (Enter/Space for buttons, Arrow keys for menus)."
+    }
+  }
+}

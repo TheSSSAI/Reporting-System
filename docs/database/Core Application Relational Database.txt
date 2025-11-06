@@ -1,0 +1,125 @@
+--
+-- PostgreSQL Script for Transformation Service Main DB
+--
+
+-- Enable UUID generation function
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+-- ========= TABLE CREATION =========
+
+-- Table: User
+-- Represents a system user or administrator.
+CREATE TABLE "User" (
+    "userId" UUID PRIMARY KEY,
+    "username" VARCHAR(100) NOT NULL,
+    "email" VARCHAR(255) NOT NULL,
+    "fullName" VARCHAR(200) NOT NULL,
+    "passwordHash" VARCHAR(255) NOT NULL,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "isDeleted" BOOLEAN NOT NULL DEFAULT false,
+    "createdAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "uq_user_username" UNIQUE ("username"),
+    CONSTRAINT "uq_user_email" UNIQUE ("email")
+);
+
+-- Table: TransformationScript
+-- Represents a user-defined transformation script with version history.
+CREATE TABLE "TransformationScript" (
+    "transformationScriptId" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    "name" VARCHAR(255) NOT NULL,
+    "description" TEXT,
+    "activeScriptVersionId" UUID,
+    "activeVersionNumber" INTEGER,
+    "createdByUserId" UUID NOT NULL,
+    "updatedByUserId" UUID NOT NULL,
+    "isDeleted" BOOLEAN NOT NULL DEFAULT false,
+    "createdAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "uq_transformation_script_name" UNIQUE ("name")
+);
+
+-- Table: ScriptVersion
+-- Stores an immutable, encrypted version of a script's content.
+CREATE TABLE "ScriptVersion" (
+    "scriptVersionId" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    "transformationScriptId" UUID NOT NULL,
+    "versionNumber" INTEGER NOT NULL,
+    "scriptContentEncrypted" BYTEA NOT NULL,
+    "changeLog" TEXT,
+    "createdByUserId" UUID NOT NULL,
+    "createdAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "uq_scriptversion_script_version" UNIQUE ("transformationScriptId", "versionNumber")
+);
+
+-- Table: JsonSchema
+-- Stores JSON Schema definitions for validating transformation outputs.
+CREATE TABLE "JsonSchema" (
+    "jsonSchemaId" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    "name" VARCHAR(255) NOT NULL,
+    "schemaDefinition" JSONB NOT NULL,
+    "createdByUserId" UUID NOT NULL,
+    "createdAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "uq_jsonschema_name" UNIQUE ("name")
+);
+
+-- Table: ReportConfiguration
+-- Represents a report definition, which can be linked to scripts and schemas.
+CREATE TABLE "ReportConfiguration" (
+    "reportConfigurationId" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    "name" VARCHAR(255) NOT NULL,
+    "jsonSchemaId" UUID,
+    "createdByUserId" UUID NOT NULL,
+    "updatedByUserId" UUID NOT NULL,
+    "createdAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Table: ReportTransformationScriptAssociation
+-- Junction table for the many-to-many relationship between reports and scripts.
+CREATE TABLE "ReportTransformationScriptAssociation" (
+    "reportConfigurationId" UUID NOT NULL,
+    "transformationScriptId" UUID NOT NULL,
+    "associatedByUserId" UUID NOT NULL,
+    "associatedAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY ("reportConfigurationId", "transformationScriptId")
+);
+
+-- ========= FOREIGN KEY CONSTRAINTS =========
+
+-- Constraints for TransformationScript table
+ALTER TABLE "TransformationScript"
+    ADD CONSTRAINT "fk_transformationscript_createdby" FOREIGN KEY ("createdByUserId") REFERENCES "User"("userId"),
+    ADD CONSTRAINT "fk_transformationscript_updatedby" FOREIGN KEY ("updatedByUserId") REFERENCES "User"("userId"),
+    ADD CONSTRAINT "fk_transformationscript_activescriptversion" FOREIGN KEY ("activeScriptVersionId") REFERENCES "ScriptVersion"("scriptVersionId") DEFERRABLE INITIALLY DEFERRED;
+
+-- Constraints for ScriptVersion table
+ALTER TABLE "ScriptVersion"
+    ADD CONSTRAINT "fk_scriptversion_transformationscript" FOREIGN KEY ("transformationScriptId") REFERENCES "TransformationScript"("transformationScriptId"),
+    ADD CONSTRAINT "fk_scriptversion_createdby" FOREIGN KEY ("createdByUserId") REFERENCES "User"("userId");
+
+-- Constraints for JsonSchema table
+ALTER TABLE "JsonSchema"
+    ADD CONSTRAINT "fk_jsonschema_createdby" FOREIGN KEY ("createdByUserId") REFERENCES "User"("userId");
+
+-- Constraints for ReportConfiguration table
+ALTER TABLE "ReportConfiguration"
+    ADD CONSTRAINT "fk_reportconfiguration_jsonschema" FOREIGN KEY ("jsonSchemaId") REFERENCES "JsonSchema"("jsonSchemaId"),
+    ADD CONSTRAINT "fk_reportconfiguration_createdby" FOREIGN KEY ("createdByUserId") REFERENCES "User"("userId"),
+    ADD CONSTRAINT "fk_reportconfiguration_updatedby" FOREIGN KEY ("updatedByUserId") REFERENCES "User"("userId");
+
+-- Constraints for ReportTransformationScriptAssociation table
+ALTER TABLE "ReportTransformationScriptAssociation"
+    ADD CONSTRAINT "fk_rtsa_reportconfiguration" FOREIGN KEY ("reportConfigurationId") REFERENCES "ReportConfiguration"("reportConfigurationId"),
+    ADD CONSTRAINT "fk_rtsa_transformationscript" FOREIGN KEY ("transformationScriptId") REFERENCES "TransformationScript"("transformationScriptId"),
+    ADD CONSTRAINT "fk_rtsa_associatedby" FOREIGN KEY ("associatedByUserId") REFERENCES "User"("userId");
+
+-- ========= INDEXES =========
+
+CREATE INDEX "idx_user_active_not_deleted" ON "User" ("isActive", "isDeleted");
+CREATE INDEX "idx_transformationscript_activescriptversionid" ON "TransformationScript" ("activeScriptVersionId");
+CREATE INDEX "idx_transformationscript_isdeleted" ON "TransformationScript" ("isDeleted");
+CREATE INDEX "idx_scriptversion_scriptid_version_desc" ON "ScriptVersion" ("transformationScriptId", "versionNumber" DESC);
+CREATE INDEX "idx_reportconfiguration_name" ON "ReportConfiguration" ("name");
+CREATE INDEX "idx_rtsa_transformationscriptid" ON "ReportTransformationScriptAssociation" ("transformationScriptId");

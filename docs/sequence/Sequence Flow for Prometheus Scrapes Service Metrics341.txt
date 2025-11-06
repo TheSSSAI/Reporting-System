@@ -1,0 +1,213 @@
+# 1 Overview
+
+## 1.1 Diagram Id
+
+SEQ-OF-001
+
+## 1.2 Name
+
+Prometheus Scrapes Service Metrics
+
+## 1.3 Description
+
+An external Prometheus monitoring server periodically sends an HTTP GET request to the .NET backend's `/metrics` endpoint. The backend, using the `prometheus-net` library, responds with the current values of all tracked metrics in the Prometheus exposition format.
+
+## 1.4 Type
+
+🔹 OperationalFlow
+
+## 1.5 Purpose
+
+To enable operational monitoring, performance analysis, and alerting for the data transformation feature.
+
+## 1.6 Complexity
+
+Low
+
+## 1.7 Priority
+
+🔴 High
+
+## 1.8 Frequency
+
+OnDemand
+
+## 1.9 Participants
+
+- External: Prometheus Server
+- REPO-APP-API-001
+
+## 1.10 Key Interactions
+
+- Prometheus server, based on its scrape interval, sends a GET request to `http://<service>:<port>/metrics`.
+- The `prometheus-net.AspNetCore` middleware in the .NET application intercepts the request.
+- The library gathers the current state of all registered metrics (counters, gauges, histograms) from memory.
+- The library formats the metrics into the Prometheus text-based exposition format.
+- The middleware returns a 200 OK response with the metrics payload.
+
+## 1.11 Triggers
+
+- Scheduled scrape job configured in the external Prometheus server (e.g., every 15s).
+
+## 1.12 Outcomes
+
+- The Prometheus server ingests and stores the time-series data for the transformation service's health and performance.
+
+## 1.13 Business Rules
+
+- The endpoint must be Prometheus-compatible (REQ-DTR-014).
+- Specific metrics must be exposed: execution times, memory usage, total executions, timeouts, constraint violations, and script errors (REQ-DTR-014).
+
+## 1.14 Error Scenarios
+
+- The service is down or unresponsive, causing the Prometheus scrape to fail, which triggers a `up == 0` alert in Prometheus.
+
+## 1.15 Integration Points
+
+- Prometheus Monitoring System
+
+# 2.0 Details
+
+## 2.1 Diagram Id
+
+SEQ-OF-001
+
+## 2.2 Name
+
+Operational Flow: Prometheus Scrapes Service Metrics Endpoint
+
+## 2.3 Description
+
+Defines the technical sequence for an external Prometheus monitoring server scraping the `/metrics` endpoint of the TransformationEngine.Api service. This flow is the primary mechanism for collecting operational telemetry, enabling system health monitoring, performance analysis, and alerting in line with Site Reliability Engineering (SRE) and Observability best practices. This sequence directly implements the requirements of REQ-DTR-014.
+
+## 2.4 Participants
+
+### 2.4.1 ExternalMonitoringSystem
+
+#### 2.4.1.1 Repository Id
+
+prometheus-server
+
+#### 2.4.1.2 Display Name
+
+External: Prometheus Server
+
+#### 2.4.1.3 Type
+
+🔹 ExternalMonitoringSystem
+
+#### 2.4.1.4 Technology
+
+Prometheus
+
+#### 2.4.1.5 Order
+
+1
+
+#### 2.4.1.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | actor |
+| Color | #E6522C |
+| Stereotype | <<External>> |
+
+### 2.4.2.0 ApplicationService
+
+#### 2.4.2.1 Repository Id
+
+REPO-APP-API-001
+
+#### 2.4.2.2 Display Name
+
+TransformationEngine.Api
+
+#### 2.4.2.3 Type
+
+🔹 ApplicationService
+
+#### 2.4.2.4 Technology
+
+ASP.NET Core 8, prometheus-net.AspNetCore
+
+#### 2.4.2.5 Order
+
+2
+
+#### 2.4.2.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | component |
+| Color | #1E90FF |
+| Stereotype | <<Service>> |
+
+## 2.5.0.0 Interactions
+
+- {'sourceId': 'prometheus-server', 'targetId': 'REPO-APP-API-001', 'message': '1. Sends scrape request to metrics endpoint.', 'sequenceNumber': 1, 'type': 'Request', 'isSynchronous': True, 'returnMessage': '5. Returns metrics payload.', 'hasReturn': True, 'isActivation': False, 'technicalDetails': {'protocol': 'HTTP/1.1', 'method': 'GET /metrics', 'parameters': 'Headers: Accept: application/openmetrics-text; version=1.0.0,text/plain; version=0.0.4;q=0.5,*/*;q=0.1', 'authentication': 'None. Endpoint is expected to be exposed within a trusted internal network (e.g., Kubernetes cluster, VPC) and not publicly.', 'errorHandling': "Prometheus handles scrape failures (e.g., connection refused, 5xx status, timeout) by marking the target as 'down' in its service discovery. This can trigger a standard `up == 0` alert.", 'performance': 'Scrape timeout is configured on the Prometheus server side (e.g., `scrape_timeout: 10s`).'}, 'nestedInteractions': [{'sourceId': 'REPO-APP-API-001', 'targetId': 'REPO-APP-API-001', 'message': '2. `prometheus-net.AspNetCore` middleware intercepts the request.', 'sequenceNumber': 2, 'type': 'InternalProcessing', 'isSynchronous': True, 'returnMessage': '', 'hasReturn': False, 'isActivation': True, 'technicalDetails': {'protocol': 'In-process', 'method': 'MapMetrics() / UseMetricServer()', 'parameters': 'HttpContext', 'authentication': 'N/A', 'errorHandling': 'Middleware has its own exception handling; a failure here would result in an HTTP 500 response to Prometheus.', 'performance': 'Extremely low latency, part of the standard ASP.NET Core request pipeline.'}}, {'sourceId': 'REPO-APP-API-001', 'targetId': 'REPO-APP-API-001', 'message': '3. Gathers current state of all registered metrics from memory.', 'sequenceNumber': 3, 'type': 'InternalProcessing', 'isSynchronous': True, 'returnMessage': '', 'hasReturn': False, 'isActivation': False, 'technicalDetails': {'protocol': 'In-process', 'method': 'Metrics.DefaultRegistry.CollectAndSerializeAsync()', 'parameters': 'N/A', 'authentication': 'N/A', 'errorHandling': 'The library is designed to be resilient. Errors in custom metric providers are logged without failing the entire scrape.', 'performance': 'Highly optimized, non-blocking, in-memory read operations from thread-safe static metric objects. Negligible performance impact.'}}, {'sourceId': 'REPO-APP-API-001', 'targetId': 'REPO-APP-API-001', 'message': '4. Formats metric data into Prometheus text-based exposition format.', 'sequenceNumber': 4, 'type': 'InternalProcessing', 'isSynchronous': True, 'returnMessage': '', 'hasReturn': False, 'isActivation': False, 'technicalDetails': {'protocol': 'In-process', 'method': 'Serialization within the library.', 'parameters': 'Collected metric data.', 'authentication': 'N/A', 'errorHandling': 'N/A', 'performance': 'Optimized string building and serialization. Payload size is typically small (KB).'}}]}
+
+## 2.6.0.0 Notes
+
+### 2.6.1.0 Content
+
+#### 2.6.1.1 Content
+
+
+
+```
+Prometheus Server Configuration (`prometheus.yml`):
+`scrape_configs:`
+  `- job_name: 'transformation-service'`
+    `scrape_interval: 15s`
+    `static_configs:`
+      `- targets: ['transform-api.internal:8080']`
+```
+
+#### 2.6.1.2 Position
+
+top-left
+
+#### 2.6.1.3 Participant Id
+
+prometheus-server
+
+#### 2.6.1.4 Sequence Number
+
+1
+
+### 2.6.2.0 Content
+
+#### 2.6.2.1 Content
+
+
+
+```
+ASP.NET Core `Program.cs` configuration:
+`// Add the prometheus-net middleware`
+`app.UseMetricServer();`
+`app.UseHttpMetrics();`
+```
+
+#### 2.6.2.2 Position
+
+top-right
+
+#### 2.6.2.3 Participant Id
+
+REPO-APP-API-001
+
+#### 2.6.2.4 Sequence Number
+
+2
+
+## 2.7.0.0 Implementation Guidance
+
+| Property | Value |
+|----------|-------|
+| Security Requirements | The `/metrics` endpoint MUST NOT be exposed to the... |
+| Performance Targets | The P99 latency for the `/metrics` endpoint must b... |
+| Error Handling Strategy | The primary failure mode is the TransformationEngi... |
+| Testing Considerations | An integration test suite must validate the `/metr... |
+| Monitoring Requirements | This sequence IS the monitoring data collection. T... |
+| Deployment Considerations | Deployment automation (e.g., Helm charts for Kuber... |
+

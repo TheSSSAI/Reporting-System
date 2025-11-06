@@ -1,0 +1,990 @@
+# 1 Overview
+
+## 1.1 Diagram Id
+
+SEQ-DF-001
+
+## 1.2 Name
+
+System Discovers and Utilizes a Custom Connector Plug-in
+
+## 1.3 Description
+
+At startup, the system scans a designated plug-in directory for custom connector DLLs. It dynamically loads these assemblies and discovers types that implement the 'IConnector' interface. When an administrator configures a report using a custom connector, the system calls the methods defined in the interface (e.g., `GetConfigurationSchema`, `FetchData`) to render the UI and ingest data.
+
+## 1.4 Type
+
+🔹 DataFlow
+
+## 1.5 Purpose
+
+To detail the mechanism for extending the system's data ingestion capabilities via the custom plug-in architecture.
+
+## 1.6 Complexity
+
+High
+
+## 1.7 Priority
+
+🟡 Medium
+
+## 1.8 Frequency
+
+OnDemand
+
+## 1.9 Participants
+
+- application_layer
+- infrastructure_layer
+
+## 1.10 Key Interactions
+
+- On service startup, the Application Layer scans the plug-in directory.
+- It loads valid .NET DLLs into a separate AssemblyLoadContext.
+- It inspects assemblies for public types implementing the `IConnector` interface from `REPO-06-PLUGINS-SDK`.
+- Discovered connectors are registered in a central service.
+- When a user configures a custom connector, the system calls its `GetConfigurationSchema()` to dynamically build the UI.
+- During a report job, the system invokes the `FetchData(configJson)` method on the plug-in to ingest data.
+
+## 1.11 Triggers
+
+- System service starts up.
+- A report job that uses a custom connector is executed.
+
+## 1.12 Outcomes
+
+- Custom connectors are available for use within the Control Panel.
+- The system can ingest data from sources not supported by built-in connectors.
+
+## 1.13 Business Rules
+
+- Custom connectors must be implemented as .NET DLLs.
+- Plug-ins must implement the defined `IConnector` interface.
+
+## 1.14 Error Scenarios
+
+- A plug-in DLL fails to load due to missing dependencies.
+- A plug-in does not correctly implement the required interface.
+
+## 1.15 Integration Points
+
+*No items available*
+
+# 2.0 Details
+
+## 2.1 Diagram Id
+
+SEQ-DF-001
+
+## 2.2 Name
+
+Implementation: Custom Connector Plug-in Discovery and Data Ingestion
+
+## 2.3 Description
+
+Provides a detailed technical specification for the custom connector plug-in data flow. The sequence is divided into two phases: 1) Discovery and Registration at Service Startup, and 2) Data Ingestion during Report Job Execution. It details the use of an isolated AssemblyLoadContext for security and stability, reflection to identify valid IConnector implementations, and the invocation of the plug-in's data fetching contract. This design enables runtime extensibility of the system's data ingestion capabilities.
+
+## 2.4 Participants
+
+### 2.4.1 Windows Service
+
+#### 2.4.1.1 Repository Id
+
+REPO-08-SERVICE-HOST
+
+#### 2.4.1.2 Display Name
+
+Service Host
+
+#### 2.4.1.3 Type
+
+🔹 Windows Service
+
+#### 2.4.1.4 Technology
+
+.NET 8 HostApplicationBuilder
+
+#### 2.4.1.5 Order
+
+1
+
+#### 2.4.1.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | actor |
+| Color | #1168BD |
+| Stereotype | « Process » |
+
+### 2.4.2.0 Application Service
+
+#### 2.4.2.1 Repository Id
+
+application_layer
+
+#### 2.4.2.2 Display Name
+
+PluginLoader Service
+
+#### 2.4.2.3 Type
+
+🔹 Application Service
+
+#### 2.4.2.4 Technology
+
+C# / .NET 8
+
+#### 2.4.2.5 Order
+
+2
+
+#### 2.4.2.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | participant |
+| Color | #3498DB |
+| Stereotype | « Service » |
+
+### 2.4.3.0 External System
+
+#### 2.4.3.1 Repository Id
+
+infrastructure_layer
+
+#### 2.4.3.2 Display Name
+
+File System
+
+#### 2.4.3.3 Type
+
+🔹 External System
+
+#### 2.4.3.4 Technology
+
+Windows OS API
+
+#### 2.4.3.5 Order
+
+3
+
+#### 2.4.3.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | database |
+| Color | #95A5A6 |
+| Stereotype | « Infrastructure » |
+
+### 2.4.4.0 In-Memory Registry
+
+#### 2.4.4.1 Repository Id
+
+application_layer
+
+#### 2.4.4.2 Display Name
+
+Connector Registry
+
+#### 2.4.4.3 Type
+
+🔹 In-Memory Registry
+
+#### 2.4.4.4 Technology
+
+C# ConcurrentDictionary
+
+#### 2.4.4.5 Order
+
+4
+
+#### 2.4.4.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | participant |
+| Color | #F1C40F |
+| Stereotype | « Singleton Service » |
+
+### 2.4.5.0 Application Service
+
+#### 2.4.5.1 Repository Id
+
+application_layer
+
+#### 2.4.5.2 Display Name
+
+Report Execution Engine
+
+#### 2.4.5.3 Type
+
+🔹 Application Service
+
+#### 2.4.5.4 Technology
+
+Quartz.NET Job
+
+#### 2.4.5.5 Order
+
+5
+
+#### 2.4.5.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | participant |
+| Color | #2ECC71 |
+| Stereotype | « Service » |
+
+### 2.4.6.0 External Plugin
+
+#### 2.4.6.1 Repository Id
+
+REPO-06-PLUGINS-SDK
+
+#### 2.4.6.2 Display Name
+
+CustomConnector.dll
+
+#### 2.4.6.3 Type
+
+🔹 External Plugin
+
+#### 2.4.6.4 Technology
+
+.NET 8 Class Library
+
+#### 2.4.6.5 Order
+
+6
+
+#### 2.4.6.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | component |
+| Color | #E74C3C |
+| Stereotype | « IConnector » |
+
+## 2.5.0.0 Interactions
+
+### 2.5.1.0 Invocation
+
+#### 2.5.1.1 Source Id
+
+REPO-08-SERVICE-HOST
+
+#### 2.5.1.2 Target Id
+
+application_layer
+
+#### 2.5.1.3 Message
+
+
+
+```
+Phase 1: Plugin Discovery on Startup
+--
+HostBuilder.ConfigureServices(...)
+```
+
+#### 2.5.1.4 Sequence Number
+
+1
+
+#### 2.5.1.5 Type
+
+🔹 Invocation
+
+#### 2.5.1.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.1.7 Return Message
+
+
+
+#### 2.5.1.8 Has Return
+
+❌ No
+
+#### 2.5.1.9 Is Activation
+
+✅ Yes
+
+#### 2.5.1.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-Process |
+| Method | Dependency Injection Setup |
+| Parameters | IServiceCollection services |
+| Authentication | N/A |
+| Error Handling | Host startup fails on exception. |
+| Performance | Should be completed within application startup tim... |
+
+### 2.5.2.0 System Call
+
+#### 2.5.2.1 Source Id
+
+application_layer
+
+#### 2.5.2.2 Target Id
+
+infrastructure_layer
+
+#### 2.5.2.3 Message
+
+Directory.EnumerateFiles(pluginPath, "*.dll")
+
+#### 2.5.2.4 Sequence Number
+
+2
+
+#### 2.5.2.5 Type
+
+🔹 System Call
+
+#### 2.5.2.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.2.7 Return Message
+
+IEnumerable<string> dllPaths
+
+#### 2.5.2.8 Has Return
+
+✅ Yes
+
+#### 2.5.2.9 Is Activation
+
+❌ No
+
+#### 2.5.2.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | File I/O |
+| Method | EnumerateFiles |
+| Parameters | string path, string searchPattern |
+| Authentication | Requires file system read permissions for the serv... |
+| Error Handling | Catches DirectoryNotFoundException. Logs a warning... |
+| Performance | Minimal latency, dependent on disk speed and numbe... |
+
+### 2.5.3.0 Loop
+
+#### 2.5.3.1 Source Id
+
+application_layer
+
+#### 2.5.3.2 Target Id
+
+application_layer
+
+#### 2.5.3.3 Message
+
+Loop foreach dllPath in dllPaths
+
+#### 2.5.3.4 Sequence Number
+
+3
+
+#### 2.5.3.5 Type
+
+🔹 Loop
+
+#### 2.5.3.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.3.7 Return Message
+
+
+
+#### 2.5.3.8 Has Return
+
+❌ No
+
+#### 2.5.3.9 Is Activation
+
+❌ No
+
+#### 2.5.3.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-Process |
+| Method | foreach |
+| Parameters | *N/A* |
+| Authentication | N/A |
+| Error Handling | Loop continues even if one DLL fails to load; erro... |
+| Performance | N/A |
+
+#### 2.5.3.11 Nested Interactions
+
+##### 2.5.3.11.1 Instantiation
+
+###### 2.5.3.11.1.1 Source Id
+
+application_layer
+
+###### 2.5.3.11.1.2 Target Id
+
+application_layer
+
+###### 2.5.3.11.1.3 Message
+
+```javascript
+var context = new AssemblyLoadContext(name: dllPath, isCollectible: true)
+```
+
+###### 2.5.3.11.1.4 Sequence Number
+
+3.1
+
+###### 2.5.3.11.1.5 Type
+
+🔹 Instantiation
+
+###### 2.5.3.11.1.6 Is Synchronous
+
+✅ Yes
+
+###### 2.5.3.11.1.7 Return Message
+
+AssemblyLoadContext instance
+
+###### 2.5.3.11.1.8 Has Return
+
+✅ Yes
+
+###### 2.5.3.11.1.9 Is Activation
+
+❌ No
+
+###### 2.5.3.11.1.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-Process |
+| Method | Constructor |
+| Parameters | string name, bool isCollectible |
+| Authentication | N/A |
+| Error Handling | N/A |
+| Performance | Low overhead. |
+
+##### 2.5.3.11.2.0 Invocation
+
+###### 2.5.3.11.2.1 Source Id
+
+application_layer
+
+###### 2.5.3.11.2.2 Target Id
+
+application_layer
+
+###### 2.5.3.11.2.3 Message
+
+Assembly assembly = context.LoadFromAssemblyPath(dllPath)
+
+###### 2.5.3.11.2.4 Sequence Number
+
+3.2
+
+###### 2.5.3.11.2.5 Type
+
+🔹 Invocation
+
+###### 2.5.3.11.2.6 Is Synchronous
+
+✅ Yes
+
+###### 2.5.3.11.2.7 Return Message
+
+Assembly instance
+
+###### 2.5.3.11.2.8 Has Return
+
+✅ Yes
+
+###### 2.5.3.11.2.9 Is Activation
+
+❌ No
+
+###### 2.5.3.11.2.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-Process |
+| Method | LoadFromAssemblyPath |
+| Parameters | string assemblyFile |
+| Authentication | N/A |
+| Error Handling | Catches BadImageFormatException, FileLoadException... |
+| Performance | Disk I/O and JIT compilation can introduce minor l... |
+
+##### 2.5.3.11.3.0 Internal Processing
+
+###### 2.5.3.11.3.1 Source Id
+
+application_layer
+
+###### 2.5.3.11.3.2 Target Id
+
+application_layer
+
+###### 2.5.3.11.3.3 Message
+
+Find types implementing IConnector via reflection
+
+###### 2.5.3.11.3.4 Sequence Number
+
+3.3
+
+###### 2.5.3.11.3.5 Type
+
+🔹 Internal Processing
+
+###### 2.5.3.11.3.6 Is Synchronous
+
+✅ Yes
+
+###### 2.5.3.11.3.7 Return Message
+
+IEnumerable<Type> connectorTypes
+
+###### 2.5.3.11.3.8 Has Return
+
+✅ Yes
+
+###### 2.5.3.11.3.9 Is Activation
+
+❌ No
+
+###### 2.5.3.11.3.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-Process |
+| Method | assembly.GetExportedTypes().Where(t => typeof(ICon... |
+| Parameters | *N/A* |
+| Authentication | N/A |
+| Error Handling | ReflectionTypeLoadException is caught if dependenc... |
+| Performance | Reflection is slower than direct calls but accepta... |
+
+##### 2.5.3.11.4.0 Instantiation
+
+###### 2.5.3.11.4.1 Source Id
+
+application_layer
+
+###### 2.5.3.11.4.2 Target Id
+
+REPO-06-PLUGINS-SDK
+
+###### 2.5.3.11.4.3 Message
+
+Activator.CreateInstance(type) as IConnector
+
+###### 2.5.3.11.4.4 Sequence Number
+
+3.4
+
+###### 2.5.3.11.4.5 Type
+
+🔹 Instantiation
+
+###### 2.5.3.11.4.6 Is Synchronous
+
+✅ Yes
+
+###### 2.5.3.11.4.7 Return Message
+
+IConnector connectorInstance
+
+###### 2.5.3.11.4.8 Has Return
+
+✅ Yes
+
+###### 2.5.3.11.4.9 Is Activation
+
+✅ Yes
+
+###### 2.5.3.11.4.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-Process |
+| Method | CreateInstance |
+| Parameters | Type type |
+| Authentication | N/A |
+| Error Handling | Catches exceptions if the constructor throws or is... |
+| Performance | Minimal overhead. |
+
+##### 2.5.3.11.5.0 Invocation
+
+###### 2.5.3.11.5.1 Source Id
+
+application_layer
+
+###### 2.5.3.11.5.2 Target Id
+
+application_layer
+
+###### 2.5.3.11.5.3 Message
+
+RegisterConnector(connectorInstance)
+
+###### 2.5.3.11.5.4 Sequence Number
+
+3.5
+
+###### 2.5.3.11.5.5 Type
+
+🔹 Invocation
+
+###### 2.5.3.11.5.6 Is Synchronous
+
+✅ Yes
+
+###### 2.5.3.11.5.7 Return Message
+
+void
+
+###### 2.5.3.11.5.8 Has Return
+
+❌ No
+
+###### 2.5.3.11.5.9 Is Activation
+
+❌ No
+
+###### 2.5.3.11.5.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-Process |
+| Method | TryAdd |
+| Parameters | string key, IConnector value |
+| Authentication | N/A |
+| Error Handling | Logs a warning if a connector with the same name/k... |
+| Performance | Highly performant (O(1) on average). |
+
+### 2.5.4.0.0.0 Scheduled Trigger
+
+#### 2.5.4.1.0.0 Source Id
+
+REPO-08-SERVICE-HOST
+
+#### 2.5.4.2.0.0 Target Id
+
+application_layer
+
+#### 2.5.4.3.0.0 Message
+
+
+
+```
+Phase 2: Report Job Execution with Custom Connector
+--
+Scheduler triggers ReportExecutionEngine.Execute(jobContext)
+```
+
+#### 2.5.4.4.0.0 Sequence Number
+
+4
+
+#### 2.5.4.5.0.0 Type
+
+🔹 Scheduled Trigger
+
+#### 2.5.4.6.0.0 Is Synchronous
+
+❌ No
+
+#### 2.5.4.7.0.0 Return Message
+
+
+
+#### 2.5.4.8.0.0 Has Return
+
+❌ No
+
+#### 2.5.4.9.0.0 Is Activation
+
+✅ Yes
+
+#### 2.5.4.10.0.0 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-Process |
+| Method | IJob.Execute |
+| Parameters | IJobExecutionContext context |
+| Authentication | N/A |
+| Error Handling | Quartz.NET handles job execution exceptions and ma... |
+| Performance | Dependent on job complexity. |
+
+### 2.5.5.0.0.0 Invocation
+
+#### 2.5.5.1.0.0 Source Id
+
+application_layer
+
+#### 2.5.5.2.0.0 Target Id
+
+application_layer
+
+#### 2.5.5.3.0.0 Message
+
+GetConnectorByName(jobContext.ReportConfig.ConnectorName)
+
+#### 2.5.5.4.0.0 Sequence Number
+
+5
+
+#### 2.5.5.5.0.0 Type
+
+🔹 Invocation
+
+#### 2.5.5.6.0.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.5.7.0.0 Return Message
+
+IConnector connectorInstance
+
+#### 2.5.5.8.0.0 Has Return
+
+✅ Yes
+
+#### 2.5.5.9.0.0 Is Activation
+
+❌ No
+
+#### 2.5.5.10.0.0 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-Process |
+| Method | TryGetValue |
+| Parameters | string key, out IConnector value |
+| Authentication | N/A |
+| Error Handling | Throws InvalidOperationException if connector is n... |
+| Performance | Highly performant (O(1) on average). |
+
+### 2.5.6.0.0.0 Asynchronous Invocation
+
+#### 2.5.6.1.0.0 Source Id
+
+application_layer
+
+#### 2.5.6.2.0.0 Target Id
+
+REPO-06-PLUGINS-SDK
+
+#### 2.5.6.3.0.0 Message
+
+connectorInstance.FetchDataAsync(jobContext.ReportConfig.ConnectorConfigJson)
+
+#### 2.5.6.4.0.0 Sequence Number
+
+6
+
+#### 2.5.6.5.0.0 Type
+
+🔹 Asynchronous Invocation
+
+#### 2.5.6.6.0.0 Is Synchronous
+
+❌ No
+
+#### 2.5.6.7.0.0 Return Message
+
+Task<JsonNode> data
+
+#### 2.5.6.8.0.0 Has Return
+
+✅ Yes
+
+#### 2.5.6.9.0.0 Is Activation
+
+✅ Yes
+
+#### 2.5.6.10.0.0 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-Process (interface call) |
+| Method | FetchDataAsync |
+| Parameters | string configurationJson |
+| Authentication | The configurationJson contains secrets which the p... |
+| Error Handling | Catches all exceptions from the plugin. Wraps them... |
+| Performance | Entirely dependent on the plugin's implementation.... |
+
+### 2.5.7.0.0.0 Callback / Response
+
+#### 2.5.7.1.0.0 Source Id
+
+REPO-06-PLUGINS-SDK
+
+#### 2.5.7.2.0.0 Target Id
+
+application_layer
+
+#### 2.5.7.3.0.0 Message
+
+Return ingested data
+
+#### 2.5.7.4.0.0 Sequence Number
+
+7
+
+#### 2.5.7.5.0.0 Type
+
+🔹 Callback / Response
+
+#### 2.5.7.6.0.0 Is Synchronous
+
+❌ No
+
+#### 2.5.7.7.0.0 Return Message
+
+JsonNode ingestedData
+
+#### 2.5.7.8.0.0 Has Return
+
+✅ Yes
+
+#### 2.5.7.9.0.0 Is Activation
+
+❌ No
+
+#### 2.5.7.10.0.0 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-Process |
+| Method | Task continuation |
+| Parameters | JsonNode result |
+| Authentication | N/A |
+| Error Handling | The returned Task can be in a faulted state, which... |
+| Performance | Data is held in memory as a JsonNode. Performance ... |
+
+### 2.5.8.0.0.0 Internal Processing
+
+#### 2.5.8.1.0.0 Source Id
+
+application_layer
+
+#### 2.5.8.2.0.0 Target Id
+
+application_layer
+
+#### 2.5.8.3.0.0 Message
+
+Continue with data transformation and report generation pipeline...
+
+#### 2.5.8.4.0.0 Sequence Number
+
+8
+
+#### 2.5.8.5.0.0 Type
+
+🔹 Internal Processing
+
+#### 2.5.8.6.0.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.8.7.0.0 Return Message
+
+
+
+#### 2.5.8.8.0.0 Has Return
+
+❌ No
+
+#### 2.5.8.9.0.0 Is Activation
+
+❌ No
+
+#### 2.5.8.10.0.0 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-Process |
+| Method | ProcessData |
+| Parameters | JsonNode data |
+| Authentication | N/A |
+| Error Handling | Handles potential null or malformed JsonNode. |
+| Performance | Memory usage is a key consideration for large data... |
+
+## 2.6.0.0.0.0 Notes
+
+### 2.6.1.0.0.0 Content
+
+#### 2.6.1.1.0.0 Content
+
+Security: Each plugin is loaded into a separate, collectible AssemblyLoadContext. This prevents DLL locking, allows for dynamic unloading/reloading of plugins, and provides a strong isolation boundary, preventing plugins from interfering with each other or the main application.
+
+#### 2.6.1.2.0.0 Position
+
+Top
+
+#### 2.6.1.3.0.0 Participant Id
+
+application_layer
+
+#### 2.6.1.4.0.0 Sequence Number
+
+3.1
+
+### 2.6.2.0.0.0 Content
+
+#### 2.6.2.1.0.0 Content
+
+Data Contract: The FetchDataAsync method's return type of 'JsonNode' is critical. It standardizes the data format for all connectors, enabling a consistent downstream processing pipeline for transformation and rendering.
+
+#### 2.6.2.2.0.0 Position
+
+Bottom
+
+#### 2.6.2.3.0.0 Participant Id
+
+REPO-06-PLUGINS-SDK
+
+#### 2.6.2.4.0.0 Sequence Number
+
+6
+
+### 2.6.3.0.0.0 Content
+
+#### 2.6.3.1.0.0 Content
+
+Resilience: The custom connector implementation is responsible for its own internal resilience logic (e.g., Polly retry policies, circuit breakers) when connecting to its external data source. The Report Execution Engine only handles exceptions surfaced by the plugin.
+
+#### 2.6.3.2.0.0 Position
+
+Bottom
+
+#### 2.6.3.3.0.0 Participant Id
+
+REPO-06-PLUGINS-SDK
+
+#### 2.6.3.4.0.0 Sequence Number
+
+6
+
+## 2.7.0.0.0.0 Implementation Guidance
+
+| Property | Value |
+|----------|-------|
+| Security Requirements | The directory containing plugin DLLs must be secur... |
+| Performance Targets | Plugin discovery at startup for 50 plugins should ... |
+| Error Handling Strategy | During discovery, any failure to load or instantia... |
+| Testing Considerations | Unit tests for the PluginLoaderService should use ... |
+| Monitoring Requirements | Log each successfully loaded custom connector at s... |
+| Deployment Considerations | Deploying a new plugin requires placing the DLL an... |
+

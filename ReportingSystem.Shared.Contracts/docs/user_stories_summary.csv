@@ -1,0 +1,2 @@
+"total_stories","total_story_points","must_have_stories","should_have_stories","could_have_stories","epics_identified","estimated_sprints","key_dependencies"
+"13","58","8","4","1","[""Core Transformation Engine & Sandbox"",""Transformation Script Management & Versioning"",""Transformation Preview & Testing"",""Data Handling & Processing Pipeline"",""User Experience & Compliance"",""System Operations & Quality"",""Data Transformation""]","4","[""Jint Library"",""Monaco Editor"",""ASP.NET Core Identity"",""Prometheus Monitoring""]"

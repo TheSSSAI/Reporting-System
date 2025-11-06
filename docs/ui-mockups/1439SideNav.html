@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Organism: SideNav</title>
+    <style>
+        /* --- 1. DESIGN TOKENS & SETUP --- */
+        :root {
+            /* Colors */
+            --color-primary-500: #0068FF;
+            --color-white: #FFFFFF;
+            --color-gray-100: #F1F3F5;
+            --color-gray-700: #495057;
+            --color-gray-800: #343A40;
+            --color-gray-900: #212529;
+            --color-focus-ring: #5C9EFF;
+
+            /* Typography */
+            --font-family-primary: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            --font-size-h4: 1.25rem;
+            --font-size-body: 1rem;
+            --font-size-caption: 0.875rem;
+            --font-weight-normal: 400;
+            --font-weight-semibold: 600;
+
+            /* Spacing & Sizing */
+            --space-xs: 4px;
+            --space-sm: 8px;
+            --space-md: 12px;
+            --space-lg: 16px;
+            --sidenav-width-expanded: 240px;
+            --sidenav-width-collapsed: 80px;
+            --header-height: 64px;
+
+            /* Borders */
+            --border-radius-main: 6px;
+            --border-radius-sm: 4px;
+
+            /* Transitions */
+            --transition-base: 0.2s ease-in-out;
+        }
+
+        /* --- 2. BASE & SHOWCASE STYLES --- */
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-family-primary);
+            font-weight: var(--font-weight-normal);
+            font-size: var(--font-size-body);
+            margin: 0;
+            background-color: #F8F9FA;
+        }
+
+        .app-layout {
+            display: grid;
+            grid-template-columns: var(--sidenav-width-expanded) 1fr;
+            transition: grid-template-columns var(--transition-base);
+        }
+        
+        #nav-toggle:checked ~ .app-layout {
+            grid-template-columns: var(--sidenav-width-collapsed) 1fr;
+        }
+
+        .main-content {
+            padding: 32px;
+        }
+
+        .main-content h1 {
+            font-size: 2rem;
+            margin-bottom: 16px;
+        }
+        .main-content p {
+            line-height: 1.6;
+        }
+        
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+        
+        #nav-toggle-label {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            z-index: 1100;
+            background: #fff;
+            padding: 8px;
+            border-radius: 4px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            cursor: pointer;
+            display: none; /* Only show on desktop for demo */
+        }
+        
+        @media (min-width: 1280px) {
+            #nav-toggle-label {
+                display: block;
+            }
+        }
+        
+        @media (max-width: 1279px) {
+            .app-layout {
+                grid-template-columns: var(--sidenav-width-collapsed) 1fr;
+            }
+        }
+        
+
+        /* --- 3. ICON STYLES --- */
+        .icon {
+            display: inline-block;
+            width: 1em;
+            height: 1em;
+            stroke-width: 0;
+            stroke: currentColor;
+            fill: currentColor;
+        }
+
+        /* --- 4. ORGANISM: SideNav --- */
+        .side-nav {
+            background-color: var(--color-gray-900);
+            color: var(--color-gray-100);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            width: var(--sidenav-width-expanded);
+            position: sticky;
+            top: 0;
+            transition: width var(--transition-base);
+            overflow-x: hidden;
+        }
+
+        /* Header / Logo */
+        .side-nav__header {
+            display: flex;
+            align-items: center;
+            padding: 0 var(--space-lg);
+            height: var(--header-height);
+            flex-shrink: 0;
+            border-bottom: 1px solid var(--color-gray-800);
+        }
+
+        .side-nav__logo {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            text-decoration: none;
+            color: var(--color-white);
+            overflow: hidden;
+            white-space: nowrap;
+        }
+
+        .side-nav__logo .logo-icon {
+            flex-shrink: 0;
+            width: 32px;
+            height: 32px;
+        }
+
+        .side-nav__logo .logo-text {
+            font-size: var(--font-size-h4);
+            font-weight: var(--font-weight-semibold);
+            opacity: 1;
+            transition: opacity 0.1s ease-out;
+        }
+
+        /* Navigation Lists */
+        .side-nav__main,
+        .side-nav__footer {
+            list-style: none;
+            margin: 0;
+            padding: var(--space-md) 0;
+        }
+
+        .side-nav__main {
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+        
+        .side-nav__footer {
+            border-top: 1px solid var(--color-gray-800);
+        }
+
+        /* Navigation Item & Link */
+        .side-nav__item {
+            padding: 0 var(--space-md);
+        }
+        
+        .side-nav__item + .side-nav__item {
+            margin-top: var(--space-xs);
+        }
+
+        .side-nav__link {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+            padding: var(--space-md);
+            border-radius: var(--border-radius-main);
+            text-decoration: none;
+            color: var(--color-gray-100);
+            white-space: nowrap;
+            overflow: hidden;
+            position: relative; /* For tooltips */
+            transition: background-color 0.15s ease, color 0.15s ease;
+        }
+
+        .side-nav__link .icon {
+            flex-shrink: 0;
+            width: 20px;
+            height: 20px;
+        }
+
+        .side-nav__link-text {
+            opacity: 1;
+            transition: opacity 0.1s ease-out;
+        }
+
+        /* Link States */
+        .side-nav__link:hover {
+            background-color: var(--color-gray-700);
+            color: var(--color-white);
+        }
+
+        .side-nav__link:focus-visible {
+            outline: 2px solid var(--color-focus-ring);
+            outline-offset: -2px;
+            background-color: var(--color-gray-700);
+        }
+
+        .side-nav__link--active {
+            background-color: var(--color-gray-800);
+            color: var(--color-white);
+            font-weight: var(--font-weight-semibold);
+        }
+
+        .side-nav__link--active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            height: 50%;
+            width: 3px;
+            background-color: var(--color-primary-500);
+            border-top-right-radius: 3px;
+            border-bottom-right-radius: 3px;
+        }
+
+
+        /* --- Collapsed State --- */
+        .side-nav.is-collapsed {
+            width: var(--sidenav-width-collapsed);
+        }
+
+        .side-nav.is-collapsed .side-nav__logo-text,
+        .side-nav.is-collapsed .side-nav__link-text {
+            opacity: 0;
+            width: 0;
+            pointer-events: none;
+            transition: none;
+        }
+
+        .side-nav.is-collapsed .side-nav__item {
+            padding: 0 var(--space-sm);
+        }
+        
+        .side-nav.is-collapsed .side-nav__link {
+            justify-content: center;
+        }
+
+        /* Tooltip for collapsed state */
+        .side-nav.is-collapsed .side-nav__link .side-nav__tooltip {
+            visibility: hidden;
+            opacity: 0;
+            position: absolute;
+            left: calc(100% + 12px);
+            background-color: var(--color-gray-800);
+            color: var(--color-white);
+            padding: var(--space-xs) var(--space-sm);
+            border-radius: var(--border-radius-sm);
+            font-size: var(--font-size-caption);
+            font-weight: 500;
+            white-space: nowrap;
+            pointer-events: none;
+            transition: opacity 0.2s, visibility 0.2s;
+            z-index: 10;
+        }
+
+        .side-nav.is-collapsed .side-nav__link:hover .side-nav__tooltip,
+        .side-nav.is-collapsed .side-nav__link:focus-visible .side-nav__tooltip {
+            visibility: visible;
+            opacity: 1;
+            transition-delay: 0.3s;
+        }
+        
+        #nav-toggle:checked ~ .app-layout .side-nav {
+            width: var(--sidenav-width-collapsed);
+        }
+
+        #nav-toggle:checked ~ .app-layout .side-nav .side-nav__logo-text,
+        #nav-toggle:checked ~ .app-layout .side-nav .side-nav__link-text {
+             opacity: 0;
+             width: 0;
+             pointer-events: none;
+             transition: none;
+        }
+
+        #nav-toggle:checked ~ .app-layout .side-nav .side-nav__item {
+            padding: 0 var(--space-sm);
+        }
+        
+        #nav-toggle:checked ~ .app-layout .side-nav .side-nav__link {
+            justify-content: center;
+        }
+        
+        #nav-toggle:checked ~ .app-layout .side-nav .side-nav__link .side-nav__tooltip {
+             display: block;
+        }
+
+
+        /* --- Responsive Behavior --- */
+        @media (max-width: 1279px) {
+            .side-nav {
+                width: var(--sidenav-width-collapsed);
+            }
+            .side-nav .side-nav__logo-text,
+            .side-nav .side-nav__link-text {
+                opacity: 0;
+                width: 0;
+                pointer-events: none;
+                transition: none;
+            }
+            .side-nav .side-nav__item {
+                padding: 0 var(--space-sm);
+            }
+            .side-nav .side-nav__link {
+                justify-content: center;
+            }
+            .side-nav .side-nav__link .side-nav__tooltip {
+                display: none; /* Hide tooltips on touch devices */
+            }
+        }
+
+        /* Accessibility */
+        @media (prefers-reduced-motion: reduce) {
+            .side-nav, .side-nav__logo-text, .side-nav__link {
+                transition: none;
+            }
+        }
+
+    </style>
+</head>
+<body>
+
+    <input type="checkbox" id="nav-toggle" class="sr-only">
+    <label for="nav-toggle" id="nav-toggle-label">Toggle Nav (Demo)</label>
+    
+    <div class="app-layout">
+        <nav class="side-nav" aria-label="Main Navigation">
+            <div class="side-nav__header">
+                <a href="#logo" class="side-nav__logo">
+                    <svg class="logo-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L2 7V17L12 22L22 17V7L12 2Z" fill="#0068FF"></path><path d="M12 2L22 7V17" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M12 22V12L2 7" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M12 12L22 7" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                    <span class="logo-text">AppName</span>
+                </a>
+            </div>
+            
+            <ul class="side-nav__main">
+                <li class="side-nav__item">
+                    <a href="#dashboard" class="side-nav__link side-nav__link--active" aria-current="page">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 10H11V3H3V10ZM3 21H11V14H3V21ZM13 21H21V12H13V21ZM13 3V8H21V3H13Z" fill="currentColor"></path></svg>
+                        <span class="side-nav__link-text">Dashboard</span>
+                        <span class="side-nav__tooltip">Dashboard</span>
+                    </a>
+                </li>
+                <li class="side-nav__item">
+                    <a href="#reports" class="side-nav__link">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M20 7H4C2.9 7 2 7.9 2 9V17C2 18.1 2.9 19 4 19H20C21.1 19 22 18.1 22 17V9C22 7.9 21.1 7 20 7ZM20 17H4V12H20V17ZM20 10H4V9H20V10Z" fill="currentColor"></path><path d="M16 5H8V4H16V5Z" fill="currentColor"></path></svg>
+                        <span class="side-nav__link-text">Reports</span>
+                        <span class="side-nav__tooltip">Reports</span>
+                    </a>
+                </li>
+                <li class="side-nav__item">
+                    <a href="#monitoring" class="side-nav__link">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M21 21H3V3H21V21ZM5 19H19V5H5V19Z" fill="currentColor"></path><path d="M9 17V12H7V17H9Z" fill="currentColor"></path><path d="M13 17V14H11V17H13Z" fill="currentColor"></path><path d="M17 17V8H15V17H17Z" fill="currentColor"></path></svg>
+                        <span class="side-nav__link-text">Monitoring</span>
+                        <span class="side-nav__tooltip">Monitoring</span>
+                    </a>
+                </li>
+                <li class="side-nav__item">
+                    <a href="#users" class="side-nav__link">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16 8C16 10.21 14.21 12 12 12C9.79 12 8 10.21 8 8C8 5.79 9.79 4 12 4C14.21 4 16 5.79 16 8ZM12 6C10.9 6 10 6.9 10 8C10 9.1 10.9 10 12 10C13.1 10 14 9.1 14 8C14 6.9 13.1 6 12 6Z" fill="currentColor"></path><path d="M12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14ZM6.08 18C6.56 16.92 9.21 16 12 16C14.79 16 17.44 16.92 17.92 18H6.08Z" fill="currentColor"></path></svg>
+                        <span class="side-nav__link-text">Users</span>
+                        <span class="side-nav__tooltip">Users</span>
+                    </a>
+                </li>
+            </ul>
+
+            <ul class="side-nav__footer">
+                <li class="side-nav__item">
+                    <a href="#settings" class="side-nav__link">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M19.44 12.99L19.94 15.22L17.82 16.03L17.37 18.23L15.11 18.77L14.2 20.89L12 20L9.8 20.89L8.89 18.77L6.63 18.23L6.18 16.03L4.06 15.22L4.56 12.99L3 12L4.56 11.01L4.06 8.78L6.18 7.97L6.63 5.77L8.89 5.23L9.8 3.11L12 4L14.2 3.11L15.11 5.23L17.37 5.77L17.82 7.97L19.94 8.78L19.44 11.01L21 12L19.44 12.99ZM12 8C9.79 8 8 9.79 8 12C8 14.21 9.79 16 12 16C14.21 16 16 14.21 16 12C16 9.79 14.21 8 12 8Z" fill="currentColor"></path></svg>
+                        <span class="side-nav__link-text">Settings</span>
+                        <span class="side-nav__tooltip">Settings</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        
+        <main class="main-content">
+            <h1>Dashboard</h1>
+            <p>This is the main content area. The side navigation is an organism component that provides the primary means of navigating between major sections of the application.</p>
+            <p>On desktop viewports wider than 1280px, it is expanded by default but can be collapsed. Below 1280px, it automatically collapses to an icon-only view to save space. A checkbox toggle is provided here for desktop demonstration purposes.</p>
+        </main>
+    </div>
+
+	
+	<div style="background: #fff; padding: 2rem; margin: 2rem; border-radius: 8px;"> <h2> Component Variations</h2>
+      <div>
+        <h3>Variant Name: Default</h3>
+		<p style="font-size: 14px; color: #666; margin-bottom: 16px;"> The standard navigation component, which can exist in either an expanded or collapsed state.</p>
+      </div>
+	 </div>
+	
+	</body>
+</html>

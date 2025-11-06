@@ -1,0 +1,774 @@
+# 1 Overview
+
+## 1.1 Diagram Id
+
+SEQ-RF-001
+
+## 1.2 Name
+
+IT Support Restores System Configuration from Backup
+
+## 1.3 Description
+
+Following a catastrophic failure, an IT Support user restores the system. They use the Control Panel's restore function, providing a valid backup file. The system validates the file and replaces the current configuration database (SQLite) with the contents of the backup, then restarts its internal services to use the restored state.
+
+## 1.4 Type
+
+🔹 RecoveryFlow
+
+## 1.5 Purpose
+
+To provide a mechanism for disaster recovery, enabling the system's configuration to be restored to a known good state, meeting the Recovery Time Objective (RTO).
+
+## 1.6 Complexity
+
+High
+
+## 1.7 Priority
+
+🚨 Critical
+
+## 1.8 Frequency
+
+OnDemand
+
+## 1.9 Participants
+
+- presentationlayerreact
+- apiweblayer
+- application_layer
+- infrastructure_layer
+
+## 1.10 Key Interactions
+
+- IT Support user with Administrator role navigates to the Backup/Restore section.
+- They select a backup file (`.bak`) from a local or network path and initiate the restore.
+- The UI securely uploads the file to a dedicated API endpoint.
+- The Application Layer receives the backup file stream.
+- The system's job scheduler (Quartz.NET) is temporarily paused to prevent job executions during restore.
+- The backup file is validated for integrity and version compatibility.
+- The Infrastructure Layer replaces the existing SQLite database file with the uploaded backup file.
+- The Application Layer re-initializes its database connection and reloads all configurations and scheduled jobs from the restored database.
+- The restore operation's success is logged to the system log and the audit trail.
+
+## 1.11 Triggers
+
+- An administrator with IT Support access initiates a restore operation from the Control Panel.
+
+## 1.12 Outcomes
+
+- The system's entire configuration (users, reports, connectors, etc.) is reverted to the state contained in the backup file.
+- The system is fully operational again after the restore process completes.
+
+## 1.13 Business Rules
+
+- The restore process must overwrite all existing configuration data.
+- A valid, uncorrupted backup file created by the same system version is required.
+
+## 1.14 Error Scenarios
+
+- The provided backup file is corrupt, invalid, or from an incompatible version.
+- File system permissions on the host server prevent overwriting the live database file.
+- The service fails to restart or re-initialize after the file replacement.
+
+## 1.15 Integration Points
+
+*No items available*
+
+# 2.0 Details
+
+## 2.1 Diagram Id
+
+SEQ-RF-001
+
+## 2.2 Name
+
+Implementation-Ready Sequence: System Configuration Restore from Backup
+
+## 2.3 Description
+
+A detailed technical sequence for restoring the system's configuration from a backup file. This flow outlines the interaction between the React frontend, ASP.NET Core API, Application services, and Infrastructure components. It includes pausing the job scheduler, validating the backup, replacing the SQLite database file, re-initializing services, and comprehensive auditing of the recovery operation.
+
+## 2.4 Participants
+
+### 2.4.1 UI/Frontend
+
+#### 2.4.1.1 Repository Id
+
+presentation_layer_react
+
+#### 2.4.1.2 Display Name
+
+Presentation Layer (React UI)
+
+#### 2.4.1.3 Type
+
+🔹 UI/Frontend
+
+#### 2.4.1.4 Technology
+
+React 18, TypeScript, Axios
+
+#### 2.4.1.5 Order
+
+1
+
+#### 2.4.1.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | actor |
+| Color | #4CAF50 |
+| Stereotype | <<IT Support User>> |
+
+### 2.4.2.0 API Gateway/Controller
+
+#### 2.4.2.1 Repository Id
+
+api_web_layer
+
+#### 2.4.2.2 Display Name
+
+API/Web Layer
+
+#### 2.4.2.3 Type
+
+🔹 API Gateway/Controller
+
+#### 2.4.2.4 Technology
+
+ASP.NET Core 8
+
+#### 2.4.2.5 Order
+
+2
+
+#### 2.4.2.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | component |
+| Color | #2196F3 |
+| Stereotype | <<SystemController>> |
+
+### 2.4.3.0 Application Service
+
+#### 2.4.3.1 Repository Id
+
+application_layer
+
+#### 2.4.3.2 Display Name
+
+Application Layer
+
+#### 2.4.3.3 Type
+
+🔹 Application Service
+
+#### 2.4.3.4 Technology
+
+.NET 8
+
+#### 2.4.3.5 Order
+
+3
+
+#### 2.4.3.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | component |
+| Color | #FFC107 |
+| Stereotype | <<SystemRecoveryService>> |
+
+### 2.4.4.0 Infrastructure Service
+
+#### 2.4.4.1 Repository Id
+
+infrastructure_layer
+
+#### 2.4.4.2 Display Name
+
+Infrastructure Layer
+
+#### 2.4.4.3 Type
+
+🔹 Infrastructure Service
+
+#### 2.4.4.4 Technology
+
+.NET 8, EF Core 8, Quartz.NET, Serilog
+
+#### 2.4.4.5 Order
+
+4
+
+#### 2.4.4.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | database |
+| Color | #E91E63 |
+| Stereotype | <<Persistence & Services>> |
+
+## 2.5.0.0 Interactions
+
+### 2.5.1.0 Request
+
+#### 2.5.1.1 Source Id
+
+presentation_layer_react
+
+#### 2.5.1.2 Target Id
+
+api_web_layer
+
+#### 2.5.1.3 Message
+
+1. UploadBackupFile(backupFile)
+
+#### 2.5.1.4 Sequence Number
+
+1
+
+#### 2.5.1.5 Type
+
+🔹 Request
+
+#### 2.5.1.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.1.7 Return Message
+
+12. HTTP 200 OK / Error Response
+
+#### 2.5.1.8 Has Return
+
+✅ Yes
+
+#### 2.5.1.9 Is Activation
+
+✅ Yes
+
+#### 2.5.1.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | HTTP/1.1 |
+| Method | POST /api/v1/system/restore |
+| Parameters | multipart/form-data request containing the '.bak' ... |
+| Authentication | Requires valid JWT Bearer token in 'Authorization'... |
+| Error Handling | Handles 400 (Bad Request), 401 (Unauthorized), 403... |
+| Performance | Subject to web server's max request body size and ... |
+
+### 2.5.2.0 Method Call
+
+#### 2.5.2.1 Source Id
+
+api_web_layer
+
+#### 2.5.2.2 Target Id
+
+application_layer
+
+#### 2.5.2.3 Message
+
+2. RestoreFromBackupAsync(backupStream)
+
+#### 2.5.2.4 Sequence Number
+
+2
+
+#### 2.5.2.5 Type
+
+🔹 Method Call
+
+#### 2.5.2.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.2.7 Return Message
+
+11. RestoreResult { Success: true }
+
+#### 2.5.2.8 Has Return
+
+✅ Yes
+
+#### 2.5.2.9 Is Activation
+
+✅ Yes
+
+#### 2.5.2.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-process |
+| Method | Task<RestoreResult> RestoreFromBackupAsync(Stream ... |
+| Parameters | A readable stream of the uploaded backup file. |
+| Authentication | Authorization check for 'Administrator' role is pe... |
+| Error Handling | Catches exceptions from the application layer and ... |
+| Performance | Latency is dependent on the entire restore process... |
+
+#### 2.5.2.11 Nested Interactions
+
+##### 2.5.2.11.1 Method Call
+
+###### 2.5.2.11.1.1 Source Id
+
+application_layer
+
+###### 2.5.2.11.1.2 Target Id
+
+infrastructure_layer
+
+###### 2.5.2.11.1.3 Message
+
+3. PauseSchedulerAsync()
+
+###### 2.5.2.11.1.4 Sequence Number
+
+3
+
+###### 2.5.2.11.1.5 Type
+
+🔹 Method Call
+
+###### 2.5.2.11.1.6 Is Synchronous
+
+✅ Yes
+
+###### 2.5.2.11.1.7 Return Message
+
+Scheduler Paused
+
+###### 2.5.2.11.1.8 Has Return
+
+✅ Yes
+
+###### 2.5.2.11.1.9 Is Activation
+
+✅ Yes
+
+###### 2.5.2.11.1.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-process |
+| Method | Calls IScheduler.Standby() on the Quartz.NET sched... |
+| Parameters | None. |
+| Authentication | N/A |
+| Error Handling | Throws SchedulerException if the scheduler cannot ... |
+| Performance | Should complete in <100ms. |
+
+##### 2.5.2.11.2.0 Method Call
+
+###### 2.5.2.11.2.1 Source Id
+
+application_layer
+
+###### 2.5.2.11.2.2 Target Id
+
+infrastructure_layer
+
+###### 2.5.2.11.2.3 Message
+
+4. ValidateBackupAsync(backupStream)
+
+###### 2.5.2.11.2.4 Sequence Number
+
+4
+
+###### 2.5.2.11.2.5 Type
+
+🔹 Method Call
+
+###### 2.5.2.11.2.6 Is Synchronous
+
+✅ Yes
+
+###### 2.5.2.11.2.7 Return Message
+
+Validation Successful
+
+###### 2.5.2.11.2.8 Has Return
+
+✅ Yes
+
+###### 2.5.2.11.2.9 Is Activation
+
+✅ Yes
+
+###### 2.5.2.11.2.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-process |
+| Method | Task ValidateBackupAsync(Stream backupStream) |
+| Parameters | Stream of the backup file. The stream position is ... |
+| Authentication | N/A |
+| Error Handling | Throws InvalidBackupFileException if the file is c... |
+| Performance | Reads a small header/footer from the file stream; ... |
+
+##### 2.5.2.11.3.0 Method Call
+
+###### 2.5.2.11.3.1 Source Id
+
+application_layer
+
+###### 2.5.2.11.3.2 Target Id
+
+infrastructure_layer
+
+###### 2.5.2.11.3.3 Message
+
+5. LogAuditEventAsync('RestoreOperationStarted')
+
+###### 2.5.2.11.3.4 Sequence Number
+
+5
+
+###### 2.5.2.11.3.5 Type
+
+🔹 Method Call
+
+###### 2.5.2.11.3.6 Is Synchronous
+
+❌ No
+
+###### 2.5.2.11.3.7 Return Message
+
+
+
+###### 2.5.2.11.3.8 Has Return
+
+❌ No
+
+###### 2.5.2.11.3.9 Is Activation
+
+❌ No
+
+###### 2.5.2.11.3.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-process |
+| Method | Task LogAuditEventAsync(AuditEventDetails details) |
+| Parameters | An object containing UserID, SourceIP, Action='Res... |
+| Authentication | N/A |
+| Error Handling | Failures are logged to the system log but do not s... |
+| Performance | Fire-and-forget, negligible impact. |
+
+##### 2.5.2.11.4.0 Method Call
+
+###### 2.5.2.11.4.1 Source Id
+
+application_layer
+
+###### 2.5.2.11.4.2 Target Id
+
+infrastructure_layer
+
+###### 2.5.2.11.4.3 Message
+
+6. ReplaceDatabaseFileAsync(backupStream)
+
+###### 2.5.2.11.4.4 Sequence Number
+
+6
+
+###### 2.5.2.11.4.5 Type
+
+🔹 Method Call
+
+###### 2.5.2.11.4.6 Is Synchronous
+
+✅ Yes
+
+###### 2.5.2.11.4.7 Return Message
+
+File Replaced
+
+###### 2.5.2.11.4.8 Has Return
+
+✅ Yes
+
+###### 2.5.2.11.4.9 Is Activation
+
+✅ Yes
+
+###### 2.5.2.11.4.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-process (File System I/O) |
+| Method | Task ReplaceDatabaseFileAsync(Stream backupStream) |
+| Parameters | A readable stream of the validated backup file. |
+| Authentication | N/A |
+| Error Handling | Throws FileSystemPermissionException on permission... |
+| Performance | Depends on file size and disk speed. Should be mon... |
+
+##### 2.5.2.11.5.0 Self Call
+
+###### 2.5.2.11.5.1 Source Id
+
+application_layer
+
+###### 2.5.2.11.5.2 Target Id
+
+application_layer
+
+###### 2.5.2.11.5.3 Message
+
+7. ReinitializeServicesAsync()
+
+###### 2.5.2.11.5.4 Sequence Number
+
+7
+
+###### 2.5.2.11.5.5 Type
+
+🔹 Self Call
+
+###### 2.5.2.11.5.6 Is Synchronous
+
+✅ Yes
+
+###### 2.5.2.11.5.7 Return Message
+
+Services Reloaded
+
+###### 2.5.2.11.5.8 Has Return
+
+✅ Yes
+
+###### 2.5.2.11.5.9 Is Activation
+
+❌ No
+
+###### 2.5.2.11.5.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-process |
+| Method | Task ReinitializeServicesAsync() |
+| Parameters | None. This may involve re-creating the scoped EF C... |
+| Authentication | N/A |
+| Error Handling | A failure here is critical. Logs a fatal error. Th... |
+| Performance | Should complete within a few seconds. |
+
+##### 2.5.2.11.6.0 Method Call
+
+###### 2.5.2.11.6.1 Source Id
+
+application_layer
+
+###### 2.5.2.11.6.2 Target Id
+
+infrastructure_layer
+
+###### 2.5.2.11.6.3 Message
+
+8. ResumeSchedulerAsync()
+
+###### 2.5.2.11.6.4 Sequence Number
+
+8
+
+###### 2.5.2.11.6.5 Type
+
+🔹 Method Call
+
+###### 2.5.2.11.6.6 Is Synchronous
+
+✅ Yes
+
+###### 2.5.2.11.6.7 Return Message
+
+Scheduler Resumed
+
+###### 2.5.2.11.6.8 Has Return
+
+✅ Yes
+
+###### 2.5.2.11.6.9 Is Activation
+
+✅ Yes
+
+###### 2.5.2.11.6.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-process |
+| Method | Calls IScheduler.Start() on the Quartz.NET schedul... |
+| Parameters | None. |
+| Authentication | N/A |
+| Error Handling | Throws SchedulerException. A failure here is criti... |
+| Performance | Depends on the number of jobs to schedule, but typ... |
+
+##### 2.5.2.11.7.0 Method Call
+
+###### 2.5.2.11.7.1 Source Id
+
+application_layer
+
+###### 2.5.2.11.7.2 Target Id
+
+infrastructure_layer
+
+###### 2.5.2.11.7.3 Message
+
+9. LogSystemEvent('RestoreOperationSucceeded')
+
+###### 2.5.2.11.7.4 Sequence Number
+
+9
+
+###### 2.5.2.11.7.5 Type
+
+🔹 Method Call
+
+###### 2.5.2.11.7.6 Is Synchronous
+
+❌ No
+
+###### 2.5.2.11.7.7 Return Message
+
+
+
+###### 2.5.2.11.7.8 Has Return
+
+❌ No
+
+###### 2.5.2.11.7.9 Is Activation
+
+❌ No
+
+###### 2.5.2.11.7.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-process |
+| Method | Uses Serilog to write a structured log event at In... |
+| Parameters | Message with details of the restore operation. |
+| Authentication | N/A |
+| Error Handling | N/A |
+| Performance | Negligible. |
+
+##### 2.5.2.11.8.0 Method Call
+
+###### 2.5.2.11.8.1 Source Id
+
+application_layer
+
+###### 2.5.2.11.8.2 Target Id
+
+infrastructure_layer
+
+###### 2.5.2.11.8.3 Message
+
+10. LogAuditEventAsync('RestoreOperationSucceeded')
+
+###### 2.5.2.11.8.4 Sequence Number
+
+10
+
+###### 2.5.2.11.8.5 Type
+
+🔹 Method Call
+
+###### 2.5.2.11.8.6 Is Synchronous
+
+❌ No
+
+###### 2.5.2.11.8.7 Return Message
+
+
+
+###### 2.5.2.11.8.8 Has Return
+
+❌ No
+
+###### 2.5.2.11.8.9 Is Activation
+
+❌ No
+
+###### 2.5.2.11.8.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-process |
+| Method | Task LogAuditEventAsync(AuditEventDetails details) |
+| Parameters | An object containing UserID, SourceIP, Action='Res... |
+| Authentication | N/A |
+| Error Handling | Failures are logged to the system log. |
+| Performance | Negligible. |
+
+## 2.6.0.0.0.0 Notes
+
+### 2.6.1.0.0.0 Content
+
+#### 2.6.1.1.0.0 Content
+
+The application service account running the Windows Service MUST have read/write/delete permissions on the directory containing the SQLite database file.
+
+#### 2.6.1.2.0.0 Position
+
+bottom
+
+#### 2.6.1.3.0.0 Participant Id
+
+infrastructure_layer
+
+#### 2.6.1.4.0.0 Sequence Number
+
+6
+
+### 2.6.2.0.0.0 Content
+
+#### 2.6.2.1.0.0 Content
+
+The entire restore operation should be wrapped in a try/catch/finally block. The 'finally' block must ensure the scheduler is resumed, even if the restore fails after the pause.
+
+#### 2.6.2.2.0.0 Position
+
+top
+
+#### 2.6.2.3.0.0 Participant Id
+
+application_layer
+
+#### 2.6.2.4.0.0 Sequence Number
+
+2
+
+### 2.6.3.0.0.0 Content
+
+#### 2.6.3.1.0.0 Content
+
+A critical failure after file replacement (step 6) leaves the system in a potentially non-operational state. The UI must clearly communicate this and direct the user to check logs and contact IT support.
+
+#### 2.6.3.2.0.0 Position
+
+bottom
+
+#### 2.6.3.3.0.0 Participant Id
+
+presentation_layer_react
+
+#### 2.6.3.4.0.0 Sequence Number
+
+12
+
+## 2.7.0.0.0.0 Implementation Guidance
+
+| Property | Value |
+|----------|-------|
+| Security Requirements | The API endpoint `/api/v1/system/restore` must be ... |
+| Performance Targets | The system must meet the Recovery Time Objective (... |
+| Error Handling Strategy | 1. **Invalid Backup**: Return HTTP 400 with a clea... |
+| Testing Considerations | This entire flow MUST be tested as part of a regul... |
+| Monitoring Requirements | The start and completion of a restore operation mu... |
+| Deployment Considerations | The installation process (MSI) must ensure that th... |
+

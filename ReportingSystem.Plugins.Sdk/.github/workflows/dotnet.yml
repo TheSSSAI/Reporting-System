@@ -1,0 +1,40 @@
+name: .NET CI/CD for SDK
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup .NET 8
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+
+    - name: Restore dependencies
+      run: dotnet restore ReportingSystem.Plugins.Sdk.sln
+
+    - name: Build solution
+      run: dotnet build ReportingSystem.Plugins.Sdk.sln --configuration Release --no-restore
+
+    - name: Run tests
+      run: dotnet test ReportingSystem.Plugins.Sdk.sln --configuration Release --no-build --verbosity normal
+
+    # Optional: If you want to create the NuGet package as an artifact
+    - name: Pack NuGet package
+      run: dotnet pack src/ReportingSystem.Plugins.Sdk/ReportingSystem.Plugins.Sdk.csproj --configuration Release --no-build -o ./artifacts
+
+    - name: Upload NuGet package artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: nuget-package
+        path: ./artifacts/*.nupkg

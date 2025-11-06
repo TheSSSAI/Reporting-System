@@ -1,0 +1,75 @@
+sequenceDiagram
+    actor User
+    participant C as React Client
+    participant A as API/Web Layer
+    participant App as Application Layer
+    participant I as Infrastructure Layer
+
+    User->>C: 1. Enters credentials & clicks Login
+    C->>A: 2. POST /api/v1/auth/token (username, password)
+
+    A->>App: 3. AuthenticateUser(credentials)
+    App->>I: 4. FindUserByNameAsync(username)
+    I-->>App: 5. User object (or null)
+
+    alt Credentials are valid
+        App->>I: 6. CheckPasswordAsync(user, password)
+        I-->>App: 7. bool isValid = true
+
+        opt 2FA is enabled for user (US-029)
+            App-->>A: 8. Return TwoFactorRequired
+            A-->>C: 9. HTTP 200 OK { twoFactorRequired: true }
+            C-->>User: 10. Show 2FA code input screen
+
+            User->>C: 11. Enters 2FA code & clicks Verify
+            C->>A: 12. POST /api/v1/auth/verify-2fa (userId, code)
+            A->>App: 13. VerifyTwoFactorCode(userId, code)
+            App->>I: 14. VerifyTwoFactorTokenAsync(user, code)
+            I-->>App: 15. bool isCodeValid = true
+
+            alt 2FA code is valid
+                App->>A: 16. Generate JWT and Refresh Token
+                A-->>C: 17. HTTP 200 OK { accessToken, refreshToken }
+                C-->>User: 18. Redirect to Dashboard/Report Viewer
+            else 2FA code is invalid
+                I-->>App: 15a. bool isCodeValid = false
+                App-->>A: 16a. Return InvalidCode
+                A-->>C: 17a. HTTP 401 Unauthorized { error: 'Invalid code' }
+                C-->>User: 18a. Show error message
+            end
+        else 2FA is not enabled
+            App->>A: 8a. Generate JWT and Refresh Token
+            A-->>C: 9a. HTTP 200 OK { accessToken, refreshToken }
+            C-->>User: 10a. Redirect to Dashboard/Report Viewer
+        end
+    else Credentials are invalid (US-027)
+        I-->>App: 7a. bool isValid = false
+        App->>I: Increment failed login count
+        App-->>A: 8b. Return InvalidCredentials
+        A-->>C: 9b. HTTP 401 Unauthorized { error: 'Invalid credentials' }
+        C-->>User: 10b. Show error message
+    end
+
+    group Client-Side Session Timeout (US-032)
+        C->>C: 19. On successful login, start inactivity timer (e.g., 15 mins)
+
+        loop Every second
+            C->>C: Check for user activity (mouse, keyboard)
+            alt User is active
+                C->>C: Reset inactivity timer
+            end
+        end
+
+        Note over C: After 14 minutes of inactivity...
+        C-->>User: 20. Show 'Session expiring in 60s' modal with countdown
+
+        alt User clicks 'Stay Logged In'
+            C->>A: 21. POST /api/v1/auth/refresh (refreshToken)
+            A-->>C: 22. HTTP 200 OK { newAccessToken, newRefreshToken }
+            C->>C: 23. Update stored tokens & reset inactivity timer
+            C-->>User: 24. Hide modal, user continues session
+        else Countdown reaches zero
+            C->>C: 21a. Clear stored tokens
+            C-->>User: 22a. Redirect to Login page with 'Session timed out' message
+        end
+    end

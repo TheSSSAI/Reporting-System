@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Organism: ReportConfigWizard</title>
+    <style>
+        /* --- 1. DESIGN TOKENS & SETUP --- */
+        :root {
+            /* Colors */
+            --color-primary-500: #0068FF;
+            --color-primary-600: #0052CC;
+            --color-primary-100: #E6F0FF;
+            --color-primary-50: #F2F8FF;
+            --color-secondary-500: #6c757d;
+            --color-danger-500: #D32F2F;
+            --color-warning-500: #ED6C02;
+            --color-warning-100: #FFF4E5;
+            --color-text-primary: #212529;
+            --color-text-secondary: #6c757d;
+            --color-text-white: #FFFFFF;
+            --color-text-link: var(--color-primary-500);
+            --color-border: #CED4DA;
+            --color-border-focus: #5C9EFF;
+            --color-border-error: var(--color-danger-500);
+            --color-bg-light: #F8F9FA;
+            --color-bg-disabled: #E9ECEF;
+
+            /* Typography */
+            --font-family-primary: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            --font-size-sm: 0.875rem;
+            --font-size-md: 1rem;
+            --font-size-lg: 1.25rem;
+            --font-size-h2: 36px;
+            --font-weight-semibold: 600;
+            --line-height-base: 1.5;
+
+            /* Spacing */
+            --space-xs: 4px;
+            --space-sm: 8px;
+            --space-md: 16px;
+            --space-lg: 24px;
+            --space-xl: 32px;
+
+            /* Borders & Shadows */
+            --border-radius-main: 8px;
+            --border-width: 1px;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+
+            /* Transitions */
+            --transition-base: all 0.2s ease-in-out;
+        }
+
+        /* --- 2. BASE & LAYOUT STYLES --- */
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-family-primary);
+            font-size: var(--font-size-md);
+            line-height: var(--line-height-base);
+            color: var(--color-text-primary);
+            background-color: var(--color-bg-light);
+            margin: 0;
+            padding: var(--space-lg);
+        }
+
+        .showcase {
+            max-width: 1024px;
+            margin: 0 auto;
+        }
+
+        .showcase-header {
+            margin-bottom: var(--space-xl);
+            text-align: center;
+        }
+
+        .wizard-demo {
+            background-color: var(--color-text-white);
+            border-radius: var(--border-radius-main);
+            box-shadow: var(--shadow-md);
+            margin-bottom: var(--space-xl);
+            border: 1px solid var(--color-border);
+            overflow: hidden;
+        }
+
+        .wizard-demo__title {
+            padding: var(--space-md) var(--space-lg);
+            background-color: var(--color-bg-light);
+            border-bottom: 1px solid var(--color-border);
+            font-weight: var(--font-weight-semibold);
+        }
+
+        /* --- 3. ATOMIC & MOLECULAR DEPENDENCIES --- */
+        /* Button */
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center; gap: var(--space-sm);
+            font-family: inherit; font-weight: var(--font-weight-semibold); text-align: center;
+            cursor: pointer; user-select: none; border: var(--border-width) solid transparent;
+            transition: var(--transition-base); font-size: var(--font-size-md); line-height: var(--line-height-base);
+            padding: 8px 22px; border-radius: var(--border-radius-main);
+        }
+        .btn:focus-visible { outline: 2px solid var(--color-border-focus); outline-offset: 2px; }
+        .btn:disabled { cursor: not-allowed; opacity: 0.65; }
+        .btn--primary { color: var(--color-text-white); background-color: var(--color-primary-500); }
+        .btn--primary:hover:not(:disabled) { background-color: var(--color-primary-600); }
+        .btn--secondary { color: var(--color-text-primary); background-color: var(--color-text-white); border-color: var(--color-border); }
+        .btn--secondary:hover:not(:disabled) { background-color: var(--color-bg-light); }
+
+        /* FormGroup */
+        .form-group {
+            display: flex; flex-direction: column; margin-bottom: var(--space-lg);
+        }
+        .form-group__label {
+            margin-bottom: var(--space-sm); font-size: var(--font-size-sm);
+            font-weight: 600; color: var(--color-text-primary);
+        }
+        .form-group__message {
+            margin-top: var(--space-xs); font-size: var(--font-size-sm);
+            color: var(--color-text-secondary); min-height: 1.4em;
+        }
+        .form-group--error .form-group__label, .form-group--error .form-group__message {
+            color: var(--color-danger-500);
+        }
+
+        /* TextInput */
+        .text-input {
+            display: block; width: 100%; padding: 12px 16px; font-size: var(--font-size-md);
+            font-family: inherit; border: 1px solid var(--color-border);
+            border-radius: var(--border-radius-main); transition: var(--transition-base);
+        }
+        .text-input:focus { border-color: var(--color-primary-500); box-shadow: 0 0 0 3px rgba(0, 104, 255, 0.1); outline: 0; }
+        .text-input.has-error { border-color: var(--color-border-error); }
+
+        /* SelectDropdown */
+        .select-input {
+            display: block; width: 100%; padding: 12px 16px;
+            font-size: var(--font-size-md); border: 1px solid var(--color-border);
+            border-radius: var(--border-radius-main); -webkit-appearance: none; appearance: none;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+            background-repeat: no-repeat; background-position: right 0.75rem center; background-size: 16px 12px;
+            cursor: pointer;
+        }
+
+        /* Alert */
+        .alert {
+            display: flex; align-items: flex-start; gap: var(--space-md);
+            padding: var(--space-md); border: 1px solid transparent;
+            border-radius: var(--border-radius-main);
+        }
+        .alert__icon { flex-shrink: 0; margin-top: 2px; }
+        .alert--warning { color: #663C00; background-color: var(--color-warning-100); border-color: #ffc107; }
+
+        /* --- 4. ORGANISM: ReportConfigWizard --- */
+        .wizard {
+            display: flex;
+            gap: var(--space-xl);
+            padding: var(--space-lg);
+        }
+
+        /* Stepper */
+        .wizard__stepper {
+            flex-shrink: 0;
+            width: 240px;
+        }
+
+        .stepper__list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .stepper__item {
+            display: flex;
+            align-items: center;
+            padding: var(--space-sm) var(--space-md);
+            border-left: 3px solid var(--color-border);
+            margin-bottom: var(--space-xs);
+            transition: var(--transition-base);
+        }
+
+        .stepper__number {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background-color: var(--color-border);
+            color: var(--color-text-white);
+            font-weight: var(--font-weight-semibold);
+            font-size: var(--font-size-sm);
+            margin-right: var(--space-md);
+            transition: var(--transition-base);
+        }
+
+        .stepper__label {
+            font-weight: var(--font-weight-semibold);
+            color: var(--color-text-secondary);
+            transition: var(--transition-base);
+        }
+
+        .stepper__item--completed .stepper__number {
+            background-color: var(--color-primary-500);
+        }
+
+        .stepper__item--completed .stepper__label {
+            color: var(--color-text-primary);
+        }
+
+        .stepper__item--active {
+            border-left-color: var(--color-primary-500);
+            background-color: var(--color-primary-50);
+        }
+
+        .stepper__item--active .stepper__number {
+            background-color: var(--color-primary-500);
+        }
+
+        .stepper__item--active .stepper__label {
+            color: var(--color-primary-500);
+        }
+
+        /* Content Area */
+        .wizard__content {
+            flex-grow: 1;
+            min-width: 0; /* Prevents flexbox overflow */
+        }
+
+        .wizard__step-header {
+            margin-bottom: var(--space-lg);
+        }
+
+        .wizard__step-title {
+            font-size: var(--font-size-lg);
+            font-weight: var(--font-weight-semibold);
+            margin: 0 0 var(--space-xs) 0;
+        }
+
+        .wizard__step-description {
+            color: var(--color-text-secondary);
+            margin: 0;
+        }
+
+        .wizard__footer {
+            margin-top: var(--space-xl);
+            padding-top: var(--space-lg);
+            border-top: 1px solid var(--color-border);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* Review Step */
+        .review-summary__section {
+            margin-bottom: var(--space-lg);
+            padding-bottom: var(--space-lg);
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .review-summary__section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+
+        .review-summary__header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--space-md);
+        }
+
+        .review-summary__title {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .review-summary__edit-link {
+            font-size: var(--font-size-sm);
+            color: var(--color-text-link);
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .review-summary__edit-link:hover {
+            text-decoration: underline;
+        }
+
+        .review-summary__item {
+            display: grid;
+            grid-template-columns: 150px 1fr;
+            gap: var(--space-md);
+            font-size: var(--font-size-md);
+            margin-bottom: var(--space-sm);
+        }
+
+        .review-summary__label {
+            color: var(--color-text-secondary);
+        }
+
+        .review-summary__value {
+            font-weight: 500;
+            word-break: break-word;
+        }
+
+        /* Responsive Adaptations */
+        @media (max-width: 768px) {
+            .wizard {
+                flex-direction: column;
+                padding: var(--space-md);
+            }
+            .wizard__stepper {
+                width: 100%;
+                display: flex;
+                overflow-x: auto;
+                padding-bottom: var(--space-md);
+                border-bottom: 1px solid var(--color-border);
+                margin-bottom: var(--space-lg);
+            }
+            .stepper__list {
+                display: flex;
+                gap: var(--space-sm);
+            }
+            .stepper__item {
+                border-left: none;
+                border-bottom: 3px solid var(--color-border);
+                padding: var(--space-sm);
+                white-space: nowrap;
+            }
+            .stepper__item--active {
+                border-bottom-color: var(--color-primary-500);
+                background-color: transparent;
+            }
+
+            .review-summary__item {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="showcase">
+        <header class="showcase-header">
+            <h1>Report Configuration Wizard</h1>
+            <p>A multi-step organism for creating and editing report configurations.</p>
+        </header>
+
+        <!-- State: Step 1 - Metadata -->
+        <div class="wizard-demo">
+            <h3 class="wizard-demo__title">State: Step 1 - Metadata</h3>
+            <div class="wizard">
+                <nav class="wizard__stepper" aria-label="Configuration Steps">
+                    <ol class="stepper__list">
+                        <li class="stepper__item stepper__item--active" aria-current="step">
+                            <span class="stepper__number">1</span>
+                            <span class="stepper__label">Metadata</span>
+                        </li>
+                        <li class="stepper__item">
+                            <span class="stepper__number">2</span>
+                            <span class="stepper__label">Data Source</span>
+                        </li>
+                        <li class="stepper__item">
+                            <span class="stepper__number">3</span>
+                            <span class="stepper__label">Transformation</span>
+                        </li>
+                        <li class="stepper__item">
+                            <span class="stepper__number">4</span>
+                            <span class="stepper__label">Output & Delivery</span>
+                        </li>
+                        <li class="stepper__item">
+                            <span class="stepper__number">5</span>
+                            <span class="stepper__label">Review</span>
+                        </li>
+                    </ol>
+                </nav>
+                <div class="wizard__content">
+                    <header class="wizard__step-header">
+                        <h2 class="wizard__step-title">Report Details</h2>
+                        <p class="wizard__step-description">Provide a name and description for your report.</p>
+                    </header>
+                    <div class="wizard__step-body">
+                        <div class="form-group">
+                            <label class="form-group__label" for="report-name">Report Name</label>
+                            <input type="text" id="report-name" class="text-input" placeholder="e.g., Monthly Sales Summary">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-group__label" for="report-desc">Description (Optional)</label>
+                            <textarea id="report-desc" class="text-input" rows="4" placeholder="A brief summary of this report's purpose."></textarea>
+                        </div>
+                    </div>
+                    <footer class="wizard__footer">
+                        <button class="btn btn--secondary" disabled>Back</button>
+                        <button class="btn btn--primary">Next</button>
+                    </footer>
+                </div>
+            </div>
+        </div>
+
+        <!-- State: Step 3 - Transformation (with warning) -->
+        <div class="wizard-demo">
+            <h3 class="wizard-demo__title">State: Step 3 - Transformation</h3>
+            <div class="wizard">
+                <nav class="wizard__stepper" aria-label="Configuration Steps">
+                    <ol class="stepper__list">
+                        <li class="stepper__item stepper__item--completed">
+                            <span class="stepper__number">1</span>
+                            <span class="stepper__label">Metadata</span>
+                        </li>
+                        <li class="stepper__item stepper__item--completed">
+                            <span class="stepper__number">2</span>
+                            <span class="stepper__label">Data Source</span>
+                        </li>
+                        <li class="stepper__item stepper__item--active" aria-current="step">
+                            <span class="stepper__number">3</span>
+                            <span class="stepper__label">Transformation</span>
+                        </li>
+                        <li class="stepper__item">
+                            <span class="stepper__number">4</span>
+                            <span class="stepper__label">Output & Delivery</span>
+                        </li>
+                        <li class="stepper__item">
+                            <span class="stepper__number">5</span>
+                            <span class="stepper__label">Review</span>
+                        </li>
+                    </ol>
+                </nav>
+                <div class="wizard__content">
+                    <header class="wizard__step-header">
+                        <h2 class="wizard__step-title">Data Transformation</h2>
+                        <p class="wizard__step-description">Optionally, select a script to transform the raw data.</p>
+                    </header>
+                    <div class="wizard__step-body">
+                        <div class="form-group">
+                            <label class="form-group__label" for="transform-script">Transformation Script</label>
+                            <select id="transform-script" class="select-input">
+                                <option>None</option>
+                                <option selected>Format User Data Script</option>
+                                <option>Calculate Sales Totals Script</option>
+                            </select>
+                        </div>
+                        <div class="alert alert--warning" role="alert">
+                            <span class="alert__icon">⚠️</span>
+                            <div class="alert__message">
+                                Adding a transformation script may increase memory usage and processing time for large datasets.
+                            </div>
+                        </div>
+                    </div>
+                    <footer class="wizard__footer">
+                        <button class="btn btn--secondary">Back</button>
+                        <button class="btn btn--primary">Next</button>
+                    </footer>
+                </div>
+            </div>
+        </div>
+        
+        <!-- State: Review Step -->
+        <div class="wizard-demo">
+            <h3 class="wizard-demo__title">State: Step 5 - Review</h3>
+            <div class="wizard">
+                <nav class="wizard__stepper" aria-label="Configuration Steps">
+                    <ol class="stepper__list">
+                        <li class="stepper__item stepper__item--completed">
+                            <span class="stepper__number">1</span>
+                            <span class="stepper__label">Metadata</span>
+                        </li>
+                        <li class="stepper__item stepper__item--completed">
+                            <span class="stepper__number">2</span>
+                            <span class="stepper__label">Data Source</span>
+                        </li>
+                        <li class="stepper__item stepper__item--completed">
+                            <span class="stepper__number">3</span>
+                            <span class="stepper__label">Transformation</span>
+                        </li>
+                        <li class="stepper__item stepper__item--completed">
+                            <span class="stepper__number">4</span>
+                            <span class="stepper__label">Output & Delivery</span>
+                        </li>
+                        <li class="stepper__item stepper__item--active" aria-current="step">
+                            <span class="stepper__number">5</span>
+                            <span class="stepper__label">Review</span>
+                        </li>
+                    </ol>
+                </nav>
+                <div class="wizard__content">
+                    <header class="wizard__step-header">
+                        <h2 class="wizard__step-title">Review & Save</h2>
+                        <p class="wizard__step-description">Review your report configuration below before saving.</p>
+                    </header>
+                    <div class="wizard__step-body">
+                        <div class="review-summary">
+                            <section class="review-summary__section">
+                                <div class="review-summary__header">
+                                    <h3 class="review-summary__title">Metadata</h3>
+                                    <a href="#" class="review-summary__edit-link">Edit</a>
+                                </div>
+                                <div class="review-summary__item">
+                                    <span class="review-summary__label">Report Name</span>
+                                    <span class="review-summary__value">Monthly Sales Summary</span>
+                                </div>
+                                <div class="review-summary__item">
+                                    <span class="review-summary__label">Description</span>
+                                    <span class="review-summary__value">A summary of sales performance for the previous month.</span>
+                                </div>
+                            </section>
+                            <section class="review-summary__section">
+                                <div class="review-summary__header">
+                                    <h3 class="review-summary__title">Data Source</h3>
+                                    <a href="#" class="review-summary__edit-link">Edit</a>
+                                </div>
+                                <div class="review-summary__item">
+                                    <span class="review-summary__label">Connector</span>
+                                    <span class="review-summary__value">Production Sales Database</span>
+                                </div>
+                            </section>
+                             <section class="review-summary__section">
+                                <div class="review-summary__header">
+                                    <h3 class="review-summary__title">Output & Delivery</h3>
+                                    <a href="#" class="review-summary__edit-link">Edit</a>
+                                </div>
+                                <div class="review-summary__item">
+                                    <span class="review-summary__label">Format</span>
+                                    <span class="review-summary__value">PDF</span>
+                                </div>
+                                 <div class="review-summary__item">
+                                    <span class="review-summary__label">Template</span>
+                                    <span class="review-summary__value">Standard Sales Template.hbs</span>
+                                </div>
+                                <div class="review-summary__item">
+                                    <span class="review-summary__label">Destinations</span>
+                                    <span class="review-summary__value">Email to: sales-team@example.com</span>
+                                </div>
+                            </section>
+                        </div>
+                    </div>
+                    <footer class="wizard__footer">
+                        <button class="btn btn--secondary">Back</button>
+                        <button class="btn btn--primary">Save Configuration</button>
+                    </footer>
+                </div>
+            </div>
+        </div>
+    </main>
+	<div class="showcase">
+        <h2>Component Variations</h2>
+        <div>
+            <h3>Variant Name: default</h3>
+            <p>The default appearance and flow of the wizard.</p>
+        </div>
+    </div>
+</body>
+</html>

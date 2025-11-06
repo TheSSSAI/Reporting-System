@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DataTable Component</title>
+    <style>
+        /* --- 1. DESIGN TOKENS & SETUP --- */
+        :root {
+            /* Colors */
+            --color-primary-500: #0068FF;
+            --color-primary-600: #0052CC;
+            --color-primary-50: #E6F0FF;
+            --color-secondary-500: #6c757d;
+            --color-danger-500: #D32F2F;
+            --color-success-500: #2E7D32;
+            
+            --color-white: #FFFFFF;
+            --color-gray-50: #F8F9FA;
+            --color-gray-100: #F1F3F5;
+            --color-gray-200: #E9ECEF;
+            --color-gray-300: #DEE2E6;
+            --color-gray-400: #CED4DA;
+            --color-gray-500: #ADB5BD;
+            --color-gray-600: #868E96;
+            --color-gray-700: #495057;
+            --color-gray-900: #212529;
+            
+            --color-text-primary: #212529;
+            --color-text-secondary: #6c757d;
+            --color-text-white: #ffffff;
+            --color-border-focus: #5C9EFF;
+            --color-error: #D32F2F;
+
+            --color-skeleton: #e0e0e0;
+            
+            /* Typography */
+            --font-family-primary: 'IBM Plex Sans', sans-serif;
+            --font-family-secondary: 'Inter', sans-serif;
+            --font-size-sm: 0.875rem; /* 14px */
+            --font-size-md: 1rem; /* 16px */
+            --font-size-lg: 1.25rem; /* 20px */
+            --line-height-base: 1.5;
+
+            /* Spacing */
+            --space-xs: 4px;
+            --space-sm: 8px;
+            --space-md: 16px;
+            --space-lg: 24px;
+            --space-xl: 32px;
+
+            /* Borders */
+            --border-radius-sm: 0.2rem;
+            --border-radius-md: 0.25rem;
+            --border-radius-lg: 8px;
+            --border-width: 1px;
+
+            /* Transitions */
+            --transition-base: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+
+        /* --- 2. BASE & LAYOUT STYLES --- */
+        *, *::before, *::after { box-sizing: border-box; }
+
+        body {
+            font-family: var(--font-family-primary);
+            font-size: var(--font-size-md);
+            line-height: var(--line-height-base);
+            color: var(--color-text-primary);
+            background-color: var(--color-gray-50);
+            margin: 0;
+            padding: var(--space-lg);
+        }
+
+        .showcase { max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: var(--space-xl); }
+        h2 { font-family: var(--font-family-primary); font-size: 1.5rem; margin: 0 0 var(--space-md) 0; color: var(--color-gray-900); border-bottom: 1px solid var(--color-gray-300); padding-bottom: var(--space-sm); }
+        .icon { display: inline-block; width: 1em; height: 1em; stroke-width: 0; stroke: currentColor; fill: currentColor; }
+
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        @keyframes shimmer { 0% { background-position: -1000px 0; } 100% { background-position: 1000px 0; } }
+        
+        /* --- 3. ATOMIC DEPENDENCY STYLES --- */
+        
+        /* Checkbox */
+        .checkbox-group { display: flex; align-items: center; gap: var(--space-sm); }
+        .checkbox-group input[type="checkbox"] { position: absolute; opacity: 0; width: 0; height: 0; }
+        .checkbox-group .checkbox__label { display: flex; align-items: center; gap: var(--space-sm); cursor: pointer; user-select: none; }
+        .checkbox__box {
+            width: 1.25em; height: 1.25em; border: var(--border-width) solid var(--color-gray-400);
+            border-radius: var(--border-radius-sm); display: inline-flex;
+            align-items: center; justify-content: center;
+            transition: var(--transition-base);
+            background-color: var(--color-white);
+        }
+        .checkbox-group input[type="checkbox"]:focus-visible + .checkbox__label .checkbox__box { border-color: var(--color-border-focus); box-shadow: 0 0 0 0.25rem rgba(0, 104, 255, 0.2); }
+        .checkbox-group input[type="checkbox"]:checked + .checkbox__label .checkbox__box { background-color: var(--color-primary-500); border-color: var(--color-primary-500); }
+        .checkbox__box .icon { color: var(--color-text-white); opacity: 0; transform: scale(0.5); transition: all 0.1s ease-in-out; }
+        .checkbox-group input[type="checkbox"]:checked + .checkbox__label .checkbox__box .icon { opacity: 1; transform: scale(1); }
+        .checkbox-group input[type="checkbox"]:indeterminate + .checkbox__label .checkbox__box { background-color: var(--color-primary-500); border-color: var(--color-primary-500); }
+        .checkbox-group input[type="checkbox"]:indeterminate + .checkbox__label .checkbox__box .icon { opacity: 1; transform: scale(1); }
+        
+        /* Spinner */
+        .spinner { display: inline-block; border: 0.25em solid var(--color-gray-200); border-top-color: var(--color-primary-500); border-radius: 50%; width: 3rem; height: 3rem; animation: spin 0.75s linear infinite; }
+
+        /* SkeletonLoader */
+        .skeleton { animation: shimmer 2s infinite linear; background: linear-gradient(to right, var(--color-skeleton) 8%, #f0f0f0 18%, var(--color-skeleton) 33%); background-size: 1000px 100%; }
+        .skeleton--text { height: 1em; border-radius: var(--border-radius-sm); }
+        
+        /* Alert */
+        .alert { display: flex; align-items: flex-start; gap: var(--space-md); position: relative; padding: var(--space-md); margin-bottom: var(--space-md); border: 1px solid transparent; border-radius: var(--border-radius-lg); }
+        .alert__icon { flex-shrink: 0; margin-top: 2px; }
+        .alert--error { color: #5F2120; background-color: #FDEDED; border-color: #f5c6cb; }
+        
+        /* --- 4. MOLECULAR COMPONENT: DataTable --- */
+        .data-table-wrapper {
+            border: 1px solid var(--color-gray-200);
+            border-radius: var(--border-radius-lg);
+            background-color: var(--color-white);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.02);
+            overflow: hidden; /* Ensures child elements adhere to the border radius */
+        }
+
+        .data-table-scroll-container {
+            overflow-x: auto;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            border-spacing: 0;
+            white-space: nowrap;
+            font-family: var(--font-family-secondary);
+        }
+
+        .data-table caption {
+            padding: var(--space-md);
+            font-size: var(--font-size-lg);
+            font-weight: 600;
+            text-align: left;
+            color: var(--color-gray-900);
+            caption-side: top;
+            background-color: var(--color-white);
+        }
+
+        .data-table thead {
+            background-color: var(--color-gray-50);
+        }
+
+        .data-table th, .data-table td {
+            padding: var(--space-md);
+            text-align: left;
+            vertical-align: middle;
+            border-bottom: 1px solid var(--color-gray-200);
+        }
+
+        .data-table th {
+            font-weight: 600;
+            color: var(--color-gray-700);
+            font-size: var(--font-size-sm);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .data-table th.sortable {
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+            padding-right: calc(var(--space-md) + 16px); /* Space for icon */
+        }
+        
+        .data-table th.sortable:focus-visible {
+            outline: 2px solid var(--color-border-focus);
+            outline-offset: -2px;
+        }
+
+        .data-table th.sortable:hover {
+            background-color: var(--color-gray-100);
+        }
+
+        .sort-icon {
+            position: absolute;
+            right: var(--space-md);
+            top: 50%;
+            transform: translateY(-50%);
+            width: 16px;
+            height: 16px;
+            color: var(--color-gray-500);
+            opacity: 0.5;
+            transition: opacity 0.2s ease, color 0.2s ease, transform 0.2s ease;
+        }
+
+        .data-table th.sortable:hover .sort-icon {
+            opacity: 1;
+        }
+        
+        .data-table th[aria-sort] .sort-icon {
+            opacity: 1;
+            color: var(--color-primary-500);
+        }
+
+        .data-table th[aria-sort="ascending"] .sort-icon {
+           transform: translateY(-50%) rotate(0deg);
+        }
+        
+        .data-table th[aria-sort="descending"] .sort-icon {
+            transform: translateY(-50%) rotate(180deg);
+        }
+
+        .data-table tbody tr {
+            transition: background-color 0.15s ease;
+        }
+
+        .data-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .data-table tbody tr:hover {
+            background-color: var(--color-gray-50);
+        }
+
+        .data-table tbody tr.selected {
+            background-color: var(--color-primary-50);
+        }
+
+        .data-table tbody tr.selected:hover {
+            background-color: #dbeaff;
+        }
+
+        .data-table__empty-state td,
+        .data-table__error-state td,
+        .data-table__loading-state td {
+            text-align: center;
+            padding: var(--space-xl);
+            color: var(--color-gray-600);
+        }
+        
+        .data-table__loading-state td {
+            padding: 0;
+        }
+        .skeleton-cell {
+            padding: var(--space-md);
+        }
+
+
+        .data-table__footer {
+            padding: var(--space-md);
+            border-top: 1px solid var(--color-gray-200);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--color-white);
+        }
+
+        /* Pagination Controls (Dependency) Styles */
+        .pagination {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            font-size: var(--font-size-sm);
+        }
+
+        .pagination__button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border: 1px solid var(--color-gray-300);
+            background-color: var(--color-white);
+            color: var(--color-gray-700);
+            border-radius: var(--border-radius-sm);
+            cursor: pointer;
+            transition: var(--transition-base);
+        }
+        
+        .pagination__button:focus-visible {
+            outline: 2px solid var(--color-border-focus);
+            outline-offset: 1px;
+        }
+
+        .pagination__button:hover:not(:disabled) {
+            background-color: var(--color-gray-100);
+            border-color: var(--color-gray-400);
+        }
+
+        .pagination__button:disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        .pagination__info {
+            color: var(--color-gray-600);
+        }
+
+        /* Responsive */
+        @media (max-width: 1279px) {
+            .data-table-scroll-container {
+                overflow-x: auto;
+            }
+        }
+
+    </style>
+</head>
+<body>
+
+    <svg width="0" height="0" style="position:absolute">
+      <symbol id="icon-check" viewBox="0 0 16 16">
+        <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
+      </symbol>
+      <symbol id="icon-minus" viewBox="0 0 16 16">
+        <path d="M4 8a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7A.5.5 0 0 1 4 8z"/>
+      </symbol>
+      <symbol id="icon-sort-arrow" viewBox="0 0 320 512">
+        <path d="M137.4 41.4c12.5-12.5 32.8-12.5 45.3 0l128 128c9.2 9.2 11.9 22.9 6.9 34.9s-16.6 19.8-29.6 19.8H32c-12.9 0-24.6-7.8-29.6-19.8s-2.2-25.7 6.9-34.9l128-128z"/>
+      </symbol>
+      <symbol id="icon-error" viewBox="0 0 16 16">
+            <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z"/>
+      </symbol>
+    </svg>
+
+    <main class="showcase">
+        
+        <!-- VARIATION: With Selection, Sorting, and Pagination -->
+        <div>
+            <h2>Data Table: Full Feature Set</h2>
+            <div class="data-table-wrapper">
+                <div class="data-table-scroll-container">
+                    <table class="data-table">
+                        <caption>Job Executions</caption>
+                        <thead>
+                            <tr>
+                                <th scope="col" style="width: 50px;">
+                                    <div class="checkbox-group">
+                                        <input type="checkbox" id="select-all" class="checkbox--indeterminate" aria-label="Select all items on this page">
+                                        <label for="select-all" class="checkbox__label"><span class="checkbox__box"><svg class="icon"><use href="#icon-minus"></use></svg></span></label>
+                                    </div>
+                                </th>
+                                <th scope="col" class="sortable" tabindex="0" aria-sort="descending">Report Name <svg class="icon sort-icon"><use href="#icon-sort-arrow"></use></svg></th>
+                                <th scope="col" class="sortable" tabindex="0">Status <svg class="icon sort-icon"><use href="#icon-sort-arrow"></use></svg></th>
+                                <th scope="col" class="sortable" tabindex="0">Start Time <svg class="icon sort-icon"><use href="#icon-sort-arrow"></use></svg></th>
+                                <th scope="col">Duration</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="selected">
+                                <td>
+                                    <div class="checkbox-group">
+                                        <input type="checkbox" id="select-1" checked>
+                                        <label for="select-1" class="checkbox__label"><span class="checkbox__box"><svg class="icon"><use href="#icon-check"></use></svg></span></label>
+                                    </div>
+                                </td>
+                                <td>Monthly Sales Summary</td>
+                                <td>Succeeded</td>
+                                <td>2025-01-15 10:30:00</td>
+                                <td>1m 15s</td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="checkbox-group">
+                                        <input type="checkbox" id="select-2">
+                                        <label for="select-2" class="checkbox__label"><span class="checkbox__box"><svg class="icon"><use href="#icon-check"></use></svg></span></label>
+                                    </div>
+                                </td>
+                                <td>Daily Inventory Check</td>
+                                <td>Failed</td>
+                                <td>2025-01-15 09:00:00</td>
+                                <td>30s</td>
+                            </tr>
+                             <tr>
+                                <td>
+                                    <div class="checkbox-group">
+                                        <input type="checkbox" id="select-3">
+                                        <label for="select-3" class="checkbox__label"><span class="checkbox__box"><svg class="icon"><use href="#icon-check"></use></svg></span></label>
+                                    </div>
+                                </td>
+                                <td>Weekly User Activity</td>
+                                <td>Succeeded</td>
+                                <td>2025-01-14 17:00:00</td>
+                                <td>5m 02s</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="data-table__footer">
+                    <div class="pagination__info">Showing 1-3 of 25</div>
+                    <nav class="pagination" aria-label="Table navigation">
+                        <button class="pagination__button" disabled>&lt;</button>
+                        <button class="pagination__button">&gt;</button>
+                    </nav>
+                </div>
+            </div>
+        </div>
+
+        <!-- STATE: Loading -->
+        <div>
+            <h2>Data Table: Loading State</h2>
+            <div class="data-table-wrapper">
+                 <div class="data-table-scroll-container">
+                    <table class="data-table">
+                        <caption>Job Executions</caption>
+                        <thead>
+                            <tr>
+                                <th scope="col" style="width: 50px;">
+                                    <div class="checkbox-group">
+                                        <input type="checkbox" id="select-all-load" disabled>
+                                        <label for="select-all-load" class="checkbox__label"><span class="checkbox__box"></span></label>
+                                    </div>
+                                </th>
+                                <th scope="col">Report Name</th>
+                                <th scope="col">Status</th>
+                                <th scope="col">Start Time</th>
+                                <th scope="col">Duration</th>
+                            </tr>
+                        </thead>
+                        <tbody class="data-table__loading-state" aria-busy="true">
+                            <tr>
+                                <td class="skeleton-cell"><div class="skeleton skeleton--text" style="width: 20px; height: 20px; border-radius: 4px; margin: 0 auto;"></div></td>
+                                <td class="skeleton-cell"><div class="skeleton skeleton--text" style="width: 80%;"></div></td>
+                                <td class="skeleton-cell"><div class="skeleton skeleton--text" style="width: 60%;"></div></td>
+                                <td class="skeleton-cell"><div class="skeleton skeleton--text" style="width: 90%;"></div></td>
+                                <td class="skeleton-cell"><div class="skeleton skeleton--text" style="width: 40%;"></div></td>
+                            </tr>
+                            <tr>
+                                <td class="skeleton-cell"><div class="skeleton skeleton--text" style="width: 20px; height: 20px; border-radius: 4px; margin: 0 auto;"></div></td>
+                                <td class="skeleton-cell"><div class="skeleton skeleton--text" style="width: 70%;"></div></td>
+                                <td class="skeleton-cell"><div class="skeleton skeleton--text" style="width: 50%;"></div></td>
+                                <td class="skeleton-cell"><div class="skeleton skeleton--text" style="width: 85%;"></div></td>
+                                <td class="skeleton-cell"><div class="skeleton skeleton--text" style="width: 45%;"></div></td>
+                            </tr>
+                            <tr>
+                                <td class="skeleton-cell"><div class="skeleton skeleton--text" style="width: 20px; height: 20px; border-radius: 4px; margin: 0 auto;"></div></td>
+                                <td class="skeleton-cell"><div class="skeleton skeleton--text" style="width: 75%;"></div></td>
+                                <td class="skeleton-cell"><div class="skeleton skeleton--text" style="width: 55%;"></div></td>
+                                <td class="skeleton-cell"><div class="skeleton skeleton--text" style="width: 95%;"></div></td>
+                                <td class="skeleton-cell"><div class="skeleton skeleton--text" style="width: 35%;"></div></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                 <div class="data-table__footer">
+                    <div class="pagination__info skeleton skeleton--text" style="width: 100px;"></div>
+                    <nav class="pagination" aria-label="Table navigation">
+                        <button class="pagination__button" disabled>&lt;</button>
+                        <button class="pagination__button" disabled>&gt;</button>
+                    </nav>
+                </div>
+            </div>
+        </div>
+
+        <!-- STATE: Empty -->
+        <div>
+            <h2>Data Table: Empty State</h2>
+            <div class="data-table-wrapper">
+                <table class="data-table">
+                    <caption>Job Executions</caption>
+                    <thead>
+                        <tr>
+                            <th scope="col">Report Name</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Start Time</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="data-table__empty-state">
+                            <td colspan="3">No job executions found.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- STATE: Error -->
+        <div>
+            <h2>Data Table: Error State</h2>
+            <div class="data-table-wrapper">
+                <div class="data-table__error-state">
+                   <div class="alert alert--error" style="margin: 0; border-radius: 0; border: none;">
+                       <svg class="icon alert__icon"><use href="#icon-error"></use></svg>
+                       <div>Failed to load data. Please try again later.</div>
+                   </div>
+                </div>
+            </div>
+        </div>
+        
+    </main>
+
+    <script>
+        // Script for indeterminate checkbox
+        document.querySelector('.checkbox--indeterminate').indeterminate = true;
+    </script>
+	
+	<div style="margin-top: 40px; padding: 20px; background: #fff; border-radius: 8px;"> <h2> Component Variations</h2>
+      <div>
+        <h3 style="margin-bottom: 8px;">Variant Name: Default (Loaded State)</h3>
+		<p style="font-size: 14px; color: #666; margin-bottom: 16px;"> The standard display of tabular data with header and body rows.</p>
+		<!-- VARIATION HTML will be implicitly shown in the first full example -->
+      </div>
+      <div style="margin-top: 20px;">
+        <h3 style="margin-bottom: 8px;">Variant Name: With Selection</h3>
+		<p style="font-size: 14px; color: #666; margin-bottom: 16px;"> Includes a checkbox in each row and a header checkbox for bulk selection. Selected rows have a distinct background color.</p>
+		<!-- VARIATION HTML will be implicitly shown in the first full example -->
+      </div>
+      <div style="margin-top: 20px;">
+        <h3 style="margin-bottom: 8px;">Variant Name: With Sorting</h3>
+		<p style="font-size: 14px; color: #666; margin-bottom: 16px;"> Headers are interactive, showing sort direction indicators and changing on hover/click.</p>
+		<!-- VARIATION HTML will be implicitly shown in the first full example -->
+      </div>
+       <div style="margin-top: 20px;">
+        <h3 style="margin-bottom: 8px;">Variant Name: With Pagination</h3>
+		<p style="font-size: 14px; color: #666; margin-bottom: 16px;"> Includes a footer with controls to navigate through pages of data and displays the current item range.</p>
+		<!-- VARIATION HTML will be implicitly shown in the first full example -->
+      </div>
+	</div>
+	
+	</body>
+</html>

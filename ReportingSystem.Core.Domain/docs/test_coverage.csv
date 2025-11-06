@@ -1,0 +1,5 @@
+"component_name","business_criticality","technical_complexity","change_frequency","test_types_required","unit_test_coverage","integration_test_coverage","e2e_test_coverage","automation_percentage","manual_test_effort","automated_test_effort","total_test_cases","risk_mitigation_score","quality_confidence","maintenance_overhead","tool_compatibility","team_skill_alignment"
+"Jint Transformation Engine & Sandbox","Critical","High","Medium","[""Unit"",""Integration"",""Security"",""Performance""]","95","98","70","95","4","60","45","0.98","High","Medium","Excellent","Good"
+"Script Management API (CRUD & Versioning)","High","Medium","Medium","[""Unit"",""Integration"",""Security""]","90","100","85","98","2","50","40","0.95","High","Low","Excellent","Good"
+"Script Editor UI (React/Monaco)","High","High","High","[""Unit"",""E2E"",""Accessibility"",""Usability""]","80","","90","80","16","40","35","0.9","High","High","Good","Good"
+"Audit & Security Logging","Critical","Medium","Low","[""Integration"",""Security""]","","95","75","90","4","15","18","0.92","High","Low","Excellent","Good"

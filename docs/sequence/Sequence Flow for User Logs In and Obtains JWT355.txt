@@ -1,0 +1,626 @@
+# 1 Overview
+
+## 1.1 Diagram Id
+
+SEQ-AF-001
+
+## 1.2 Name
+
+User Logs In and Obtains JWT
+
+## 1.3 Description
+
+A user (Administrator or Viewer) provides their credentials through the React-based web UI. The ASP.NET Core backend authenticates them using the ASP.NET Core Identity framework against the user data stored in the encrypted SQLite database. Upon success, the API layer generates and returns a signed JSON Web Token (JWT) for securing subsequent API calls.
+
+## 1.4 Type
+
+🔹 AuthenticationFlow
+
+## 1.5 Purpose
+
+To securely authenticate a user and establish a session for accessing the system's web interfaces and API.
+
+## 1.6 Complexity
+
+Medium
+
+## 1.7 Priority
+
+🚨 Critical
+
+## 1.8 Frequency
+
+OnDemand
+
+## 1.9 Participants
+
+- presentationlayerreact
+- apiweblayer
+- application_layer
+- infrastructure_layer
+
+## 1.10 Key Interactions
+
+- User submits credentials (username, password) via React UI.
+- API/Web Layer receives the request and invokes the Application Layer's user service.
+- Application Layer uses ASP.NET Core Identity to validate credentials against the user store.
+- Infrastructure Layer (EF Core) retrieves the user's hashed password from the SQLite database.
+- ASP.NET Core Identity securely compares the provided password with the stored hash.
+- Upon successful validation, the API/Web Layer generates a signed JWT containing user claims and roles.
+- The JWT is returned to the React UI, which stores it (e.g., in memory/session storage) for use in Authorization headers of future requests.
+
+## 1.11 Triggers
+
+- User clicks the 'Login' button on the login screen.
+
+## 1.12 Outcomes
+
+- User is successfully authenticated.
+- A valid JWT is issued and stored on the client-side.
+- User is redirected to the appropriate application view (Control Panel or Report Viewer).
+
+## 1.13 Business Rules
+
+- A user account must be locked after 5 consecutive failed login attempts.
+- Password hashing uses a strong, industry-standard algorithm (managed by ASP.NET Core Identity).
+
+## 1.14 Error Scenarios
+
+- Invalid username or password provided, resulting in an HTTP 401 Unauthorized response.
+- User account is locked, preventing login.
+- User account does not exist or is inactive.
+
+## 1.15 Integration Points
+
+*No items available*
+
+# 2.0 Details
+
+## 2.1 Diagram Id
+
+SEQ-AF-001
+
+## 2.2 Name
+
+Implementation: User Authentication and JWT Issuance
+
+## 2.3 Description
+
+Detailed sequence for user authentication via credentials. The flow starts at the React UI, proceeds through ASP.NET Core layers for validation using ASP.NET Core Identity against an encrypted SQLite store, and concludes with the API Layer generating and returning a signed JWT upon successful validation. The sequence includes account lockout checks and specific error handling for authentication failures.
+
+## 2.4 Participants
+
+### 2.4.1 Frontend Application
+
+#### 2.4.1.1 Repository Id
+
+presentation_layer_react
+
+#### 2.4.1.2 Display Name
+
+React Client
+
+#### 2.4.1.3 Type
+
+🔹 Frontend Application
+
+#### 2.4.1.4 Technology
+
+React 18, TypeScript, Axios
+
+#### 2.4.1.5 Order
+
+1
+
+#### 2.4.1.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | actor |
+| Color | #4287f5 |
+| Stereotype | UI |
+
+### 2.4.2.0 API Controller
+
+#### 2.4.2.1 Repository Id
+
+api_web_layer
+
+#### 2.4.2.2 Display Name
+
+API/Web Layer
+
+#### 2.4.2.3 Type
+
+🔹 API Controller
+
+#### 2.4.2.4 Technology
+
+ASP.NET Core 8
+
+#### 2.4.2.5 Order
+
+2
+
+#### 2.4.2.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | component |
+| Color | #42f5ad |
+| Stereotype | Controller |
+
+### 2.4.3.0 Application Service
+
+#### 2.4.3.1 Repository Id
+
+application_layer
+
+#### 2.4.3.2 Display Name
+
+Application Layer
+
+#### 2.4.3.3 Type
+
+🔹 Application Service
+
+#### 2.4.3.4 Technology
+
+.NET 8, ASP.NET Core Identity
+
+#### 2.4.3.5 Order
+
+3
+
+#### 2.4.3.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | component |
+| Color | #f5a442 |
+| Stereotype | Service |
+
+### 2.4.4.0 Data Access
+
+#### 2.4.4.1 Repository Id
+
+infrastructure_layer
+
+#### 2.4.4.2 Display Name
+
+Infrastructure Layer
+
+#### 2.4.4.3 Type
+
+🔹 Data Access
+
+#### 2.4.4.4 Technology
+
+Entity Framework Core 8, SQLite
+
+#### 2.4.4.5 Order
+
+4
+
+#### 2.4.4.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | database |
+| Color | #f56e42 |
+| Stereotype | Repository/DB |
+
+## 2.5.0.0 Interactions
+
+### 2.5.1.0 HTTP Request
+
+#### 2.5.1.1 Source Id
+
+presentation_layer_react
+
+#### 2.5.1.2 Target Id
+
+api_web_layer
+
+#### 2.5.1.3 Message
+
+User submits credentials via Login form.
+
+#### 2.5.1.4 Sequence Number
+
+1
+
+#### 2.5.1.5 Type
+
+🔹 HTTP Request
+
+#### 2.5.1.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.1.7 Return Message
+
+Returns JWT on success or error response on failure.
+
+#### 2.5.1.8 Has Return
+
+✅ Yes
+
+#### 2.5.1.9 Is Activation
+
+✅ Yes
+
+#### 2.5.1.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | HTTPS |
+| Method | POST /api/v1/auth/login |
+| Parameters | Request body: { "username": "string", "password": ... |
+| Authentication | None |
+| Error Handling | Client-side handling of 401, 403, 500 status codes... |
+| Performance | P99 latency < 500ms |
+
+### 2.5.2.0 Method Call
+
+#### 2.5.2.1 Source Id
+
+api_web_layer
+
+#### 2.5.2.2 Target Id
+
+application_layer
+
+#### 2.5.2.3 Message
+
+Invokes authentication service with credentials DTO.
+
+#### 2.5.2.4 Sequence Number
+
+2
+
+#### 2.5.2.5 Type
+
+🔹 Method Call
+
+#### 2.5.2.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.2.7 Return Message
+
+Returns AuthenticationResult object (Success/Failure/LockedOut).
+
+#### 2.5.2.8 Has Return
+
+✅ Yes
+
+#### 2.5.2.9 Is Activation
+
+✅ Yes
+
+#### 2.5.2.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-Process |
+| Method | Task<AuthenticationResult> AuthenticateAsync(Login... |
+| Parameters | LoginRequestDto containing username and password. |
+| Authentication | Internal trust |
+| Error Handling | Catches exceptions from application service and ma... |
+| Performance | N/A |
+
+#### 2.5.2.11 Nested Interactions
+
+##### 2.5.2.11.1 Data Request
+
+###### 2.5.2.11.1.1 Source Id
+
+application_layer
+
+###### 2.5.2.11.1.2 Target Id
+
+infrastructure_layer
+
+###### 2.5.2.11.1.3 Message
+
+Find user by username using UserManager.
+
+###### 2.5.2.11.1.4 Sequence Number
+
+3
+
+###### 2.5.2.11.1.5 Type
+
+🔹 Data Request
+
+###### 2.5.2.11.1.6 Is Synchronous
+
+✅ Yes
+
+###### 2.5.2.11.1.7 Return Message
+
+Returns User object or null if not found.
+
+###### 2.5.2.11.1.8 Has Return
+
+✅ Yes
+
+###### 2.5.2.11.1.9 Is Activation
+
+✅ Yes
+
+###### 2.5.2.11.1.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | EF Core |
+| Method | UserManager.FindByNameAsync(username) |
+| Parameters | string username |
+| Authentication | Database connection string credentials. |
+| Error Handling | If user is null, returns 'InvalidCredentials' resu... |
+| Performance | Query must be indexed on the UserName column for f... |
+
+##### 2.5.2.11.2.0 Method Call
+
+###### 2.5.2.11.2.1 Source Id
+
+application_layer
+
+###### 2.5.2.11.2.2 Target Id
+
+application_layer
+
+###### 2.5.2.11.2.3 Message
+
+Check if user account is locked.
+
+###### 2.5.2.11.2.4 Sequence Number
+
+4
+
+###### 2.5.2.11.2.5 Type
+
+🔹 Method Call
+
+###### 2.5.2.11.2.6 Is Synchronous
+
+✅ Yes
+
+###### 2.5.2.11.2.7 Return Message
+
+Boolean indicating locked status.
+
+###### 2.5.2.11.2.8 Has Return
+
+✅ Yes
+
+###### 2.5.2.11.2.9 Is Activation
+
+❌ No
+
+###### 2.5.2.11.2.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-Process |
+| Method | UserManager.IsLockedOutAsync(user) |
+| Parameters | ApplicationUser user |
+| Authentication | Internal trust |
+| Error Handling | If true, returns 'AccountLocked' result immediatel... |
+| Performance | N/A |
+
+##### 2.5.2.11.3.0 Data Request/Update
+
+###### 2.5.2.11.3.1 Source Id
+
+application_layer
+
+###### 2.5.2.11.3.2 Target Id
+
+infrastructure_layer
+
+###### 2.5.2.11.3.3 Message
+
+Validate password and handle lockout policy using SignInManager.
+
+###### 2.5.2.11.3.4 Sequence Number
+
+5
+
+###### 2.5.2.11.3.5 Type
+
+🔹 Data Request/Update
+
+###### 2.5.2.11.3.6 Is Synchronous
+
+✅ Yes
+
+###### 2.5.2.11.3.7 Return Message
+
+Returns SignInResult object.
+
+###### 2.5.2.11.3.8 Has Return
+
+✅ Yes
+
+###### 2.5.2.11.3.9 Is Activation
+
+❌ No
+
+###### 2.5.2.11.3.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | EF Core |
+| Method | SignInManager.CheckPasswordSignInAsync(user, passw... |
+| Parameters | ApplicationUser user, string password, bool lockou... |
+| Authentication | Database connection string credentials. |
+| Error Handling | This method encapsulates the core logic. On failur... |
+| Performance | Password hashing must be performed efficiently. |
+
+##### 2.5.2.11.4.0 Method Call
+
+###### 2.5.2.11.4.1 Source Id
+
+application_layer
+
+###### 2.5.2.11.4.2 Target Id
+
+application_layer
+
+###### 2.5.2.11.4.3 Message
+
+Log successful or failed login attempt to audit log.
+
+###### 2.5.2.11.4.4 Sequence Number
+
+6
+
+###### 2.5.2.11.4.5 Type
+
+🔹 Method Call
+
+###### 2.5.2.11.4.6 Is Synchronous
+
+❌ No
+
+###### 2.5.2.11.4.7 Return Message
+
+
+
+###### 2.5.2.11.4.8 Has Return
+
+❌ No
+
+###### 2.5.2.11.4.9 Is Activation
+
+❌ No
+
+###### 2.5.2.11.4.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-Process |
+| Method | IAuditLogger.LogAuthenticationEventAsync(details) |
+| Parameters | AuditEvent details (UserId, IP Address, Success/Fa... |
+| Authentication | N/A |
+| Error Handling | Logging failures should not block the user login f... |
+| Performance | Should be non-blocking to avoid adding latency to ... |
+
+### 2.5.3.0.0.0 Internal Process
+
+#### 2.5.3.1.0.0 Source Id
+
+api_web_layer
+
+#### 2.5.3.2.0.0 Target Id
+
+api_web_layer
+
+#### 2.5.3.3.0.0 Message
+
+If authentication successful, generate signed JWT.
+
+#### 2.5.3.4.0.0 Sequence Number
+
+7
+
+#### 2.5.3.5.0.0 Type
+
+🔹 Internal Process
+
+#### 2.5.3.6.0.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.3.7.0.0 Return Message
+
+Signed JWT string.
+
+#### 2.5.3.8.0.0 Has Return
+
+✅ Yes
+
+#### 2.5.3.9.0.0 Is Activation
+
+❌ No
+
+#### 2.5.3.10.0.0 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-Process |
+| Method | GenerateJwtToken(ApplicationUser user, IList<strin... |
+| Parameters | User object and their assigned roles. |
+| Authentication | N/A |
+| Error Handling | Failure to read signing key from configuration res... |
+| Performance | Token generation should be very fast (< 5ms). |
+
+## 2.6.0.0.0.0 Notes
+
+### 2.6.1.0.0.0 Content
+
+#### 2.6.1.1.0.0 Content
+
+ASP.NET Core Identity's UserManager and SignInManager abstract away the direct database interactions for user retrieval, password hashing/comparison, and lockout logic.
+
+#### 2.6.1.2.0.0 Position
+
+top
+
+#### 2.6.1.3.0.0 Participant Id
+
+application_layer
+
+#### 2.6.1.4.0.0 Sequence Number
+
+3
+
+### 2.6.2.0.0.0 Content
+
+#### 2.6.2.1.0.0 Content
+
+The generated JWT contains claims such as 'sub' (user ID), 'name', 'jti' (unique token ID), 'exp' (expiration), and a custom 'role' claim for RBAC.
+
+#### 2.6.2.2.0.0 Position
+
+bottom
+
+#### 2.6.2.3.0.0 Participant Id
+
+api_web_layer
+
+#### 2.6.2.4.0.0 Sequence Number
+
+7
+
+### 2.6.3.0.0.0 Content
+
+#### 2.6.3.1.0.0 Content
+
+The React client must store the received JWT securely and include it in the 'Authorization: Bearer <token>' header for all subsequent API requests.
+
+#### 2.6.3.2.0.0 Position
+
+bottom
+
+#### 2.6.3.3.0.0 Participant Id
+
+presentation_layer_react
+
+#### 2.6.3.4.0.0 Sequence Number
+
+1
+
+## 2.7.0.0.0.0 Implementation Guidance
+
+| Property | Value |
+|----------|-------|
+| Security Requirements | JWTs must be signed using RS256 or HS256 with a st... |
+| Performance Targets | P95 latency for the login endpoint should be < 300... |
+| Error Handling Strategy | Return HTTP 401 Unauthorized for invalid username/... |
+| Testing Considerations | Unit tests for the Application Layer's authenticat... |
+| Monitoring Requirements | Monitor the rate of 401 and 403 responses from the... |
+| Deployment Considerations | The JWT signing secret must be managed securely in... |
+

@@ -1,0 +1,17 @@
+graph TD
+    subgraph "User Role Structure"
+        SystemUsers["System Users"]
+
+        Admin["<strong>Administrator</strong><br/>Full system control<br/>Manages configurations, users, and reports"]
+        Viewer["<strong>End-User (Viewer)</strong><br/>Read-only access<br/>Views and downloads permitted reports"]
+
+        SystemUsers -- Manages System --> Admin
+        SystemUsers -- Consumes Reports --> Viewer
+    end
+
+    %% Styling
+    classDef role fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,color:#0d47a1
+    classDef system fill:#e0f2f1,stroke:#00796b,stroke-width:2px,color:#004d40
+
+    class SystemUsers system
+    class Admin,Viewer role

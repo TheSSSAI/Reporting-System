@@ -1,0 +1,35 @@
+sequenceDiagram
+    actor "User Agent" as UserAgent
+    participant "API Host (Kestrel)" as APIHostKestrel
+    participant "Authentication Middleware" as AuthenticationMiddleware
+    participant "Authorization Middleware" as AuthorizationMiddleware
+    participant "TransformationScriptsController" as TransformationScriptsController
+
+    activate APIHostKestrel
+    UserAgent->>APIHostKestrel: 1. Sends HTTP request to protected endpoint.
+    activate AuthenticationMiddleware
+    APIHostKestrel->>AuthenticationMiddleware: 2. Invoke(context)
+    AuthenticationMiddleware->>AuthenticationMiddleware: 2.1. [Security Checkpoint] Validate JWT Bearer Token
+    AuthenticationMiddleware-->>AuthenticationMiddleware: Valid ClaimsPrincipal or Authentication Failure
+    AuthenticationMiddleware->>APIHostKestrel: 3. Populates context.User with ClaimsPrincipal
+    AuthenticationMiddleware->>APIHostKestrel: 3.1. [ALT] Short-circuits with 401 Unauthorized
+    APIHostKestrel->>UserAgent: 3.2. [ALT] Sends failure response
+    activate AuthorizationMiddleware
+    APIHostKestrel->>AuthorizationMiddleware: 4. Invoke(context)
+    AuthorizationMiddleware->>AuthorizationMiddleware: 4.1. [Security Checkpoint] Evaluate [Authorize(Roles = 'Administrator')] Policy
+    AuthorizationMiddleware-->>AuthorizationMiddleware: Authorization Success or Failure
+    AuthorizationMiddleware->>APIHostKestrel: 5. Allows request to proceed
+    AuthorizationMiddleware->>APIHostKestrel: 5.1. [ALT] Short-circuits with 403 Forbidden
+    APIHostKestrel->>UserAgent: 5.2. [ALT] Sends failure response
+    activate TransformationScriptsController
+    APIHostKestrel->>TransformationScriptsController: 6. ExecuteControllerAction(context, id)
+    TransformationScriptsController-->>APIHostKestrel: IActionResult (e.g., 200 OK)
+    TransformationScriptsController->>APIHostKestrel: 7. Return HTTP 200 OK
+    APIHostKestrel->>UserAgent: 8. Sends success response
+
+    note over AuthenticationMiddleware: The Identity Provider's OIDC discovery document (containing the public key URI) is typically fetc...
+
+    deactivate TransformationScriptsController
+    deactivate AuthorizationMiddleware
+    deactivate AuthenticationMiddleware
+    deactivate APIHostKestrel

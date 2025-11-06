@@ -1,0 +1,17 @@
+<Project>
+  <PropertyGroup>
+    <!-- Set common properties for all projects -->
+    <LangVersion>12.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors Condition="'$(Configuration)' == 'Release'">true</TreatWarningsAsErrors>
+    
+    <!-- Project metadata -->
+    <Authors>EnterpriseSolutions Inc.</Authors>
+    <Company>EnterpriseSolutions Inc.</Company>
+    <Product>Reporting System</Product>
+    <Copyright>Copyright © 2024 EnterpriseSolutions Inc.</Copyright>
+    <RepositoryUrl>https://github.com/your-org/ReportingSystem</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,684 @@
+# 1 Overview
+
+## 1.1 Diagram Id
+
+SEQ-UJ-001
+
+## 1.2 Name
+
+Administrator Creates a Full Report Configuration
+
+## 1.3 Description
+
+An Administrator uses the multi-step guided interface in the React-based Control Panel to define a new report job. This involves defining metadata, selecting a pre-configured data connector, optionally choosing a transformation script, defining the output format and template, configuring one or more delivery destinations, and setting a CRON schedule for automation.
+
+## 1.4 Type
+
+🔹 UserJourney
+
+## 1.5 Purpose
+
+To allow administrators to configure automated report generation workflows, which is a core function of the system.
+
+## 1.6 Complexity
+
+High
+
+## 1.7 Priority
+
+🚨 Critical
+
+## 1.8 Frequency
+
+OnDemand
+
+## 1.9 Participants
+
+- presentationlayerreact
+- apiweblayer
+- application_layer
+- infrastructure_layer
+
+## 1.10 Key Interactions
+
+- Admin interacts with the 'Create Report' wizard in the React UI.
+- UI makes API calls to fetch lists of available ConnectorConfigurations and TransformationScripts.
+- Admin submits the complete configuration object.
+- API/Web Layer receives the DTO and performs validation (e.g., using FluentValidation).
+- Application Layer creates a new ReportConfiguration domain entity from the DTO.
+- The Application Layer validates the CRON expression.
+- Infrastructure Layer (EF Core) persists the new ReportConfiguration entity and its relationships to the SQLite database within a transaction.
+- Application Layer schedules the new job with the Quartz.NET scheduler service.
+- The creation of the configuration is logged to the audit trail.
+
+## 1.11 Triggers
+
+- Administrator initiates the 'Create New Report' action in the Control Panel.
+
+## 1.12 Outcomes
+
+- A new report configuration is created and stored in the system.
+- A new version of the configuration is created automatically.
+- The report job is scheduled for execution based on the CRON expression.
+
+## 1.13 Business Rules
+
+- A report configuration must link to a valid, existing connector configuration.
+- If the output format is HTML or PDF, a valid template must be selected.
+- The CRON schedule must not be more frequent than once per minute.
+
+## 1.14 Error Scenarios
+
+- Submitted configuration fails DTO validation (e.g., missing required fields).
+- The provided CRON expression is invalid.
+- A database error occurs while saving the configuration.
+
+## 1.15 Integration Points
+
+*No items available*
+
+# 2.0 Details
+
+## 2.1 Diagram Id
+
+SEQ-UJ-001
+
+## 2.2 Name
+
+Implementation: Administrator Creates a Full Report Configuration via Control Panel
+
+## 2.3 Description
+
+Detailed technical sequence for an Administrator creating a new report configuration. This covers the React UI state management, API interactions for data fetching and submission, backend DTO validation, domain logic execution for business rule validation (CRON expressions), transactional persistence to the SQLite database via EF Core, and job scheduling with Quartz.NET. The sequence emphasizes clear error handling paths for validation and infrastructure failures.
+
+## 2.4 Participants
+
+### 2.4.1 UI/Frontend
+
+#### 2.4.1.1 Repository Id
+
+presentationlayerreact
+
+#### 2.4.1.2 Display Name
+
+React Control Panel
+
+#### 2.4.1.3 Type
+
+🔹 UI/Frontend
+
+#### 2.4.1.4 Technology
+
+React 18, TypeScript, Zustand, Axios
+
+#### 2.4.1.5 Order
+
+1
+
+#### 2.4.1.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | actor |
+| Color | #4287f5 |
+| Stereotype | <<User Interface>> |
+
+### 2.4.2.0 API Gateway
+
+#### 2.4.2.1 Repository Id
+
+apiweblayer
+
+#### 2.4.2.2 Display Name
+
+API/Web Layer
+
+#### 2.4.2.3 Type
+
+🔹 API Gateway
+
+#### 2.4.2.4 Technology
+
+ASP.NET Core 8
+
+#### 2.4.2.5 Order
+
+2
+
+#### 2.4.2.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | component |
+| Color | #f5a742 |
+| Stereotype | <<Controller>> |
+
+### 2.4.3.0 Application Service
+
+#### 2.4.3.1 Repository Id
+
+application_layer
+
+#### 2.4.3.2 Display Name
+
+Application Layer
+
+#### 2.4.3.3 Type
+
+🔹 Application Service
+
+#### 2.4.3.4 Technology
+
+.NET 8
+
+#### 2.4.3.5 Order
+
+3
+
+#### 2.4.3.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | component |
+| Color | #42f560 |
+| Stereotype | <<Service>> |
+
+### 2.4.4.0 Infrastructure
+
+#### 2.4.4.1 Repository Id
+
+infrastructure_layer
+
+#### 2.4.4.2 Display Name
+
+Infrastructure Layer
+
+#### 2.4.4.3 Type
+
+🔹 Infrastructure
+
+#### 2.4.4.4 Technology
+
+EF Core 8, Quartz.NET, Serilog
+
+#### 2.4.4.5 Order
+
+4
+
+#### 2.4.4.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | database |
+| Color | #d142f5 |
+| Stereotype | <<Infrastructure>> |
+
+## 2.5.0.0 Interactions
+
+### 2.5.1.0 UI Event
+
+#### 2.5.1.1 Source Id
+
+presentationlayerreact
+
+#### 2.5.1.2 Target Id
+
+presentationlayerreact
+
+#### 2.5.1.3 Message
+
+1. Admin clicks 'Create New Report'. UI navigates to wizard, initializes state (Zustand store).
+
+#### 2.5.1.4 Sequence Number
+
+1
+
+#### 2.5.1.5 Type
+
+🔹 UI Event
+
+#### 2.5.1.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.1.7 Return Message
+
+
+
+#### 2.5.1.8 Has Return
+
+❌ No
+
+#### 2.5.1.9 Is Activation
+
+✅ Yes
+
+#### 2.5.1.10 Technical Details
+
+##### 2.5.1.10.1 Protocol
+
+DOM Event
+
+##### 2.5.1.10.2 Method
+
+onClick
+
+##### 2.5.1.10.3 Parameters
+
+*No items available*
+
+##### 2.5.1.10.4 Authentication
+
+N/A
+
+##### 2.5.1.10.5 Error Handling
+
+N/A
+
+##### 2.5.1.10.6 Performance
+
+###### 2.5.1.10.6.1 Latency
+
+<50ms
+
+### 2.5.2.0.0.0 API Call
+
+#### 2.5.2.1.0.0 Source Id
+
+presentationlayerreact
+
+#### 2.5.2.2.0.0 Target Id
+
+apiweblayer
+
+#### 2.5.2.3.0.0 Message
+
+2. [useEffect] Fetch initial data: GET /api/v1/connectors
+
+#### 2.5.2.4.0.0 Sequence Number
+
+2
+
+#### 2.5.2.5.0.0 Type
+
+🔹 API Call
+
+#### 2.5.2.6.0.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.2.7.0.0 Return Message
+
+200 OK with ConnectorConfiguration[]
+
+#### 2.5.2.8.0.0 Has Return
+
+✅ Yes
+
+#### 2.5.2.9.0.0 Is Activation
+
+✅ Yes
+
+#### 2.5.2.10.0.0 Technical Details
+
+##### 2.5.2.10.1.0 Protocol
+
+HTTPS
+
+##### 2.5.2.10.2.0 Method
+
+GET
+
+##### 2.5.2.10.3.0 Parameters
+
+*No items available*
+
+##### 2.5.2.10.4.0 Authentication
+
+Bearer JWT
+
+##### 2.5.2.10.5.0 Error Handling
+
+If 4xx/5xx, display error notification to user.
+
+##### 2.5.2.10.6.0 Performance
+
+###### 2.5.2.10.6.1 Latency
+
+<200ms
+
+### 2.5.3.0.0.0 API Call
+
+#### 2.5.3.1.0.0 Source Id
+
+presentationlayerreact
+
+#### 2.5.3.2.0.0 Target Id
+
+apiweblayer
+
+#### 2.5.3.3.0.0 Message
+
+3. [useEffect] Fetch initial data: GET /api/v1/transformations
+
+#### 2.5.3.4.0.0 Sequence Number
+
+3
+
+#### 2.5.3.5.0.0 Type
+
+🔹 API Call
+
+#### 2.5.3.6.0.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.3.7.0.0 Return Message
+
+200 OK with TransformationScript[]
+
+#### 2.5.3.8.0.0 Has Return
+
+✅ Yes
+
+#### 2.5.3.9.0.0 Is Activation
+
+❌ No
+
+#### 2.5.3.10.0.0 Technical Details
+
+##### 2.5.3.10.1.0 Protocol
+
+HTTPS
+
+##### 2.5.3.10.2.0 Method
+
+GET
+
+##### 2.5.3.10.3.0 Parameters
+
+*No items available*
+
+##### 2.5.3.10.4.0 Authentication
+
+Bearer JWT
+
+##### 2.5.3.10.5.0 Error Handling
+
+If 4xx/5xx, display error notification to user.
+
+##### 2.5.3.10.6.0 Performance
+
+###### 2.5.3.10.6.1 Latency
+
+<200ms
+
+### 2.5.4.0.0.0 User Input
+
+#### 2.5.4.1.0.0 Source Id
+
+presentationlayerreact
+
+#### 2.5.4.2.0.0 Target Id
+
+presentationlayerreact
+
+#### 2.5.4.3.0.0 Message
+
+4. Admin completes multi-step form. UI performs real-time client-side validation and updates state store on input change.
+
+#### 2.5.4.4.0.0 Sequence Number
+
+4
+
+#### 2.5.4.5.0.0 Type
+
+🔹 User Input
+
+#### 2.5.4.6.0.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.4.7.0.0 Return Message
+
+
+
+#### 2.5.4.8.0.0 Has Return
+
+❌ No
+
+#### 2.5.4.9.0.0 Is Activation
+
+❌ No
+
+#### 2.5.4.10.0.0 Technical Details
+
+##### 2.5.4.10.1.0 Protocol
+
+DOM Event
+
+##### 2.5.4.10.2.0 Method
+
+onChange
+
+##### 2.5.4.10.3.0 Parameters
+
+*No items available*
+
+##### 2.5.4.10.4.0 Authentication
+
+N/A
+
+##### 2.5.4.10.5.0 Error Handling
+
+Display inline validation messages for invalid fields.
+
+##### 2.5.4.10.6.0 Performance
+
+###### 2.5.4.10.6.1 Latency
+
+Real-time
+
+### 2.5.5.0.0.0 API Call
+
+#### 2.5.5.1.0.0 Source Id
+
+presentationlayerreact
+
+#### 2.5.5.2.0.0 Target Id
+
+apiweblayer
+
+#### 2.5.5.3.0.0 Message
+
+5. Admin clicks 'Save'. Submit form: POST /api/v1/reports with ReportConfigurationCreateDTO
+
+#### 2.5.5.4.0.0 Sequence Number
+
+5
+
+#### 2.5.5.5.0.0 Type
+
+🔹 API Call
+
+#### 2.5.5.6.0.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.5.7.0.0 Return Message
+
+201 Created with new report ID, or 400/500 on error
+
+#### 2.5.5.8.0.0 Has Return
+
+✅ Yes
+
+#### 2.5.5.9.0.0 Is Activation
+
+❌ No
+
+#### 2.5.5.10.0.0 Technical Details
+
+##### 2.5.5.10.1.0 Protocol
+
+HTTPS
+
+##### 2.5.5.10.2.0 Method
+
+POST
+
+##### 2.5.5.10.3.0 Parameters
+
+- {'name': 'body', 'type': 'ReportConfigurationCreateDTO'}
+
+##### 2.5.5.10.4.0 Authentication
+
+Bearer JWT
+
+##### 2.5.5.10.5.0 Error Handling
+
+UI displays specific validation errors from 400 response, or a generic error for 500.
+
+##### 2.5.5.10.6.0 Performance
+
+###### 2.5.5.10.6.1 Latency
+
+<500ms
+
+#### 2.5.5.11.0.0 Nested Interactions
+
+- {'sourceId': 'apiweblayer', 'targetId': 'application_layer', 'message': '6. [Controller Action] Invoke CreateReportAsync(dto)', 'sequenceNumber': 6, 'type': 'Service Call', 'isSynchronous': True, 'returnMessage': 'Success(newReportId) or Failure(error)', 'hasReturn': True, 'isActivation': True, 'technicalDetails': {'protocol': 'In-process', 'method': 'CreateReportAsync', 'parameters': [{'name': 'dto', 'type': 'ReportConfigurationCreateDTO'}], 'authentication': 'N/A (internal)', 'errorHandling': 'Catches exceptions, maps to specific failure results.', 'performance': {'latency': 'In-process'}}, 'nestedInteractions': [{'sourceId': 'application_layer', 'targetId': 'application_layer', 'message': '7. Validate business rules (e.g., CRON expression syntax and frequency)', 'sequenceNumber': 7, 'type': 'Validation', 'isSynchronous': True, 'returnMessage': 'Validation success or throws ValidationException', 'hasReturn': True, 'isActivation': False, 'technicalDetails': {'protocol': 'In-process', 'method': 'Internal validation logic', 'parameters': [{'name': 'cronExpression', 'type': 'string'}], 'authentication': 'N/A', 'errorHandling': 'If invalid, throws custom ValidationException, caught by controller to return HTTP 400.', 'performance': {'latency': '<10ms'}}}, {'sourceId': 'application_layer', 'targetId': 'infrastructure_layer', 'message': '8. Map DTO to domain entity and invoke IReportRepository.AddAsync(entity)', 'sequenceNumber': 8, 'type': 'Repository Call', 'isSynchronous': True, 'returnMessage': 'Returns saved entity with new ID', 'hasReturn': True, 'isActivation': True, 'technicalDetails': {'protocol': 'In-process', 'method': 'AddAsync', 'parameters': [{'name': 'entity', 'type': 'ReportConfiguration'}], 'authentication': 'N/A', 'errorHandling': 'Propagates DbUpdateException on failure.', 'performance': {'latency': 'Dependent on DB write speed.'}}, 'nestedInteractions': [{'sourceId': 'infrastructure_layer', 'targetId': 'infrastructure_layer', 'message': '9. [EF Core] Begin transaction. INSERT into ReportConfigurations & related tables. Commit transaction.', 'sequenceNumber': 9, 'type': 'Database Operation', 'isSynchronous': True, 'returnMessage': 'Success or throws DbUpdateException', 'hasReturn': True, 'isActivation': False, 'technicalDetails': {'protocol': 'SQLite Connection', 'method': 'SaveChangesAsync()', 'parameters': [], 'authentication': 'N/A', 'errorHandling': 'On exception, transaction is automatically rolled back.', 'performance': {'latency': '<50ms'}}}]}, {'sourceId': 'application_layer', 'targetId': 'infrastructure_layer', 'message': '10. Invoke ISchedulerService.ScheduleJob(reportConfig)', 'sequenceNumber': 10, 'type': 'Service Call', 'isSynchronous': True, 'returnMessage': 'Success or throws SchedulerException', 'hasReturn': True, 'isActivation': False, 'technicalDetails': {'protocol': 'In-process', 'method': 'ScheduleJob', 'parameters': [{'name': 'reportConfig', 'type': 'ReportConfiguration'}], 'authentication': 'N/A', 'errorHandling': 'If scheduling fails, exception is caught by Application Layer to trigger a full rollback.', 'performance': {'latency': '<20ms'}}}, {'sourceId': 'application_layer', 'targetId': 'infrastructure_layer', 'message': '11. Publish domain event to trigger audit logging', 'sequenceNumber': 11, 'type': 'Event Publication', 'isSynchronous': False, 'returnMessage': '', 'hasReturn': False, 'isActivation': False, 'technicalDetails': {'protocol': 'In-process (MediatR)', 'method': 'Publish(ReportConfigurationCreatedEvent)', 'parameters': [], 'authentication': 'N/A', 'errorHandling': 'Handled by event handler with retry/logging.', 'performance': {'latency': 'Asynchronous'}}}]}
+
+### 2.5.6.0.0.0 UI Update
+
+#### 2.5.6.1.0.0 Source Id
+
+presentationlayerreact
+
+#### 2.5.6.2.0.0 Target Id
+
+presentationlayerreact
+
+#### 2.5.6.3.0.0 Message
+
+12. On success, display 'Report Created' notification and redirect to reports list page.
+
+#### 2.5.6.4.0.0 Sequence Number
+
+12
+
+#### 2.5.6.5.0.0 Type
+
+🔹 UI Update
+
+#### 2.5.6.6.0.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.6.7.0.0 Return Message
+
+
+
+#### 2.5.6.8.0.0 Has Return
+
+❌ No
+
+#### 2.5.6.9.0.0 Is Activation
+
+❌ No
+
+#### 2.5.6.10.0.0 Technical Details
+
+##### 2.5.6.10.1.0 Protocol
+
+React State
+
+##### 2.5.6.10.2.0 Method
+
+setState/navigation
+
+##### 2.5.6.10.3.0 Parameters
+
+*No items available*
+
+##### 2.5.6.10.4.0 Authentication
+
+N/A
+
+##### 2.5.6.10.5.0 Error Handling
+
+N/A
+
+##### 2.5.6.10.6.0 Performance
+
+###### 2.5.6.10.6.1 Latency
+
+<100ms
+
+## 2.6.0.0.0.0 Notes
+
+### 2.6.1.0.0.0 Content
+
+#### 2.6.1.1.0.0 Content
+
+State Management: The multi-step wizard's state is managed centrally in a Zustand store to simplify data flow between components.
+
+#### 2.6.1.2.0.0 Position
+
+top-left
+
+#### 2.6.1.3.0.0 Participant Id
+
+presentationlayerreact
+
+#### 2.6.1.4.0.0 Sequence Number
+
+1
+
+### 2.6.2.0.0.0 Content
+
+#### 2.6.2.1.0.0 Content
+
+Validation: DTO validation is handled by FluentValidation via ASP.NET Core middleware, ensuring the controller only receives valid data models.
+
+#### 2.6.2.2.0.0 Position
+
+top-right
+
+#### 2.6.2.3.0.0 Participant Id
+
+apiweblayer
+
+#### 2.6.2.4.0.0 Sequence Number
+
+5
+
+### 2.6.3.0.0.0 Content
+
+#### 2.6.3.1.0.0 Content
+
+Transactional Boundary: The Application Service ensures that creating the database record and scheduling the job is an atomic operation. If scheduling fails, the entire transaction is rolled back.
+
+#### 2.6.3.2.0.0 Position
+
+bottom-right
+
+#### 2.6.3.3.0.0 Participant Id
+
+application_layer
+
+#### 2.6.3.4.0.0 Sequence Number
+
+10
+
+## 2.7.0.0.0.0 Implementation Guidance
+
+| Property | Value |
+|----------|-------|
+| Security Requirements | All API endpoints must be protected by JWT Bearer ... |
+| Performance Targets | Initial data fetch (connectors, scripts) API calls... |
+| Error Handling Strategy | Client-side validation provides immediate feedback... |
+| Testing Considerations | Frontend: Component tests for the wizard steps. E2... |
+| Monitoring Requirements | Monitor the latency and error rate (4xx, 5xx) of t... |
+| Deployment Considerations | Database migrations for the `ReportConfiguration` ... |
+

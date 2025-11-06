@@ -1,0 +1,649 @@
+# 1 Overview
+
+## 1.1 Diagram Id
+
+SEQ-CF-001
+
+## 1.2 Name
+
+Sensitive Configuration Change Triggers Audit Log Entry
+
+## 1.3 Description
+
+An Administrator modifies a security-sensitive configuration, such as changing a user's role or updating a connector's credentials. After the change is successfully committed to the database, the Application Layer service publishes a domain event using an in-process mediator. A dedicated event handler subscribes to this event and writes a detailed, tamper-evident record to the AuditLog.
+
+## 1.4 Type
+
+🔹 ComplianceFlow
+
+## 1.5 Purpose
+
+To create an immutable record of all sensitive system changes, supporting compliance with regulations like HIPAA and providing a trail for security investigations.
+
+## 1.6 Complexity
+
+Medium
+
+## 1.7 Priority
+
+🔴 High
+
+## 1.8 Frequency
+
+OnDemand
+
+## 1.9 Participants
+
+- application_layer
+- infrastructure_layer
+
+## 1.10 Key Interactions
+
+- Admin saves a change in the Control Panel, triggering a validated API call.
+- The responsible Application Service (e.g., UserManagementService) validates and persists the change to the SQLite database via EF Core.
+- After the `SaveChangesAsync()` transaction commits successfully, the service publishes a domain event (e.g., `UserRoleChangedEvent`).
+- An in-process mediator dispatches the event to a subscribed handler (e.g., `AuditLogEventHandler`).
+- The event handler constructs a detailed AuditLog entity (who, what, when, source IP, etc.).
+- The Infrastructure Layer (via a dedicated repository) persists the AuditLog entity to the database in a separate transaction.
+
+## 1.11 Triggers
+
+- A CRUD operation is performed on a security-sensitive entity (User, Role, ConnectorConfiguration, ReportConfiguration).
+
+## 1.12 Outcomes
+
+- The configuration change is successfully saved.
+- A detailed audit log entry is created that records the who, what, and when of the change, ensuring non-repudiation.
+
+## 1.13 Business Rules
+
+- Audit logs must include a timestamp, the responsible user, the source IP address, the action performed, and the outcome.
+- Audit logs must be stored in a tamper-evident format and be exportable.
+
+## 1.14 Error Scenarios
+
+- The primary database transaction fails, so the audit event is never published, ensuring consistency.
+- The audit log write fails; the system must retry and log a critical system error if it ultimately fails, as this is a compliance failure.
+
+## 1.15 Integration Points
+
+*No items available*
+
+# 2.0 Details
+
+## 2.1 Diagram Id
+
+SEQ-CF-001
+
+## 2.2 Name
+
+Implementation: Sensitive Configuration Change Audit Trail Generation
+
+## 2.3 Description
+
+Provides a detailed technical specification for generating an immutable audit trail entry following a sensitive configuration change. The sequence leverages an in-process mediator to decouple the primary business transaction from the compliance-critical audit logging, ensuring system consistency. After an application service successfully commits a change using Entity Framework Core, it publishes a domain event. A dedicated, asynchronous handler subscribes to this event, constructs a detailed audit record as per compliance requirements (HIPAA, etc.), and persists it in a separate transaction. This pattern guarantees that audit logs are created only for successful operations and that failures in the audit process do not roll back the primary user-facing action.
+
+## 2.4 Participants
+
+### 2.4.1 Application Service
+
+#### 2.4.1.1 Repository Id
+
+REPO-08-SERVICE-HOST
+
+#### 2.4.1.2 Display Name
+
+ApplicationService
+
+#### 2.4.1.3 Type
+
+🔹 Application Service
+
+#### 2.4.1.4 Technology
+
+.NET 8 Application Logic
+
+#### 2.4.1.5 Order
+
+1
+
+#### 2.4.1.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | actor |
+| Color | #1E90FF |
+| Stereotype | C# Service |
+
+### 2.4.2.0 Data Access Layer
+
+#### 2.4.2.1 Repository Id
+
+REPO-05-INFRASTRUCTURE
+
+#### 2.4.2.2 Display Name
+
+EFCoreDbContext
+
+#### 2.4.2.3 Type
+
+🔹 Data Access Layer
+
+#### 2.4.2.4 Technology
+
+Entity Framework Core 8 / SQLite
+
+#### 2.4.2.5 Order
+
+2
+
+#### 2.4.2.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | database |
+| Color | #800080 |
+| Stereotype | DbContext |
+
+### 2.4.3.0 Messaging Bus
+
+#### 2.4.3.1 Repository Id
+
+InProcessMediator
+
+#### 2.4.3.2 Display Name
+
+InProcessMediator
+
+#### 2.4.3.3 Type
+
+🔹 Messaging Bus
+
+#### 2.4.3.4 Technology
+
+MediatR Library (or similar)
+
+#### 2.4.3.5 Order
+
+3
+
+#### 2.4.3.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | component |
+| Color | #FFD700 |
+| Stereotype | Event Dispatcher |
+
+### 2.4.4.0 Event Handler
+
+#### 2.4.4.1 Repository Id
+
+AuditLogEventHandler
+
+#### 2.4.4.2 Display Name
+
+AuditLogEventHandler
+
+#### 2.4.4.3 Type
+
+🔹 Event Handler
+
+#### 2.4.4.4 Technology
+
+.NET 8 Background Service Logic
+
+#### 2.4.4.5 Order
+
+4
+
+#### 2.4.4.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | component |
+| Color | #32CD32 |
+| Stereotype | Event Subscriber |
+
+### 2.4.5.0 Repository
+
+#### 2.4.5.1 Repository Id
+
+AuditLogRepository
+
+#### 2.4.5.2 Display Name
+
+AuditLogRepository
+
+#### 2.4.5.3 Type
+
+🔹 Repository
+
+#### 2.4.5.4 Technology
+
+EF Core 8 / SQLite
+
+#### 2.4.5.5 Order
+
+5
+
+#### 2.4.5.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | component |
+| Color | #800080 |
+| Stereotype | Data Access |
+
+## 2.5.0.0 Interactions
+
+### 2.5.1.0 Method Call
+
+#### 2.5.1.1 Source Id
+
+REPO-08-SERVICE-HOST
+
+#### 2.5.1.2 Target Id
+
+REPO-08-SERVICE-HOST
+
+#### 2.5.1.3 Message
+
+1. UpdateSensitiveConfig(configDto)
+
+#### 2.5.1.4 Sequence Number
+
+1
+
+#### 2.5.1.5 Type
+
+🔹 Method Call
+
+#### 2.5.1.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.1.7 Return Message
+
+
+
+#### 2.5.1.8 Has Return
+
+❌ No
+
+#### 2.5.1.9 Is Activation
+
+✅ Yes
+
+#### 2.5.1.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-Process Call |
+| Method | UpdateSensitiveConfigAsync(ConfigDto dto, UserCont... |
+| Parameters | DTO with changes, User context (ID, IP Address) |
+| Authentication | Assumed to be authorized at API layer (e.g., via J... |
+| Error Handling | Throws ValidationException for invalid data. |
+| Performance | P95 < 100ms |
+
+### 2.5.2.0 Data Access
+
+#### 2.5.2.1 Source Id
+
+REPO-08-SERVICE-HOST
+
+#### 2.5.2.2 Target Id
+
+REPO-05-INFRASTRUCTURE
+
+#### 2.5.2.3 Message
+
+2. Load, Validate, and Update Entity
+
+#### 2.5.2.4 Sequence Number
+
+2
+
+#### 2.5.2.5 Type
+
+🔹 Data Access
+
+#### 2.5.2.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.2.7 Return Message
+
+Updated Entity
+
+#### 2.5.2.8 Has Return
+
+✅ Yes
+
+#### 2.5.2.9 Is Activation
+
+❌ No
+
+#### 2.5.2.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | EF Core LINQ |
+| Method | DbSet<T>.FindAsync(id); entity.Property = newValue... |
+| Parameters | Entity ID from DTO |
+| Authentication | N/A (Uses application's DB connection string) |
+| Error Handling | Throws EntityNotFoundException if ID is invalid. |
+| Performance | P99 < 20ms |
+
+### 2.5.3.0 Database Commit
+
+#### 2.5.3.1 Source Id
+
+REPO-08-SERVICE-HOST
+
+#### 2.5.3.2 Target Id
+
+REPO-05-INFRASTRUCTURE
+
+#### 2.5.3.3 Message
+
+3. Commit Primary Transaction
+
+#### 2.5.3.4 Sequence Number
+
+3
+
+#### 2.5.3.5 Type
+
+🔹 Database Commit
+
+#### 2.5.3.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.3.7 Return Message
+
+Success (int rowsAffected)
+
+#### 2.5.3.8 Has Return
+
+✅ Yes
+
+#### 2.5.3.9 Is Activation
+
+✅ Yes
+
+#### 2.5.3.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | SQLite Transaction |
+| Method | DbContext.SaveChangesAsync() |
+| Parameters | CancellationToken |
+| Authentication | N/A |
+| Error Handling | Throws DbUpdateException on failure. The audit eve... |
+| Performance | P99 < 50ms |
+
+### 2.5.4.0 Event Publication
+
+#### 2.5.4.1 Source Id
+
+REPO-08-SERVICE-HOST
+
+#### 2.5.4.2 Target Id
+
+InProcessMediator
+
+#### 2.5.4.3 Message
+
+4. Publish Domain Event (Post-Commit)
+
+#### 2.5.4.4 Sequence Number
+
+4
+
+#### 2.5.4.5 Type
+
+🔹 Event Publication
+
+#### 2.5.4.6 Is Synchronous
+
+❌ No
+
+#### 2.5.4.7 Return Message
+
+Task
+
+#### 2.5.4.8 Has Return
+
+✅ Yes
+
+#### 2.5.4.9 Is Activation
+
+✅ Yes
+
+#### 2.5.4.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-Process Messaging |
+| Method | IMediator.Publish(new ConfigChangedEvent(...)) |
+| Parameters | Domain event object containing user context, entit... |
+| Authentication | N/A |
+| Error Handling | Typically fire-and-forget; handler is responsible ... |
+| Performance | Sub-millisecond latency. |
+
+### 2.5.5.0 Event Dispatch
+
+#### 2.5.5.1 Source Id
+
+InProcessMediator
+
+#### 2.5.5.2 Target Id
+
+AuditLogEventHandler
+
+#### 2.5.5.3 Message
+
+5. Dispatch Event to Handler
+
+#### 2.5.5.4 Sequence Number
+
+5
+
+#### 2.5.5.5 Type
+
+🔹 Event Dispatch
+
+#### 2.5.5.6 Is Synchronous
+
+❌ No
+
+#### 2.5.5.7 Return Message
+
+
+
+#### 2.5.5.8 Has Return
+
+❌ No
+
+#### 2.5.5.9 Is Activation
+
+✅ Yes
+
+#### 2.5.5.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | In-Process Call |
+| Method | IRequestHandler<ConfigChangedEvent>.Handle(event) |
+| Parameters | The ConfigChangedEvent object. |
+| Authentication | N/A |
+| Error Handling | Mediator logs if no handler is found. |
+| Performance | Sub-millisecond latency. |
+
+### 2.5.6.0 Data Access
+
+#### 2.5.6.1 Source Id
+
+AuditLogEventHandler
+
+#### 2.5.6.2 Target Id
+
+AuditLogRepository
+
+#### 2.5.6.3 Message
+
+6. Create AuditLog Entry
+
+#### 2.5.6.4 Sequence Number
+
+6
+
+#### 2.5.6.5 Type
+
+🔹 Data Access
+
+#### 2.5.6.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.6.7 Return Message
+
+Task
+
+#### 2.5.6.8 Has Return
+
+✅ Yes
+
+#### 2.5.6.9 Is Activation
+
+✅ Yes
+
+#### 2.5.6.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | EF Core |
+| Method | IAuditLogRepository.AddAsync(auditLog) |
+| Parameters | A new AuditLog entity constructed from the event p... |
+| Authentication | N/A |
+| Error Handling | Handler implements a retry policy (e.g., Polly) fo... |
+| Performance | P99 < 20ms |
+
+### 2.5.7.0 Database Commit
+
+#### 2.5.7.1 Source Id
+
+AuditLogRepository
+
+#### 2.5.7.2 Target Id
+
+REPO-05-INFRASTRUCTURE
+
+#### 2.5.7.3 Message
+
+7. Commit Audit Transaction
+
+#### 2.5.7.4 Sequence Number
+
+7
+
+#### 2.5.7.5 Type
+
+🔹 Database Commit
+
+#### 2.5.7.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.7.7 Return Message
+
+Success
+
+#### 2.5.7.8 Has Return
+
+✅ Yes
+
+#### 2.5.7.9 Is Activation
+
+❌ No
+
+#### 2.5.7.10 Technical Details
+
+| Property | Value |
+|----------|-------|
+| Protocol | SQLite Transaction |
+| Method | DbContext.SaveChangesAsync() |
+| Parameters | CancellationToken |
+| Authentication | N/A |
+| Error Handling | If this fails after retries, a CRITICAL system err... |
+| Performance | P99 < 50ms |
+
+## 2.6.0.0 Notes
+
+### 2.6.1.0 Content
+
+#### 2.6.1.1 Content
+
+Transactional Boundary 1: The primary business operation (e.g., updating a user's role) is committed. The audit event is only published AFTER this transaction succeeds to ensure consistency.
+
+#### 2.6.1.2 Position
+
+Top
+
+#### 2.6.1.3 Participant Id
+
+REPO-05-INFRASTRUCTURE
+
+#### 2.6.1.4 Sequence Number
+
+3
+
+### 2.6.2.0 Content
+
+#### 2.6.2.1 Content
+
+AuditLog Entity Payload: Must contain timestamp, userId, sourceIpAddress, actionType (e.g., 'UserRoleUpdated'), entityType ('User'), entityId, outcome ('Success'), and changeDetails (JSON diff of old/new values).
+
+#### 2.6.2.2 Position
+
+Middle
+
+#### 2.6.2.3 Participant Id
+
+AuditLogEventHandler
+
+#### 2.6.2.4 Sequence Number
+
+6
+
+### 2.6.3.0 Content
+
+#### 2.6.3.1 Content
+
+Transactional Boundary 2: The audit log entry is persisted in its own separate transaction. This ensures that a failure to write the audit log does not roll back the user-facing change.
+
+#### 2.6.3.2 Position
+
+Bottom
+
+#### 2.6.3.3 Participant Id
+
+AuditLogRepository
+
+#### 2.6.3.4 Sequence Number
+
+7
+
+## 2.7.0.0 Implementation Guidance
+
+| Property | Value |
+|----------|-------|
+| Security Requirements | The AuditLog table/data must be protected with str... |
+| Performance Targets | The entire asynchronous audit process (steps 4-7) ... |
+| Error Handling Strategy | Primary Transaction Failure (Step 3): The operatio... |
+| Testing Considerations | Integration tests are critical. One test must veri... |
+| Monitoring Requirements | A metric counter for `audit_log_failures_total` mu... |
+| Deployment Considerations | Database migrations managed by EF Core must be use... |
+

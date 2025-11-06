@@ -1,0 +1,41 @@
+// Switch to the target database
+use transformation_service_logs_db;
+
+// --- Collection: AuditLog ---
+// Records all script management activities for compliance and tracking (REQ-DTR-010).
+db.createCollection("AuditLog");
+
+// Indexes for AuditLog
+
+// Index for time-series queries, sorted descending for recent-first access.
+db.AuditLog.createIndex({ "timestamp": -1 }, { name: "idx_auditlog_timestamp_desc" });
+
+// Compound index to efficiently query all audit trails for a specific entity.
+db.AuditLog.createIndex({ "entityType": 1, "entityId": 1 }, { name: "idx_auditlog_entity" });
+
+// Compound index to query actions by a specific user, sorted by time.
+db.AuditLog.createIndex({ "userId": 1, "actionType": 1, "timestamp": -1 }, { name: "idx_auditlog_user_action" });
+
+// Optional: As per constraints, a TTL index can be created to automatically archive/delete old data.
+// Example for a 1-year retention policy:
+// db.AuditLog.createIndex({ "timestamp": 1 }, { expireAfterSeconds: 31536000 });
+
+
+// --- Collection: SecurityViolationLog ---
+// Dedicated time-series log for script executions that violate sandbox constraints (REQ-DTR-001).
+db.createCollection("SecurityViolationLog", {
+   timeseries: {
+      timeField: "timestamp",
+      metaField: "transformationScriptId",
+      granularity: "hours"
+   }
+});
+
+// Indexes for SecurityViolationLog
+// NOTE: A primary index on the 'timeField' (timestamp) is automatically created for time-series collections.
+
+// Compound index to find all violations for a specific script, sorted by time.
+db.SecurityViolationLog.createIndex({ "transformationScriptId": 1, "timestamp": -1 }, { name: "idx_secviolation_script_time" });
+
+// Compound index to find all violations of a certain type, sorted by time, useful for alerting.
+db.SecurityViolationLog.createIndex({ "violationType": 1, "timestamp": -1 }, { name: "idx_secviolation_type_time" });

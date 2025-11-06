@@ -1,0 +1,74 @@
+# Visual Studio / .NET Core
+## Ignore all files in the root folder except for this .gitignore file
+## and the solution file.
+#*
+# !*.sln
+# !*.md
+# !.gitignore
+
+## User-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+## Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+
+## Visual Studio cache files
+.vs/
+.vscode/
+
+## Rider
+.idea/
+
+## Tests
+test-results/
+*.trx
+
+## Roslyn
+.roslyn/
+
+## NuGet
+*.nupkg
+*.snupkg
+/packages/
+/artifacts/
+
+# Tooling
+.DS_Store
+
+# Misc
+*.swp
+*.bak
+*.tmp
+*.log
+
+# Rider
+.idea/
+
+# DotCover
+*.dotCover
+
+# NCrunch
+_NCrunch_*
+*.ncrunch*
+
+# ReSharper
+_ReSharper*
+*.resharper
+
+# User-specific files
+*.DotSettings.user

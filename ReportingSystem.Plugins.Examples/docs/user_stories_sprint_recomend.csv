@@ -1,0 +1,5 @@
+"sprint_number","story_ids","total_points","sprint_goal","dependencies_resolved"
+"1","[""US-DTE-001"",""US-DTE-002""]","21","Establish the core, secure Jint transformation engine and sandboxing capabilities. This provides the foundational backend for all subsequent features.","true"
+"2","[""US-DTE-004"",""US-DTE-009"",""US-DTE-010""]","19","Implement the backend and basic UI for secure script management with versioning, and put the feature behind a feature flag.","true"
+"3","[""US-DTE-006"",""US-DTE-007""]","18","Build the rich script development and preview experience, including the Monaco editor and the 3-pane preview UI with live data testing.","true"
+"4","[""US-DTE-003"",""US-DTE-005"",""US-DTE-008""]","13","Add advanced features and operational readiness, including data validation, version history UI, and Prometheus monitoring.","true"

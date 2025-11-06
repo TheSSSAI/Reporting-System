@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Application Header</title>
+    <style>
+        /* CSS Reset & Basic Styles */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            /* Colors */
+            --color-background: #F8F9FA;
+            --color-surface: #FFFFFF;
+            --color-primary: #4A90E2;
+            --color-primary-hover: #357ABD;
+            --color-text-primary: #212529;
+            --color-text-secondary: #6C757D;
+            --color-border: #E9ECEF;
+            --color-notification: #E63946;
+            --color-focus-ring: #80BDFF;
+
+            /* Typography */
+            --font-family-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            --font-size-base: 16px;
+            --font-size-sm: 14px;
+            --font-weight-normal: 400;
+            --font-weight-medium: 500;
+            --font-weight-bold: 700;
+
+            /* Spacing */
+            --space-xs: 4px;
+            --space-sm: 8px;
+            --space-md: 16px;
+            --space-lg: 24px;
+            --space-xl: 32px;
+
+            /* Borders & Shadows */
+            --border-radius-sm: 4px;
+            --border-radius-md: 8px;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        body {
+            font-family: var(--font-family-sans);
+            background-color: var(--color-background);
+            color: var(--color-text-primary);
+            font-size: var(--font-size-base);
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* App Header Implementation */
+        .app-header {
+            background-color: var(--color-surface);
+            border-bottom: 1px solid var(--color-border);
+            padding: 0 var(--space-lg);
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .app-header__left, .app-header__right {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+        }
+        
+        /* Logo */
+        .app-logo {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            text-decoration: none;
+            color: var(--color-text-primary);
+        }
+
+        .app-logo__icon {
+            width: 32px;
+            height: 32px;
+            background-color: var(--color-primary);
+            border-radius: var(--border-radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .app-logo__icon svg {
+            width: 20px;
+            height: 20px;
+            color: white;
+        }
+
+        .app-logo__text {
+            font-size: 20px;
+            font-weight: var(--font-weight-bold);
+            white-space: nowrap;
+        }
+
+        /* Primary Navigation */
+        .primary-nav {
+            display: none; /* Hidden on mobile by default */
+        }
+        
+        .primary-nav__list {
+            display: flex;
+            list-style: none;
+            gap: var(--space-xs);
+        }
+
+        .primary-nav__link {
+            display: block;
+            padding: var(--space-sm) var(--space-md);
+            text-decoration: none;
+            color: var(--color-text-secondary);
+            font-weight: var(--font-weight-medium);
+            font-size: var(--font-size-sm);
+            border-radius: var(--border-radius-sm);
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+
+        .primary-nav__link:hover {
+            background-color: var(--color-background);
+            color: var(--color-text-primary);
+        }
+        
+        .primary-nav__link:focus-visible {
+            outline: 2px solid var(--color-focus-ring);
+            outline-offset: 2px;
+        }
+
+        .primary-nav__link--active {
+            color: var(--color-primary);
+            background-color: #EAF2FC; /* A light primary color */
+        }
+
+        /* Header Actions */
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+        }
+
+        .icon-button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            background-color: transparent;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            color: var(--color-text-secondary);
+            position: relative;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+
+        .icon-button:hover {
+            background-color: var(--color-background);
+            color: var(--color-text-primary);
+        }
+
+        .icon-button:focus-visible {
+            outline: 2px solid var(--color-focus-ring);
+            outline-offset: 2px;
+        }
+
+        .icon-button svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .icon-button--notification.has-notification::after {
+            content: '';
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 8px;
+            height: 8px;
+            background-color: var(--color-notification);
+            border-radius: 50%;
+            border: 2px solid var(--color-surface);
+        }
+
+        /* User Profile Menu */
+        .user-profile {
+            position: relative;
+        }
+
+        .user-profile__button {
+            background-color: transparent;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            padding: 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .user-profile__button:focus-visible {
+            outline: 2px solid var(--color-focus-ring);
+            outline-offset: 2px;
+        }
+
+        .user-profile__avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background-color: #D8E6F8;
+            color: var(--color-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: var(--font-weight-bold);
+            font-size: var(--font-size-sm);
+        }
+
+        .user-profile__menu {
+            display: none;
+            position: absolute;
+            top: calc(100% + var(--space-sm));
+            right: 0;
+            background-color: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--border-radius-md);
+            box-shadow: var(--shadow-md);
+            min-width: 220px;
+            padding: var(--space-sm) 0;
+        }
+
+        .user-profile:focus-within .user-profile__menu {
+            display: block;
+        }
+        
+        .user-profile__menu--open { /* JS hook */
+            display: block;
+        }
+        
+        .user-profile__menu-header {
+            padding: var(--space-sm) var(--space-md);
+            border-bottom: 1px solid var(--color-border);
+            margin-bottom: var(--space-sm);
+        }
+        
+        .user-profile__name {
+            font-weight: var(--font-weight-bold);
+            color: var(--color-text-primary);
+        }
+        
+        .user-profile__email {
+            font-size: var(--font-size-sm);
+            color: var(--color-text-secondary);
+        }
+
+        .user-profile__menu-list {
+            list-style: none;
+        }
+
+        .user-profile__menu-link {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            padding: var(--space-sm) var(--space-md);
+            text-decoration: none;
+            color: var(--color-text-primary);
+            font-size: var(--font-size-sm);
+        }
+
+        .user-profile__menu-link:hover {
+            background-color: var(--color-background);
+        }
+        
+        .user-profile__menu-link svg {
+            width: 16px;
+            height: 16px;
+            color: var(--color-text-secondary);
+        }
+        
+        .user-profile__menu-divider {
+            height: 1px;
+            background-color: var(--color-border);
+            margin: var(--space-sm) 0;
+        }
+
+        /* Hamburger Menu */
+        .mobile-nav-toggle {
+            display: flex;
+        }
+
+        /* Responsive Breakpoint */
+        @media (min-width: 992px) {
+            .primary-nav {
+                display: block;
+            }
+            .mobile-nav-toggle {
+                display: none;
+            }
+        }
+        
+        /* DEMO STYLES */
+        .demo-content {
+            padding: var(--space-xl);
+        }
+        .demo-title {
+            margin-top: var(--space-lg);
+            margin-bottom: var(--space-md);
+        }
+        .demo-variant {
+            border: 1px dashed var(--color-border);
+            margin-bottom: var(--space-xl);
+        }
+        .mobile-frame {
+            width: 375px;
+            margin: 0 auto;
+            border: 8px solid #333;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+        }
+    </style>
+</head>
+<body>
+
+  <header class="app-header">
+      <div class="app-header__left">
+          <a href="#" class="app-logo" aria-label="Homepage">
+              <div class="app-logo__icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6a7.5 7.5 0 1 0 7.5 7.5h-7.5V6Z" />
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 10.5H21A7.5 7.5 0 0 0 13.5 3v7.5Z" />
+                  </svg>
+              </div>
+              <span class="app-logo__text">ReportSys</span>
+          </a>
+          <nav class="primary-nav" aria-label="Main Navigation">
+              <ul class="primary-nav__list">
+                  <li><a href="#" class="primary-nav__link">Dashboard</a></li>
+                  <li><a href="#" class="primary-nav__link primary-nav__link--active" aria-current="page">Reports</a></li>
+                  <li><a href="#" class="primary-nav__link">Connectors</a></li>
+                  <li><a href="#" class="primary-nav__link">Administration</a></li>
+              </ul>
+          </nav>
+      </div>
+      <div class="app-header__right">
+          <div class="header-actions">
+              <button class="icon-button icon-button--notification" aria-label="View Notifications">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
+                  </svg>
+              </button>
+              <button class="icon-button" aria-label="Help">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" />
+                  </svg>
+              </button>
+          </div>
+          <div class="user-profile">
+              <button class="user-profile__button" aria-label="Open user menu" aria-haspopup="true">
+                  <span class="user-profile__avatar">JA</span>
+              </button>
+              <div class="user-profile__menu">
+                   <div class="user-profile__menu-header">
+                       <p class="user-profile__name">Jane Administrator</p>
+                       <p class="user-profile__email">jane.admin@example.com</p>
+                   </div>
+                   <ul class="user-profile__menu-list">
+                       <li>
+                           <a href="#" class="user-profile__menu-link">
+                               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 0m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
+                               <span>My Account</span>
+                           </a>
+                       </li>
+                       <li>
+                           <a href="#" class="user-profile__menu-link">
+                               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.24-.438.613-.438.991v.08c0 .378.145.75.438.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 0 1-.22.128c-.333.183-.582.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.063-.374-.313-.686-.645-.87a6.52 6.52 0 0 1-.22-.127c-.324-.196-.72-.257-1.075-.124l-1.217.456a1.125 1.125 0 0 1-1.37-.49l-1.296-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.437-.991v-.08c0-.378-.145-.75-.437-.99l-1.004-.828a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.49l1.217.456c.355.133.75.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281Z" /></svg>
+                               <span>Settings</span>
+                           </a>
+                       </li>
+                       <li class="user-profile__menu-divider"></li>
+                       <li>
+                           <a href="#" class="user-profile__menu-link">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" /></svg>
+                               <span>Log Out</span>
+                           </a>
+                       </li>
+                   </ul>
+              </div>
+          </div>
+          <button class="icon-button mobile-nav-toggle" aria-label="Open main menu">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+              </svg>
+          </button>
+      </div>
+  </header>
+
+  <div class="demo-content">
+      <h1>Screen Mockup: Global Application Header</h1>
+      <p>The component above is the primary implementation of the Global Application Header for desktop viewports.</p>
+  
+      <div class="screen-variations">
+        <h2 class="demo-title">Screen Variations</h2>
+        
+        <div class="variation-group">
+          <h3>Variant Name: "Notification Present"</h3>
+          <p>The notification bell icon displays an indicator when there are unread notifications.</p>
+          <div class="demo-variant">
+            <header class="app-header">
+                <div class="app-header__left">
+                     <a href="#" class="app-logo" aria-label="Homepage">
+                        <div class="app-logo__icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6a7.5 7.5 0 1 0 7.5 7.5h-7.5V6Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 10.5H21A7.5 7.5 0 0 0 13.5 3v7.5Z" /></svg>
+                        </div>
+                    </a>
+                </div>
+                <div class="app-header__right">
+                    <div class="header-actions">
+                        <button class="icon-button icon-button--notification has-notification" aria-label="View Notifications (1 unread)">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" /></svg>
+                        </button>
+                    </div>
+                    <div class="user-profile">
+                        <button class="user-profile__button" aria-label="Open user menu" aria-haspopup="true"><span class="user-profile__avatar">JA</span></button>
+                    </div>
+                    <button class="icon-button mobile-nav-toggle" aria-label="Open main menu">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>
+                    </button>
+                </div>
+            </header>
+          </div>
+        </div>
+
+        <div class="variation-group">
+            <h3>Variant Name: "User Menu Open"</h3>
+            <p>Demonstrates the user profile menu in its expanded state. (Note: In a real app, this is controlled by JavaScript. Here, `:focus-within` or a manual class is used for display).</p>
+            <div class="demo-variant" style="padding-bottom: 250px; position: relative;">
+              <header class="app-header">
+                  <div class="app-header__left">
+                       <a href="#" class="app-logo" aria-label="Homepage">
+                          <div class="app-logo__icon">
+                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6a7.5 7.5 0 1 0 7.5 7.5h-7.5V6Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 10.5H21A7.5 7.5 0 0 0 13.5 3v7.5Z" /></svg>
+                          </div>
+                      </a>
+                  </div>
+                  <div class="app-header__right">
+                      <div class="user-profile">
+                           <button class="user-profile__button" aria-label="Open user menu" aria-haspopup="true" aria-expanded="true">
+                                <span class="user-profile__avatar">JA</span>
+                            </button>
+                            <div class="user-profile__menu user-profile__menu--open">
+                                <div class="user-profile__menu-header">
+                                    <p class="user-profile__name">Jane Administrator</p>
+                                    <p class="user-profile__email">jane.admin@example.com</p>
+                                </div>
+                                <ul class="user-profile__menu-list">
+                                    <li>
+                                        <a href="#" class="user-profile__menu-link">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 0m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
+                                            <span>My Account</span>
+                                        </a>
+                                    </li>
+                                    <li class="user-profile__menu-divider"></li>
+                                    <li>
+                                        <a href="#" class="user-profile__menu-link">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" /></svg>
+                                            <span>Log Out</span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                      </div>
+                       <button class="icon-button mobile-nav-toggle" aria-label="Open main menu">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>
+                        </button>
+                  </div>
+              </header>
+            </div>
+        </div>
+
+        <div class="variation-group">
+            <h3>Variant Name: "Mobile/Collapsed View"</h3>
+            <p>Demonstrates the header on a narrow viewport (< 992px), where the primary navigation is collapsed into a hamburger menu.</p>
+            <div class="demo-variant">
+                <div class="mobile-frame">
+                    <header class="app-header">
+                        <div class="app-header__left">
+                             <a href="#" class="app-logo" aria-label="Homepage">
+                                <div class="app-logo__icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6a7.5 7.5 0 1 0 7.5 7.5h-7.5V6Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 10.5H21A7.5 7.5 0 0 0 13.5 3v7.5Z" /></svg>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="app-header__right">
+                            <div class="user-profile">
+                                <button class="user-profile__button" aria-label="Open user menu" aria-haspopup="true">
+                                    <span class="user-profile__avatar">JA</span>
+                                </button>
+                            </div>
+                            <button class="icon-button mobile-nav-toggle" aria-label="Open main menu">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                                </svg>
+                            </button>
+                        </div>
+                    </header>
+                    <div style="padding: var(--space-md); font-size: var(--font-size-sm); color: var(--color-text-secondary);">
+                        Mobile content area.
+                    </div>
+                </div>
+            </div>
+        </div>
+      </div>
+  </div>
+
+</body>
+</html>

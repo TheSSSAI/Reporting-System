@@ -1,0 +1,6 @@
+"component_name","business_criticality","technical_complexity","change_frequency","test_types_required","unit_test_coverage","integration_test_coverage","e2e_test_coverage","automation_percentage","manual_test_effort","automated_test_effort","total_test_cases","risk_mitigation_score","quality_confidence","maintenance_overhead","tool_compatibility","team_skill_alignment"
+"Script Repository & DB Models","Critical","Medium","Low","[""Unit"",""Integration"",""Security""]","95","100","","100","","30","15","0.98","High","Low","Excellent","Good"
+"Audit Logging Service","High","Medium","Low","[""Unit"",""Integration"",""Security"",""System""]","90","95","80","95","4","25","12","0.95","High","Low","Excellent","Good"
+"Encryption Service","Critical","High","Very Low","[""Unit"",""Integration"",""Security""]","98","100","","100","2","15","8","0.99","Very High","Very Low","Excellent","Good"
+"CRUD & Versioning APIs","Critical","Medium","Medium","[""Integration"",""Security"",""E2E"",""Performance""]","85","95","90","95","8","60","40","0.96","High","Medium","Excellent","Good"
+"Legacy Data Migration Script","Critical","High","Very Low","[""Unit"",""Integration"",""System""]","90","100","100","80","16","40","10","0.9","Medium","Very Low","Good","Good"

@@ -1,0 +1,35 @@
+sequenceDiagram
+    participant "Quartz.NET Scheduler" as QuartzNETScheduler
+    participant "LicensingService" as LicensingService
+    participant "LicensingService" as LicensingService
+    participant "LicensingApiClient" as LicensingApiClient
+    actor "LicensingApiClient" as LicensingApiClient
+    actor "Cloud Licensing Service API" as CloudLicensingServiceAPI
+
+    activate LicensingService
+    QuartzNETScheduler->>LicensingService: 1. Trigger: Execute(IJobExecutionContext context)
+    LicensingService->>LicensingService: 2. Invoke: PerformValidationAsync()
+    LicensingService-->>LicensingService: Task
+    LicensingService->>LicensingApiClient: 3. Request: GetLicenseKeyAsync()
+    LicensingApiClient-->>LicensingService: Task<string>
+    LicensingApiClient->>LicensingService: 4. Return: Encrypted License Key
+    LicensingService-->>LicensingApiClient: The key is decrypted using .NET's DPAPI before being returned.
+    activate LicensingApiClient
+    LicensingService->>LicensingApiClient: 5. Call: ValidateKeyAsync(licenseKey)
+    LicensingApiClient-->>LicensingService: Task<LicenseStatus>
+    LicensingApiClient->>CloudLicensingServiceAPI: 6. POST /v1/validate
+    CloudLicensingServiceAPI-->>LicensingApiClient: 200 OK with JSON body
+    CloudLicensingServiceAPI->>LicensingApiClient: 7. Return: { "status": "Valid" }
+    LicensingApiClient-->>CloudLicensingServiceAPI: JSON payload indicating the license status.
+    LicensingApiClient->>LicensingService: 8. Return: LicenseStatus.Valid
+    LicensingService-->>LicensingApiClient: Returns a strongly-typed enum representing the result.
+    LicensingService->>LicensingService: 9. [ALT: Success] Process Valid Status
+    LicensingService->>LicensingApiClient: 9.1. Update: UpdateLastValidatedTimestampAsync(DateTime.UtcNow)
+    LicensingApiClient-->>LicensingService: Task
+    LicensingService->>LicensingService: 10. [ALT: Failure or Exception] Process Failure
+    LicensingService->>LicensingApiClient: 10.1. Update: EnterGracePeriodAsync()
+    LicensingApiClient-->>LicensingService: Task
+
+
+    deactivate LicensingApiClient
+    deactivate LicensingService

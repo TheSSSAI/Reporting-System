@@ -1,0 +1,35 @@
+sequenceDiagram
+    participant "Quartz.NET Scheduler" as QuartzNETScheduler
+    participant "Application Service Host" as ApplicationServiceHost
+    participant "Infrastructure Layer" as InfrastructureLayer
+    participant "External Systems" as ExternalSystems
+
+    activate ApplicationServiceHost
+    QuartzNETScheduler->>ApplicationServiceHost: 1. ExecuteJob(IJobExecutionContext context)
+    ApplicationServiceHost-->>QuartzNETScheduler: Task
+    ApplicationServiceHost->>InfrastructureLayer: 2. CreateJobExecutionLogAsync(reportConfigId, 'Queued')
+    InfrastructureLayer-->>ApplicationServiceHost: Task<JobExecutionLog>
+    ApplicationServiceHost->>InfrastructureLayer: 3. GetReportConfigurationByIdAsync(reportConfigId)
+    InfrastructureLayer-->>ApplicationServiceHost: Task<ReportConfiguration>
+    activate InfrastructureLayer
+    ApplicationServiceHost->>InfrastructureLayer: 4. FetchDataAsync(connectorConfig)
+    InfrastructureLayer-->>ApplicationServiceHost: Task<JsonNode>
+    InfrastructureLayer->>ExternalSystems: 4.1. [Polly Retry] Execute SQL Query / Read File / Call OPC UA
+    ExternalSystems-->>InfrastructureLayer: Raw Data (Stream, DataSet)
+    ApplicationServiceHost->>InfrastructureLayer: 5. ExecuteTransformationAsync(script, jsonData)
+    InfrastructureLayer-->>ApplicationServiceHost: Task<JsonNode>
+    ApplicationServiceHost->>InfrastructureLayer: 6. GenerateReportAsync(template, data, format)
+    InfrastructureLayer-->>ApplicationServiceHost: Task<Stream>
+    ApplicationServiceHost->>InfrastructureLayer: 7. [Loop] DeliverReportAsync(reportArtifact, deliveryConfig)
+    InfrastructureLayer-->>ApplicationServiceHost: Task<DeliveryResult>
+    InfrastructureLayer->>ExternalSystems: 7.1. [Polly Circuit Breaker] S3.PutObject / SMTPS.Send / SFTP.Upload
+    ExternalSystems-->>InfrastructureLayer: Delivery Confirmation
+    ApplicationServiceHost->>InfrastructureLayer: 8. UpdateJobExecutionLogAsync(logId, 'Succeeded', details)
+    InfrastructureLayer-->>ApplicationServiceHost: Task
+
+    note over ApplicationServiceHost: ALT: Failure Flow. If any step from 4 to 7 fails, the orchestrator catches the exception, and the...
+    note over ApplicationServiceHost: Step 5 (Transformation) is conditional. It is skipped if the ReportConfiguration does not have an...
+    note over InfrastructureLayer: The JobExecutionLog acts as the persistent state record for this business process, fulfilling aud...
+
+    deactivate InfrastructureLayer
+    deactivate ApplicationServiceHost

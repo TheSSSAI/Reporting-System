@@ -1,0 +1,5 @@
+"component_name","business_criticality","technical_complexity","change_frequency","test_types_required","unit_test_coverage","integration_test_coverage","e2e_test_coverage","automation_percentage","manual_test_effort","automated_test_effort","total_test_cases","risk_mitigation_score","quality_confidence","maintenance_overhead","tool_compatibility","team_skill_alignment"
+"Jint Transformation Service & Sandbox","Critical","High","Medium","[""Unit"",""Integration"",""Security"",""Performance""]","95","98","70","98","4","60","35","0.98","High","Medium","Excellent","Good"
+"Script Management API (CRUD & Versioning)","High","High","Medium","[""Unit"",""Integration"",""Security""]","90","95","85","95","8","50","40","0.95","High","Medium","Excellent","Good"
+"Frontend Script Editor & Preview UI","High","High","High","[""Unit"",""E2E"",""Accessibility"",""Compatibility""]","80","","90","85","24","70","45","0.9","Medium","High","Good","Medium"
+"Operational & Compliance Features","High","Medium","Low","[""Integration"",""E2E"",""Security""]","75","90","60","90","10","30","18","0.92","High","Low","Excellent","Good"

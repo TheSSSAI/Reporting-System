@@ -1,0 +1,28 @@
+sequenceDiagram
+    participant "React Control Panel" as ReactControlPanel
+    participant "API/Web Layer" as APIWebLayer
+    participant "Application Layer" as ApplicationLayer
+    participant "Infrastructure Layer" as InfrastructureLayer
+
+    activate ReactControlPanel
+    ReactControlPanel->>ReactControlPanel: 1. 1. Admin clicks 'Create New Report'. UI navigates to wizard, initializes state (Zustand store).
+    activate APIWebLayer
+    ReactControlPanel->>APIWebLayer: 2. 2. [useEffect] Fetch initial data: GET /api/v1/connectors
+    APIWebLayer-->>ReactControlPanel: 200 OK with ConnectorConfiguration[]
+    ReactControlPanel->>APIWebLayer: 3. 3. [useEffect] Fetch initial data: GET /api/v1/transformations
+    APIWebLayer-->>ReactControlPanel: 200 OK with TransformationScript[]
+    ReactControlPanel->>ReactControlPanel: 4. 4. Admin completes multi-step form. UI performs real-time client-side validation and updates state store on input change.
+    ReactControlPanel->>APIWebLayer: 5. 5. Admin clicks 'Save'. Submit form: POST /api/v1/reports with ReportConfigurationCreateDTO
+    APIWebLayer-->>ReactControlPanel: 201 Created with new report ID, or 400/500 on error
+    activate ApplicationLayer
+    APIWebLayer->>ApplicationLayer: 6. 6. [Controller Action] Invoke CreateReportAsync(dto)
+    ApplicationLayer-->>APIWebLayer: Success(newReportId) or Failure(error)
+    ReactControlPanel->>ReactControlPanel: 12. 12. On success, display 'Report Created' notification and redirect to reports list page.
+
+    note over ReactControlPanel: State Management: The multi-step wizard's state is managed centrally in a Zustand store to simpli...
+    note over APIWebLayer: Validation: DTO validation is handled by FluentValidation via ASP.NET Core middleware, ensuring t...
+    note over ApplicationLayer: Transactional Boundary: The Application Service ensures that creating the database record and sch...
+
+    deactivate ApplicationLayer
+    deactivate APIWebLayer
+    deactivate ReactControlPanel

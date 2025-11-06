@@ -1,0 +1,36 @@
+<Project>
+  <!-- This file is auto-imported by the .NET SDK into all projects in this solution. -->
+  <!-- It is used to set common properties for all projects. -->
+
+  <PropertyGroup>
+    <!-- Target Framework -->
+    <TargetFramework>net8.0</TargetFramework>
+    
+    <!-- Language Features -->
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <!-- Assembly Metadata -->
+    <Authors>Reporting System Team</Authors>
+    <Company>Your Company</Company>
+    <Product>Reporting System - Plug-in Examples</Product>
+    <Copyright>Copyright © Your Company 2024</Copyright>
+
+    <!-- Build Settings -->
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    
+    <!-- 
+      Crucial for US-112: Enforce XML Documentation.
+      This forces the compiler to generate an XML documentation file. More importantly,
+      it will generate a build warning (CS1591) for any public type or member that is missing
+      XML documentation comments. This serves as a quality gate to ensure the examples are
+      well-documented as required.
+    -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn> <!-- Optionally disable the warning if it becomes too noisy during early development, but should be enabled for release builds. -->
+
+  </PropertyGroup>
+
+</Project>

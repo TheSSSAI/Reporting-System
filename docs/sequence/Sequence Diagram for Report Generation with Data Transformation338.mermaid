@@ -1,0 +1,28 @@
+sequenceDiagram
+    participant "TransformationEngine.Api" as TransformationEngineApi
+    participant "TransformationEngine.Data" as TransformationEngineData
+    participant "TransformationEngine.JintWrapper" as TransformationEngineJintWrapper
+
+    activate TransformationEngineApi
+    TransformationEngineApi->>TransformationEngineApi: 1. 1. [Trigger] BeginTransformation(jobId, reportId, sourceDataStream)
+    TransformationEngineApi->>TransformationEngineApi: 2. 2. Check source data size against configured limit (e.g., 256MB)
+    TransformationEngineApi->>TransformationEngineApi: 3. 3. Buffer data into memory as System.Text.Json.JsonNode
+    TransformationEngineApi-->>TransformationEngineApi: JsonNode inputData
+    activate TransformationEngineData
+    TransformationEngineApi->>TransformationEngineData: 4. 4. GetActiveScriptVersionAsync(reportId)
+    TransformationEngineData-->>TransformationEngineApi: ScriptVersion scriptEntity
+    TransformationEngineData->>TransformationEngineApi: 5. 5. return scriptEntity (with decrypted content)
+    activate TransformationEngineJintWrapper
+    TransformationEngineApi->>TransformationEngineJintWrapper: 6. 6. Execute(scriptEntity.Content, inputData)
+    TransformationEngineJintWrapper-->>TransformationEngineApi: JsonNode transformedData
+    TransformationEngineJintWrapper->>TransformationEngineApi: 7. 7. return transformedData
+    TransformationEngineApi->>TransformationEngineApi: 8. 8. Record successful execution metrics
+    TransformationEngineApi->>TransformationEngineApi: 9. 9. Return transformedData to Report Generation Engine
+    TransformationEngineApi-->>TransformationEngineApi: JsonNode transformedData
+
+    note over TransformationEngineJintWrapper: JintEngineWrapper configures a new engine instance for each execution with strict, configurable c...
+    note over TransformationEngineApi: If any step fails, the ScriptExecutionService catches the exception, records a 'failed' outcome m...
+
+    deactivate TransformationEngineJintWrapper
+    deactivate TransformationEngineData
+    deactivate TransformationEngineApi

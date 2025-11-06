@@ -1,0 +1,22 @@
+sequenceDiagram
+    participant "CreateAuditLogEntryHandler" as CreateAuditLogEntryHandler
+    participant "CreateAuditLogEntryHandler" as CreateAuditLogEntryHandler
+    participant "CreateAuditLogEntryHandler" as CreateAuditLogEntryHandler
+    participant "CreateAuditLogEntryHandler" as CreateAuditLogEntryHandler
+    participant "AppDbContext" as AppDbContext
+
+    activate CreateAuditLogEntryHandler
+    CreateAuditLogEntryHandler->>CreateAuditLogEntryHandler: 1. UpdateScriptAsync(scriptId, updateDto)
+    CreateAuditLogEntryHandler-->>CreateAuditLogEntryHandler: Updated Script DTO
+    CreateAuditLogEntryHandler->>AppDbContext: 2. Adds new ScriptVersion entity to change tracker.
+    CreateAuditLogEntryHandler->>CreateAuditLogEntryHandler: 3. Publish(TransformationScriptModifiedEvent)
+    CreateAuditLogEntryHandler->>CreateAuditLogEntryHandler: 4. Handle(TransformationScriptModifiedEvent)
+    CreateAuditLogEntryHandler->>AppDbContext: 5. Constructs and adds AuditLog entity to change tracker.
+    CreateAuditLogEntryHandler->>CreateAuditLogEntryHandler: 6. Return from handler
+    CreateAuditLogEntryHandler->>CreateAuditLogEntryHandler: 7. Return from mediator
+    CreateAuditLogEntryHandler->>AppDbContext: 8. SaveChangesAsync()
+    AppDbContext-->>CreateAuditLogEntryHandler: Number of entities saved.
+
+    note over AppDbContext: This is the atomic commit point. EF Core wraps all tracked changes (the ScriptVersion and the Aud...
+
+    deactivate CreateAuditLogEntryHandler

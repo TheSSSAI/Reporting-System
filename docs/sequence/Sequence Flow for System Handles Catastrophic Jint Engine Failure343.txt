@@ -1,0 +1,898 @@
+# 1 Overview
+
+## 1.1 Diagram Id
+
+SEQ-RF-001
+
+## 1.2 Name
+
+System Handles Catastrophic Jint Engine Failure
+
+## 1.3 Description
+
+An unexpected, unrecoverable error occurs within the Jint library. The application's global error handling middleware catches this failure, logs it as FATAL, and gracefully fails the active job, ensuring the stability of the main service.
+
+## 1.4 Type
+
+🔹 RecoveryFlow
+
+## 1.5 Purpose
+
+To ensure the reliability of the main application service by isolating it from crashes within the Jint library, as mandated by REQ-DTR-011.
+
+## 1.6 Complexity
+
+High
+
+## 1.7 Priority
+
+🚨 Critical
+
+## 1.8 Frequency
+
+OnDemand
+
+## 1.9 Participants
+
+- REPO-LIB-JINT-002
+- REPO-APP-API-001
+
+## 1.10 Key Interactions
+
+- The `JintEngineWrapper` calls `engine.Execute()`.
+- A critical, unhandled exception (e.g., `OutOfMemoryException`) is thrown from within Jint that is not a `JavaScriptException`.
+- The exception propagates up to the API layer's global exception handler middleware.
+- The middleware catches the unhandled exception.
+- It logs the exception as a FATAL error with the full stack trace and context.
+- The middleware ensures the current data processing job is marked as 'Failed'.
+- The middleware returns a generic HTTP 500 Internal Server Error response.
+- The application service process remains running and continues to handle other requests.
+
+## 1.11 Triggers
+
+- An unknown bug in Jint is triggered, or a script causes a non-standard, catastrophic failure.
+
+## 1.12 Outcomes
+
+- The affected data processing job is terminated and marked as 'Failed'.
+- The main application service remains stable and responsive.
+- A FATAL error is logged, triggering critical alerts for immediate investigation.
+
+## 1.13 Business Rules
+
+- Execution must be fully isolated (REQ-DTR-011).
+- Any crash or unhandled exception within Jint must be caught and handled gracefully (REQ-DTR-011).
+- The affected job is marked 'Failed' without impacting other jobs (REQ-DTR-011).
+
+## 1.14 Error Scenarios
+
+- This entire sequence is about recovering from a worst-case error scenario.
+
+## 1.15 Integration Points
+
+- Centralized Logging System
+- Alerting System (via FATAL logs)
+
+# 2.0 Details
+
+## 2.1 Diagram Id
+
+SEQ-RF-001
+
+## 2.2 Name
+
+System Recovery from Catastrophic Jint Engine Failure
+
+## 2.3 Description
+
+An implementation-ready sequence detailing the system's recovery flow from an unexpected, unrecoverable error within the Jint library. The application's global exception handling middleware catches the failure, logs it as FATAL, gracefully fails the active job, and returns a generic HTTP 500 response, ensuring the stability of the main service as mandated by REQ-DTR-011.
+
+## 2.4 Participants
+
+### 2.4.1 Application Service
+
+#### 2.4.1.1 Repository Id
+
+REPO-APP-API-001
+
+#### 2.4.1.2 Display Name
+
+API: ScriptExecutionService
+
+#### 2.4.1.3 Type
+
+🔹 Application Service
+
+#### 2.4.1.4 Technology
+
+.NET 8, C#
+
+#### 2.4.1.5 Order
+
+1
+
+#### 2.4.1.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | actor |
+| Color | #1168bd |
+| Stereotype | Service |
+
+### 2.4.2.0 Infrastructure Wrapper
+
+#### 2.4.2.1 Repository Id
+
+REPO-LIB-JINT-002
+
+#### 2.4.2.2 Display Name
+
+Lib: JintEngineWrapper
+
+#### 2.4.2.3 Type
+
+🔹 Infrastructure Wrapper
+
+#### 2.4.2.4 Technology
+
+Jint, .NET 8
+
+#### 2.4.2.5 Order
+
+2
+
+#### 2.4.2.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | component |
+| Color | #d9a54f |
+| Stereotype | Library |
+
+### 2.4.3.0 Middleware
+
+#### 2.4.3.1 Repository Id
+
+REPO-APP-API-001
+
+#### 2.4.3.2 Display Name
+
+API: GlobalExceptionHandlerMiddleware
+
+#### 2.4.3.3 Type
+
+🔹 Middleware
+
+#### 2.4.3.4 Technology
+
+ASP.NET Core 8
+
+#### 2.4.3.5 Order
+
+3
+
+#### 2.4.3.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | boundary |
+| Color | #c0392b |
+| Stereotype | Middleware |
+
+### 2.4.4.0 Observability Service
+
+#### 2.4.4.1 Repository Id
+
+Observability.Logging
+
+#### 2.4.4.2 Display Name
+
+Logging Service
+
+#### 2.4.4.3 Type
+
+🔹 Observability Service
+
+#### 2.4.4.4 Technology
+
+Serilog, Centralized Log Aggregator
+
+#### 2.4.4.5 Order
+
+4
+
+#### 2.4.4.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | database |
+| Color | #8e44ad |
+| Stereotype | Logging |
+
+### 2.4.5.0 Repository/Unit of Work
+
+#### 2.4.5.1 Repository Id
+
+REPO-LIB-DATA-003
+
+#### 2.4.5.2 Display Name
+
+Data Persistence
+
+#### 2.4.5.3 Type
+
+🔹 Repository/Unit of Work
+
+#### 2.4.5.4 Technology
+
+Entity Framework Core 8
+
+#### 2.4.5.5 Order
+
+5
+
+#### 2.4.5.6 Style
+
+| Property | Value |
+|----------|-------|
+| Shape | database |
+| Color | #27ae60 |
+| Stereotype | Database |
+
+## 2.5.0.0 Interactions
+
+### 2.5.1.0 Method Call
+
+#### 2.5.1.1 Source Id
+
+REPO-APP-API-001
+
+#### 2.5.1.2 Target Id
+
+REPO-LIB-JINT-002
+
+#### 2.5.1.3 Message
+
+1. ExecuteAsync(script, inputJson, jobId)
+
+#### 2.5.1.4 Sequence Number
+
+1
+
+#### 2.5.1.5 Type
+
+🔹 Method Call
+
+#### 2.5.1.6 Is Synchronous
+
+✅ Yes
+
+#### 2.5.1.7 Return Message
+
+
+
+#### 2.5.1.8 Has Return
+
+✅ Yes
+
+#### 2.5.1.9 Is Activation
+
+✅ Yes
+
+#### 2.5.1.10 Technical Details
+
+##### 2.5.1.10.1 Protocol
+
+In-process
+
+##### 2.5.1.10.2 Method
+
+Task<JsonNode> ExecuteAsync(string scriptText, JsonNode input, Guid jobId)
+
+##### 2.5.1.10.3 Parameters
+
+scriptText: The user-provided JavaScript. input: The data to be transformed. jobId: The unique identifier for the current data processing job.
+
+##### 2.5.1.10.4 Authentication
+
+N/A (Internal call)
+
+##### 2.5.1.10.5 Error Handling
+
+Propagates exceptions not handled internally (i.e., non-JavaScriptExceptions).
+
+##### 2.5.1.10.6 Performance
+
+###### 2.5.1.10.6.1 Latency
+
+< 10ms for invocation overhead.
+
+### 2.5.2.0.0.0 Internal Call
+
+#### 2.5.2.1.0.0 Source Id
+
+REPO-LIB-JINT-002
+
+#### 2.5.2.2.0.0 Target Id
+
+REPO-LIB-JINT-002
+
+#### 2.5.2.3.0.0 Message
+
+2. engine.Execute(script)
+
+#### 2.5.2.4.0.0 Sequence Number
+
+2
+
+#### 2.5.2.5.0.0 Type
+
+🔹 Internal Call
+
+#### 2.5.2.6.0.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.2.7.0.0 Return Message
+
+3. throws OutOfMemoryException
+
+#### 2.5.2.8.0.0 Has Return
+
+✅ Yes
+
+#### 2.5.2.9.0.0 Is Activation
+
+❌ No
+
+#### 2.5.2.10.0.0 Technical Details
+
+##### 2.5.2.10.1.0 Protocol
+
+In-process
+
+##### 2.5.2.10.2.0 Method
+
+Jint.Engine.Execute(string script)
+
+##### 2.5.2.10.3.0 Parameters
+
+The user-provided script passed to the underlying Jint library.
+
+##### 2.5.2.10.4.0 Authentication
+
+N/A
+
+##### 2.5.2.10.5.0 Error Handling
+
+A catastrophic, unhandled exception (e.g., OutOfMemoryException, StackOverflowException, AccessViolationException) is thrown from native code or the .NET runtime within Jint's execution context.
+
+##### 2.5.2.10.6.0 Performance
+
+*No data available*
+
+#### 2.5.2.11.0.0 Nested Interactions
+
+*No items available*
+
+### 2.5.3.0.0.0 Exception Propagation
+
+#### 2.5.3.1.0.0 Source Id
+
+REPO-LIB-JINT-002
+
+#### 2.5.3.2.0.0 Target Id
+
+REPO-APP-API-001
+
+#### 2.5.3.3.0.0 Message
+
+4. Exception propagates up the call stack
+
+#### 2.5.3.4.0.0 Sequence Number
+
+4
+
+#### 2.5.3.5.0.0 Type
+
+🔹 Exception Propagation
+
+#### 2.5.3.6.0.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.3.7.0.0 Return Message
+
+
+
+#### 2.5.3.8.0.0 Has Return
+
+❌ No
+
+#### 2.5.3.9.0.0 Is Activation
+
+✅ Yes
+
+#### 2.5.3.10.0.0 Technical Details
+
+##### 2.5.3.10.1.0 Protocol
+
+In-process
+
+##### 2.5.3.10.2.0 Method
+
+N/A
+
+##### 2.5.3.10.3.0 Parameters
+
+The original `OutOfMemoryException` object.
+
+##### 2.5.3.10.4.0 Authentication
+
+N/A
+
+##### 2.5.3.10.5.0 Error Handling
+
+The exception is not caught by the ScriptExecutionService, allowing it to bubble up to the ASP.NET Core middleware pipeline.
+
+##### 2.5.3.10.6.0 Performance
+
+*No data available*
+
+### 2.5.4.0.0.0 Exception Propagation
+
+#### 2.5.4.1.0.0 Source Id
+
+REPO-APP-API-001
+
+#### 2.5.4.2.0.0 Target Id
+
+REPO-APP-API-001
+
+#### 2.5.4.3.0.0 Message
+
+5. Exception propagates to middleware boundary
+
+#### 2.5.4.4.0.0 Sequence Number
+
+5
+
+#### 2.5.4.5.0.0 Type
+
+🔹 Exception Propagation
+
+#### 2.5.4.6.0.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.4.7.0.0 Return Message
+
+
+
+#### 2.5.4.8.0.0 Has Return
+
+❌ No
+
+#### 2.5.4.9.0.0 Is Activation
+
+❌ No
+
+#### 2.5.4.10.0.0 Technical Details
+
+##### 2.5.4.10.1.0 Protocol
+
+In-process (ASP.NET Core Pipeline)
+
+##### 2.5.4.10.2.0 Method
+
+N/A
+
+##### 2.5.4.10.3.0 Parameters
+
+The uncaught `OutOfMemoryException`.
+
+##### 2.5.4.10.4.0 Authentication
+
+N/A
+
+##### 2.5.4.10.5.0 Error Handling
+
+The exception reaches the boundary of the `GlobalExceptionHandlerMiddleware`.
+
+##### 2.5.4.10.6.0 Performance
+
+*No data available*
+
+### 2.5.5.0.0.0 Exception Handling
+
+#### 2.5.5.1.0.0 Source Id
+
+REPO-APP-API-001
+
+#### 2.5.5.2.0.0 Target Id
+
+REPO-APP-API-001
+
+#### 2.5.5.3.0.0 Message
+
+6. InvokeAsync(context) catches unhandled Exception
+
+#### 2.5.5.4.0.0 Sequence Number
+
+6
+
+#### 2.5.5.5.0.0 Type
+
+🔹 Exception Handling
+
+#### 2.5.5.6.0.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.5.7.0.0 Return Message
+
+
+
+#### 2.5.5.8.0.0 Has Return
+
+✅ Yes
+
+#### 2.5.5.9.0.0 Is Activation
+
+✅ Yes
+
+#### 2.5.5.10.0.0 Technical Details
+
+##### 2.5.5.10.1.0 Protocol
+
+In-process (ASP.NET Core Middleware)
+
+##### 2.5.5.10.2.0 Method
+
+public async Task InvokeAsync(HttpContext context, RequestDelegate next)
+
+##### 2.5.5.10.3.0 Parameters
+
+The standard HttpContext for the request.
+
+##### 2.5.5.10.4.0 Authentication
+
+N/A
+
+##### 2.5.5.10.5.0 Error Handling
+
+The core of the recovery flow. A `try-catch (Exception ex)` block wraps the `await next(context);` call.
+
+##### 2.5.5.10.6.0 Performance
+
+###### 2.5.5.10.6.1 Latency
+
+< 1ms to catch.
+
+### 2.5.6.0.0.0 Logging Call
+
+#### 2.5.6.1.0.0 Source Id
+
+REPO-APP-API-001
+
+#### 2.5.6.2.0.0 Target Id
+
+Observability.Logging
+
+#### 2.5.6.3.0.0 Message
+
+7. Log.Fatal(ex, "Catastrophic failure...")
+
+#### 2.5.6.4.0.0 Sequence Number
+
+7
+
+#### 2.5.6.5.0.0 Type
+
+🔹 Logging Call
+
+#### 2.5.6.6.0.0 Is Synchronous
+
+❌ No
+
+#### 2.5.6.7.0.0 Return Message
+
+
+
+#### 2.5.6.8.0.0 Has Return
+
+❌ No
+
+#### 2.5.6.9.0.0 Is Activation
+
+❌ No
+
+#### 2.5.6.10.0.0 Technical Details
+
+##### 2.5.6.10.1.0 Protocol
+
+In-process (Serilog)
+
+##### 2.5.6.10.2.0 Method
+
+Log.Fatal(Exception ex, string messageTemplate, params object[] propertyValues)
+
+##### 2.5.6.10.3.0 Parameters
+
+The caught exception, a descriptive message, CorrelationId, and JobId.
+
+##### 2.5.6.10.4.0 Authentication
+
+N/A
+
+##### 2.5.6.10.5.0 Error Handling
+
+Logging sink is configured to be asynchronous and resilient to network issues with an internal buffer.
+
+##### 2.5.6.10.6.0 Performance
+
+*No data available*
+
+### 2.5.7.0.0.0 Method Call
+
+#### 2.5.7.1.0.0 Source Id
+
+REPO-APP-API-001
+
+#### 2.5.7.2.0.0 Target Id
+
+REPO-LIB-DATA-003
+
+#### 2.5.7.3.0.0 Message
+
+8. UpdateJobStatusAsync(jobId, JobStatus.Failed)
+
+#### 2.5.7.4.0.0 Sequence Number
+
+8
+
+#### 2.5.7.5.0.0 Type
+
+🔹 Method Call
+
+#### 2.5.7.6.0.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.7.7.0.0 Return Message
+
+
+
+#### 2.5.7.8.0.0 Has Return
+
+✅ Yes
+
+#### 2.5.7.9.0.0 Is Activation
+
+❌ No
+
+#### 2.5.7.10.0.0 Technical Details
+
+##### 2.5.7.10.1.0 Protocol
+
+In-process
+
+##### 2.5.7.10.2.0 Method
+
+Task UpdateJobStatusAsync(Guid jobId, JobStatus newStatus, string errorMessage)
+
+##### 2.5.7.10.3.0 Parameters
+
+The ID of the failed job, the 'Failed' status, and a generic error reference.
+
+##### 2.5.7.10.4.0 Authentication
+
+N/A
+
+##### 2.5.7.10.5.0 Error Handling
+
+Database exceptions here would be caught and logged, but the HTTP response would still be 500.
+
+##### 2.5.7.10.6.0 Performance
+
+###### 2.5.7.10.6.1 Latency
+
+< 50ms
+
+### 2.5.8.0.0.0 Method Call
+
+#### 2.5.8.1.0.0 Source Id
+
+REPO-APP-API-001
+
+#### 2.5.8.2.0.0 Target Id
+
+REPO-LIB-DATA-003
+
+#### 2.5.8.3.0.0 Message
+
+9. CommitAsync()
+
+#### 2.5.8.4.0.0 Sequence Number
+
+9
+
+#### 2.5.8.5.0.0 Type
+
+🔹 Method Call
+
+#### 2.5.8.6.0.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.8.7.0.0 Return Message
+
+Success
+
+#### 2.5.8.8.0.0 Has Return
+
+✅ Yes
+
+#### 2.5.8.9.0.0 Is Activation
+
+❌ No
+
+#### 2.5.8.10.0.0 Technical Details
+
+##### 2.5.8.10.1.0 Protocol
+
+In-process (EF Core)
+
+##### 2.5.8.10.2.0 Method
+
+Task<int> SaveChangesAsync(CancellationToken cancellationToken)
+
+##### 2.5.8.10.3.0 Parameters
+
+Standard EF Core parameters.
+
+##### 2.5.8.10.4.0 Authentication
+
+N/A
+
+##### 2.5.8.10.5.0 Error Handling
+
+The Unit of Work pattern ensures this is part of a transaction.
+
+##### 2.5.8.10.6.0 Performance
+
+###### 2.5.8.10.6.1 Latency
+
+< 100ms
+
+### 2.5.9.0.0.0 HTTP Response
+
+#### 2.5.9.1.0.0 Source Id
+
+REPO-APP-API-001
+
+#### 2.5.9.2.0.0 Target Id
+
+REPO-APP-API-001
+
+#### 2.5.9.3.0.0 Message
+
+10. Returns HTTP 500 Internal Server Error
+
+#### 2.5.9.4.0.0 Sequence Number
+
+10
+
+#### 2.5.9.5.0.0 Type
+
+🔹 HTTP Response
+
+#### 2.5.9.6.0.0 Is Synchronous
+
+✅ Yes
+
+#### 2.5.9.7.0.0 Return Message
+
+
+
+#### 2.5.9.8.0.0 Has Return
+
+❌ No
+
+#### 2.5.9.9.0.0 Is Activation
+
+✅ Yes
+
+#### 2.5.9.10.0.0 Technical Details
+
+##### 2.5.9.10.1.0 Protocol
+
+HTTP/1.1
+
+##### 2.5.9.10.2.0 Method
+
+Status Code: 500
+
+##### 2.5.9.10.3.0 Parameters
+
+Response Body: `{"error": {"message": "An unexpected error occurred. Please contact support and provide Correlation ID: ..."}}`
+
+##### 2.5.9.10.4.0 Authentication
+
+N/A
+
+##### 2.5.9.10.5.0 Error Handling
+
+The response body is deliberately generic to avoid leaking internal implementation details or stack traces, as per security best practices.
+
+##### 2.5.9.10.6.0 Performance
+
+*No data available*
+
+## 2.6.0.0.0.0 Notes
+
+### 2.6.1.0.0.0 Content
+
+#### 2.6.1.1.0.0 Content
+
+The key to this recovery pattern is that the exception handler exists outside the direct call chain of the business logic, as part of the cross-cutting middleware pipeline. This ensures it can catch failures from any underlying component.
+
+#### 2.6.1.2.0.0 Position
+
+top
+
+#### 2.6.1.3.0.0 Participant Id
+
+REPO-APP-API-001
+
+#### 2.6.1.4.0.0 Sequence Number
+
+6
+
+### 2.6.2.0.0.0 Content
+
+#### 2.6.2.1.0.0 Content
+
+The FATAL log entry is critical. It must be configured to trigger immediate, high-priority alerts to the on-call engineering team, as this indicates a severe, unknown bug or instability in a core library.
+
+#### 2.6.2.2.0.0 Position
+
+right
+
+#### 2.6.2.3.0.0 Participant Id
+
+Observability.Logging
+
+#### 2.6.2.4.0.0 Sequence Number
+
+7
+
+### 2.6.3.0.0.0 Content
+
+#### 2.6.3.1.0.0 Content
+
+After returning the 500 error, the middleware's execution scope ends, but the ASP.NET Core Kestrel process remains healthy and continues to serve other, unrelated incoming requests, fulfilling the isolation requirement of REQ-DTR-011.
+
+#### 2.6.3.2.0.0 Position
+
+bottom
+
+#### 2.6.3.3.0.0 Participant Id
+
+*Not specified*
+
+#### 2.6.3.4.0.0 Sequence Number
+
+10
+
+## 2.7.0.0.0.0 Implementation Guidance
+
+| Property | Value |
+|----------|-------|
+| Security Requirements | The HTTP 500 response MUST NOT include the excepti... |
+| Performance Targets | The RTO (Recovery Time Objective) for the main app... |
+| Error Handling Strategy | The `GlobalExceptionHandlerMiddleware` must be reg... |
+| Testing Considerations | An integration test must be created using `WebAppl... |
+| Monitoring Requirements | A monitoring alert must be configured to fire imme... |
+| Deployment Considerations | Ensure the middleware is correctly registered in `... |
+

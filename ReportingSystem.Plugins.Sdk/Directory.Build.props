@@ -1,0 +1,37 @@
+<Project>
+  <!-- This file applies common properties to all projects in the solution -->
+  
+  <PropertyGroup>
+    <!-- Set language and framework defaults -->
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>12.0</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+
+    <!-- Set common assembly and package metadata -->
+    <Product>Reporting System</Product>
+    <Company>YourCompanyName</Company>
+    <Authors>YourCompanyName</Authors>
+    <Copyright>Copyright © YourCompanyName $([System.DateTime]::Now.Year)</Copyright>
+    
+    <!-- NuGet Packaging settings -->
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/your-org/ReportingSystem.Plugins.Sdk</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/your-org/ReportingSystem.Plugins.Sdk</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>reporting;plugins;sdk</PackageTags>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+
+    <!-- Enable SourceLink for better debugging experience from NuGet package -->
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
+  </ItemGroup>
+
+</Project>

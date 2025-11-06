@@ -1,0 +1,44 @@
+flowchart TD
+    subgraph "User Journey in UI"
+        A["Start: 'My Modes' Screen"] --> B("User clicks 'Create New Mode'")
+        B --> C["Step 1: Enter Name & Description"]
+        C --> D{"Name valid & unique?"}
+        D -- "No" --> E["Show name validation error"]
+        E --> C
+        D -- "Yes" --> F["Step 2: Define Input/Output Variables"]
+        F --> G{"At least 1 Input/Output<br/>& all names valid?"}
+        G -- "No" --> H["Show variable validation error"]
+        H --> F
+        G -- "Yes" --> I["Step 3: Write Formulas"]
+        I --> J{"All formulas syntactically valid?"}
+        J -- "No" --> K["Show formula validation error"]
+        K --> I
+        J -- "Yes" --> L{User Action}
+        L -- "Clicks 'Cancel'" --> M{Confirm Cancel?}
+        M -- "No" --> I
+        M -- "Yes" --> Z["End: Return to 'My Modes' list"]
+        L -- "Clicks 'Save'" --> N(("(API))<br/>POST /api/modes"))
+    end
+
+    subgraph "System Interaction"
+        N --> O{"Backend Validation OK?"}
+        O -- "No" --> P["(UI)<br/>Display 'Save Failed' server error"]
+        P --> I
+        O -- "Yes" --> Q["(DB)<br/>Save Mode to Database"]
+        Q --> R(("(API))<br/>Return 201 Created"))
+        R --> S["(UI)<br/>Show 'Mode Saved' success message"]
+        S --> Z
+    end
+
+    %% Styling
+    classDef step fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,color:#000
+    classDef decision fill:#fff9c4,stroke:#fbc02d,stroke-width:2px,color:#000
+    classDef error fill:#ffebee,stroke:#d32f2f,stroke-width:2px,color:#000
+    classDef success fill:#e8f5e9,stroke:#388e3c,stroke-width:2px,color:#000
+    classDef io fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#000
+
+    class C,F,I step
+    class D,G,J,L,M,O decision
+    class E,H,K,P error
+    class Q,S success
+    class N,R io

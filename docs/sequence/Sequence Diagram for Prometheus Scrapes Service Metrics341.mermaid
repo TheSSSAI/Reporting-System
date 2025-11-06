@@ -1,0 +1,15 @@
+sequenceDiagram
+    participant "External: Prometheus Server" as ExternalPrometheusServer
+    participant "TransformationEngine.Api" as TransformationEngineApi
+
+    ExternalPrometheusServer->>TransformationEngineApi: 1. 1. Sends scrape request to metrics endpoint.
+    TransformationEngineApi-->>ExternalPrometheusServer: 5. Returns metrics payload.
+    activate TransformationEngineApi
+    TransformationEngineApi->>TransformationEngineApi: 2. 2. prometheus-net.AspNetCore middleware intercepts the request.
+    TransformationEngineApi->>TransformationEngineApi: 3. 3. Gathers current state of all registered metrics from memory.
+    TransformationEngineApi->>TransformationEngineApi: 4. 4. Formats metric data into Prometheus text-based exposition format.
+
+    note over ExternalPrometheusServer: Prometheus Server Configuration (prometheus.yml): scrape_configs:   - job_name: 'transformation-s...
+    note over TransformationEngineApi: ASP.NET Core Program.cs configuration: // Add the prometheus-net middleware app.UseMetricServer()...
+
+    deactivate TransformationEngineApi
